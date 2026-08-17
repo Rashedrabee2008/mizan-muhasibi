@@ -1,0 +1,10 @@
+users/{uid}/
+  ├── products
+  ├── customers
+  ├── suppliers
+  ├── invoices
+  ├── treasuries
+  ├── treasuryMovements
+  ├── expenses
+  ├── notifications
+  └── counters (invoiceCounter, etc.)
