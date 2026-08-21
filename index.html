@@ -2722,14 +2722,14 @@
         // 1. تهيئة Firebase (باستخدام الإعدادات الجديدة)
         // ================================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyDZlzKX7urPYIiLI8dKjUmmMarS17sKseo",
-            authDomain: "accounting-system-4695d.firebaseapp.com",
-            databaseURL: "https://accounting-system-4695d-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "accounting-system-4695d",
-            storageBucket: "accounting-system-4695d.firebasestorage.app",
-            messagingSenderId: "577360785300",
-            appId: "1:577360785300:web:c277d41bd114ebcefea981",
-            measurementId: "G-VPHGNXYPDZ"
+            apiKey: "AIzaSyCP7vpqviR6A11gPkC7cO6MQJBGKWcnVWE",
+            authDomain: "accounting-balance-ab9d3.firebaseapp.com",
+            databaseURL: "https://accounting-balance-ab9d3-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "accounting-balance-ab9d3",
+            storageBucket: "accounting-balance-ab9d3.firebasestorage.app",
+            messagingSenderId: "564321427560",
+            appId: "1:564321427560:web:ae44d18b626ad2e5771bdd",
+            measurementId: "G-MGT87N4TG4"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -3286,7 +3286,7 @@
         };
 
         // ================================================================
-        // 11. دوال الموردين (Suppliers) - مختصرة
+        // 11. دوال الموردين (Suppliers)
         // ================================================================
         window.addSupplier = function() {
             const name = document.getElementById('supplierName').value.trim();
@@ -3399,7 +3399,7 @@
         // ================================================================
         // 12. دوال المشتريات والمبيعات والمرتجعات والمصروفات والسندات
         // ================================================================
-        // المشتريات
+        // ===== المشتريات =====
         window.updatePurchasePrice = function() {
             const productId = parseInt(document.getElementById('purchaseProduct').value);
             if (!productId) return;
@@ -3487,7 +3487,7 @@
             filterPurchases();
         };
 
-        // المبيعات
+        // ===== المبيعات =====
         window.updateSalesPrice = function() {
             const productId = parseInt(document.getElementById('salesProduct').value);
             if (!productId) return;
@@ -3574,7 +3574,7 @@
             filterSales();
         };
 
-        // المرتجعات
+        // ===== المرتجعات =====
         window.populateReturnSelects = function() {
             const returnProduct = document.getElementById('returnProduct');
             if (returnProduct) {
@@ -3703,7 +3703,7 @@
             filterReturns(returnFilter);
         };
 
-        // المصروفات
+        // ===== المصروفات =====
         window.addExpense = function() {
             const note = document.getElementById('expenseNote').value.trim();
             const amount = parseFloat(document.getElementById('expenseAmount').value);
@@ -3765,7 +3765,7 @@
             filterExpenses();
         };
 
-        // السندات
+        // ===== السندات =====
         window.toggleBondFields = function() {
             const type = document.getElementById('bondType').value;
             document.getElementById('bondCustomerField').style.display = type === 'collect' ? 'block' : 'none';
@@ -4651,7 +4651,7 @@
             showToast('تم فتح طباعة التقرير', 'success');
         };
 
-        // ===== دوال تصدير Excel (مختصرة) =====
+        // ===== دوال تصدير Excel =====
         function downloadExcel(data, filename) {
             if (!data || data.length === 0) { showToast('لا توجد بيانات', 'warning'); return; }
             const headers = Object.keys(data[0]);
