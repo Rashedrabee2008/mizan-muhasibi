@@ -130,6 +130,27 @@
         .grid-item:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(108,99,255,0.18); border-color: #6c63ff; }
         .grid-item:hover i { transform: scale(1.08); }
 
+        /* أزرار التقارير السريعة */
+        .report-quick-btn {
+            background: #6c63ff;
+            color: #fff !important;
+            border: none !important;
+            border-radius: 16px;
+            padding: 14px 4px 12px;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(108,99,255,0.2);
+            transition: 0.25s ease;
+            cursor: pointer;
+            width: 100%;
+        }
+        .report-quick-btn i { font-size: 22px; display: block; margin-bottom: 4px; color: #fff !important; }
+        .report-quick-btn span { font-size: 11px; font-weight: 700; display: block; line-height: 1.2; color: #fff !important; }
+        .report-quick-btn:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(108,99,255,0.4); }
+        .report-quick-btn.sales { background: #6c63ff; }
+        .report-quick-btn.purchases { background: #2ecc71; }
+        .report-quick-btn.expenses { background: #e74c6f; }
+        .report-quick-btn.profit { background: #f39c12; }
+
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 1200px; background: #ffffff; display: flex; justify-content: space-around; padding: 10px 0 16px; border-top: 1px solid #eeeef4; box-shadow: 0 -4px 24px rgba(0,0,0,0.06); border-radius: 30px 30px 0 0; transition: background 0.3s, box-shadow 0.3s; z-index: 100; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #a0a0c0; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; padding: 4px 12px; background: transparent; border: none; min-width: 50px; }
         .nav-item i { font-size: 22px; margin-bottom: 3px; transition: 0.2s; }
@@ -342,6 +363,9 @@
             .grid-item { padding: 10px 2px 8px; }
             .grid-item i { font-size: 18px; }
             .grid-item span { font-size: 10px; }
+            .report-quick-btn { padding: 10px 2px 8px; }
+            .report-quick-btn i { font-size: 18px; }
+            .report-quick-btn span { font-size: 10px; }
             .more-grid { gap: 8px; }
             .more-item { padding: 12px 4px 10px; }
             .more-item i { font-size: 22px; }
@@ -378,6 +402,9 @@
             .grid-item { padding: 18px 8px 16px; }
             .grid-item i { font-size: 28px; }
             .grid-item span { font-size: 13px; }
+            .report-quick-btn { padding: 18px 8px 16px; }
+            .report-quick-btn i { font-size: 28px; }
+            .report-quick-btn span { font-size: 13px; }
             .bottom-nav { border-radius: 30px 30px 20px 20px; bottom: 16px; max-width: 700px; }
             .more-panel { max-width: 500px; border-radius: 32px 32px 20px 20px; bottom: 16px; }
             .more-panel.open { transform: translateX(-50%) translateY(0); }
@@ -406,6 +433,9 @@
             .grid-item { padding: 22px 12px 18px; }
             .grid-item i { font-size: 32px; }
             .grid-item span { font-size: 14px; }
+            .report-quick-btn { padding: 22px 12px 18px; }
+            .report-quick-btn i { font-size: 32px; }
+            .report-quick-btn span { font-size: 14px; }
             .bottom-nav { max-width: 800px; }
             .stats-row { grid-template-columns: repeat(4, 1fr); }
             .form-row { grid-template-columns: 1fr 1fr 1fr; }
@@ -592,6 +622,25 @@
                 </div>
             </section>
 
+            <!-- ===== أزرار التقارير السريعة ===== -->
+            <section>
+                <h3 class="section-title"><i class="fas fa-chart-pie"></i> التقارير السريعة</h3>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+                    <button class="report-quick-btn sales" onclick="navigateTo('reports'); renderReports('sales');">
+                        <i class="fas fa-chart-line"></i><span>تقرير المبيعات</span>
+                    </button>
+                    <button class="report-quick-btn purchases" onclick="navigateTo('reports'); renderReports('purchases');">
+                        <i class="fas fa-shopping-cart"></i><span>تقرير المشتريات</span>
+                    </button>
+                    <button class="report-quick-btn expenses" onclick="navigateTo('reports'); renderReports('expenses');">
+                        <i class="fas fa-money-bill-wave"></i><span>تقرير المصروفات</span>
+                    </button>
+                    <button class="report-quick-btn profit" onclick="navigateTo('reports'); renderReports('profit');">
+                        <i class="fas fa-coins"></i><span>تقرير الأرباح</span>
+                    </button>
+                </div>
+            </section>
+
             <section>
                 <h3 class="section-title"><i class="fas fa-bolt"></i> الاختبارات السريعة</h3>
                 <div class="grid-container">
@@ -603,7 +652,7 @@
                     <button class="grid-item" onclick="navigateTo('expenses')"><i class="fas fa-money-bill-wave"></i><span>المصروفات</span></button>
                     <button class="grid-item" onclick="navigateTo('returns')"><i class="fas fa-undo-alt"></i><span>مرتجعات</span></button>
                     <button class="grid-item" onclick="navigateTo('invoices')"><i class="fas fa-file-invoice"></i><span>الفواتير</span></button>
-                    <button class="grid-item" onclick="navigateTo('reports')"><i class="fas fa-chart-pie"></i><span>التقارير</span></button>
+                    <button class="grid-item" onclick="navigateTo('reports'); renderReports('all');"><i class="fas fa-chart-pie"></i><span>التقارير</span></button>
                     <button class="grid-item" onclick="navigateTo('treasury')"><i class="fas fa-vault"></i><span>الخزنة</span></button>
                     <button class="grid-item" onclick="navigateTo('bonds')"><i class="fas fa-file-signature"></i><span>السندات</span></button>
                     <button class="grid-item" onclick="navigateTo('accounting')"><i class="fas fa-calculator"></i><span>محاسبات</span></button>
@@ -612,7 +661,6 @@
                     <button class="grid-item" onclick="navigateTo('projects')"><i class="fas fa-project-diagram"></i><span>المشاريع</span></button>
                     <button class="grid-item" onclick="navigateTo('company')"><i class="fas fa-building"></i><span>إعدادات الشركة</span></button>
                     <button class="grid-item" onclick="navigateTo('settings')"><i class="fas fa-cog"></i><span>الإعدادات</span></button>
-                    <!-- أزرار الصفحات الجديدة -->
                     <button class="grid-item" onclick="navigateTo('manufacturing')"><i class="fas fa-industry"></i><span>التصنيع</span></button>
                     <button class="grid-item" onclick="navigateTo('delegates')"><i class="fas fa-user-tie"></i><span>المناديب</span></button>
                     <button class="grid-item" onclick="navigateTo('cheques')"><i class="fas fa-check-double"></i><span>الشيكات</span></button>
@@ -1411,6 +1459,19 @@
                 <button class="more-close" onclick="closeMorePanel()">&times;</button>
             </div>
             <div class="more-grid">
+                <!-- أزرار التقارير السريعة في المزيد -->
+                <button class="more-item" onclick="navigateTo('reports'); renderReports('sales'); closeMorePanel();">
+                    <i class="fas fa-chart-line"></i><span>تقرير المبيعات</span>
+                </button>
+                <button class="more-item" onclick="navigateTo('reports'); renderReports('purchases'); closeMorePanel();">
+                    <i class="fas fa-shopping-cart"></i><span>تقرير المشتريات</span>
+                </button>
+                <button class="more-item" onclick="navigateTo('reports'); renderReports('expenses'); closeMorePanel();">
+                    <i class="fas fa-money-bill-wave"></i><span>تقرير المصروفات</span>
+                </button>
+                <button class="more-item" onclick="navigateTo('reports'); renderReports('profit'); closeMorePanel();">
+                    <i class="fas fa-coins"></i><span>تقرير الأرباح</span>
+                </button>
                 <button class="more-item" onclick="navigateTo('manufacturing'); closeMorePanel();"><i class="fas fa-industry"></i><span>التصنيع</span></button>
                 <button class="more-item" onclick="navigateTo('employees'); closeMorePanel();"><i class="fas fa-user-cog"></i><span>الموظفين</span></button>
                 <button class="more-item" onclick="navigateTo('partners'); closeMorePanel();"><i class="fas fa-handshake"></i><span>الشركاء</span></button>
@@ -2707,6 +2768,15 @@
             if (elExpenses) elExpenses.textContent = totalExpenses.toFixed(2);
             if (elBonds) elBonds.textContent = netBonds.toFixed(2);
             if (elProfit) elProfit.textContent = profit.toFixed(2);
+
+            // تحديث البطاقات الرئيسية
+            const homeSales = document.getElementById('homeTotalSales');
+            const homeProfit = document.getElementById('homeProfit');
+            if (homeSales) homeSales.textContent = totalSales.toFixed(2);
+            if (homeProfit) {
+                homeProfit.textContent = profit.toFixed(2);
+                homeProfit.style.color = profit >= 0 ? '#2ecc71' : '#e74c6f';
+            }
 
             const container = document.getElementById('reportDetails');
             if (!container) return;
