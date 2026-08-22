@@ -3391,6 +3391,478 @@
             showToast('✅ مرحباً بك في الميزان', 'success');
         }
 
+        // ================================================================
+// 22. دوال العملاء (Customers) - كاملة
+// ================================================================
+window.renderCustomers = function() {
+    const container = document.getElementById('customerList');
+    if (!container) return;
+    if (appData.customers.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-user-friends"></i><span>لا يوجد عملاء</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>الاسم</span><span>الهاتف</span><span>البريد</span><span>العنوان</span><span></span></div>`;
+    appData.customers.forEach(c => {
+        html += `
+            <div class="table-row">
+                <span><strong>${c.name}</strong></span>
+                <span>${c.phone || '-'}</span>
+                <span>${c.email || '-'}</span>
+                <span>${c.address || '-'}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteCustomer('${c.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+window.deleteCustomer = function(id) {
+    if (!confirm('حذف العميل؟')) return;
+    appData.customers = appData.customers.filter(c => c.id !== id);
+    saveToLocalStorage('customers', appData.customers);
+    refreshAllData();
+    showToast('تم حذف العميل', 'info');
+};
+
+// ================================================================
+// 23. دوال الموردين (Suppliers) - كاملة
+// ================================================================
+window.renderSuppliers = function() {
+    const container = document.getElementById('supplierList');
+    if (!container) return;
+    if (appData.suppliers.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-truck"></i><span>لا يوجد موردين</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>الاسم</span><span>الهاتف</span><span>البريد</span><span>العنوان</span><span></span></div>`;
+    appData.suppliers.forEach(s => {
+        html += `
+            <div class="table-row">
+                <span><strong>${s.name}</strong></span>
+                <span>${s.phone || '-'}</span>
+                <span>${s.email || '-'}</span>
+                <span>${s.address || '-'}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteSupplier('${s.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+window.deleteSupplier = function(id) {
+    if (!confirm('حذف المورد؟')) return;
+    appData.suppliers = appData.suppliers.filter(s => s.id !== id);
+    saveToLocalStorage('suppliers', appData.suppliers);
+    refreshAllData();
+    showToast('تم حذف المورد', 'info');
+};
+
+// ================================================================
+// 24. دوال المصروفات (Expenses) - كاملة
+// ================================================================
+window.renderExpenses = function() {
+    const container = document.getElementById('expenseList');
+    if (!container) return;
+    if (appData.expenses.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-receipt"></i><span>لا توجد مصروفات</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>البيان</span><span>التصنيف</span><span>المبلغ</span><span>التاريخ</span><span></span></div>`;
+    appData.expenses.slice().reverse().forEach(e => {
+        html += `
+            <div class="table-row">
+                <span>${e.note}</span>
+                <span>${e.category}</span>
+                <span style="color:#e74c6f;font-weight:700;">${e.amount.toFixed(2)}</span>
+                <span>${e.date}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteExpense('${e.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+window.deleteExpense = function(id) {
+    if (!confirm('حذف المصروف؟')) return;
+    appData.expenses = appData.expenses.filter(e => e.id !== id);
+    saveToLocalStorage('expenses', appData.expenses);
+    refreshAllData();
+    showToast('تم حذف المصروف', 'info');
+};
+
+// ================================================================
+// 25. دوال الخزنة (Treasury) - كاملة
+// ================================================================
+window.renderTreasury = function() {
+    const container = document.getElementById('treasuryList');
+    if (!container) return;
+    if (appData.treasury.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-coins"></i><span>لا توجد حركات</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>النوع</span><span>المبلغ</span><span>الطريقة</span><span>البيان</span><span>التاريخ</span><span></span></div>`;
+    appData.treasury.slice().reverse().forEach(t => {
+        const typeLabel = t.type === 'deposit' ? '💰 إيداع' : '💸 سحب';
+        const color = t.type === 'deposit' ? '#2ecc71' : '#e74c6f';
+        html += `
+            <div class="table-row">
+                <span style="color:${color};font-weight:700;">${typeLabel}</span>
+                <span style="color:${color};font-weight:700;">${t.amount.toFixed(2)}</span>
+                <span>${t.method}</span>
+                <span>${t.note}</span>
+                <span>${t.date}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteTreasury('${t.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+window.deleteTreasury = function(id) {
+    if (!confirm('حذف الحركة؟')) return;
+    appData.treasury = appData.treasury.filter(t => t.id !== id);
+    saveToLocalStorage('treasury', appData.treasury);
+    refreshAllData();
+    showToast('تم حذف الحركة', 'info');
+};
+
+// ================================================================
+// 26. دوال المرتجعات (Returns) - كاملة
+// ================================================================
+window.renderReturns = function() {
+    const container = document.getElementById('returnList');
+    if (!container) return;
+    if (appData.returns.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-undo-alt"></i><span>لا توجد مرتجعات</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>النوع</span><span>الطرف</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>التاريخ</span><span></span></div>`;
+    appData.returns.slice().reverse().forEach(r => {
+        const color = r.type === 'sale' ? '#e74c6f' : '#f39c12';
+        html += `
+            <div class="table-row">
+                <span>${r.icon} ${r.typeLabel}</span>
+                <span>${r.party}</span>
+                <span>${r.productName}</span>
+                <span>${r.qty}</span>
+                <span style="color:${color};font-weight:700;">${r.total.toFixed(2)}</span>
+                <span>${r.date}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteReturn('${r.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+window.deleteReturn = function(id) {
+    if (!confirm('حذف المرتجع؟')) return;
+    appData.returns = appData.returns.filter(r => r.id !== id);
+    saveToLocalStorage('returns', appData.returns);
+    refreshAllData();
+    showToast('تم حذف المرتجع', 'info');
+};
+
+// ================================================================
+// 27. دوال السندات (Bonds) - كاملة
+// ================================================================
+window.renderBonds = function() {
+    const container = document.getElementById('bondList');
+    if (!container) return;
+    if (appData.bonds.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-file-signature"></i><span>لا توجد سندات</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>النوع</span><span>الطرف</span><span>المبلغ</span><span>الدفع</span><span>التاريخ</span><span>البيان</span><span></span></div>`;
+    appData.bonds.slice().reverse().forEach(b => {
+        const color = b.type === 'collect' ? '#2ecc71' : '#e74c6f';
+        html += `
+            <div class="table-row">
+                <span>${b.icon} ${b.typeLabel}</span>
+                <span>${b.partyName}</span>
+                <span style="color:${color};font-weight:700;">${b.amount.toFixed(2)}</span>
+                <span>${b.payment}</span>
+                <span>${b.date}</span>
+                <span style="font-size:10px;">${b.note}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteBond('${b.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+window.deleteBond = function(id) {
+    if (!confirm('حذف السند؟')) return;
+    appData.bonds = appData.bonds.filter(b => b.id !== id);
+    saveToLocalStorage('bonds', appData.bonds);
+    refreshAllData();
+    showToast('تم حذف السند', 'info');
+};
+
+// ================================================================
+// 28. دوال الموظفين (Employees) - كاملة
+// ================================================================
+window.renderEmployees = function() {
+    const container = document.getElementById('employeeList');
+    if (!container) return;
+    if (appData.employees.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><span>لا يوجد موظفين</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>الاسم</span><span>الوظيفة</span><span>الهاتف</span><span>الراتب</span><span></span></div>`;
+    appData.employees.forEach(e => {
+        html += `
+            <div class="table-row">
+                <span><strong>${e.name}</strong></span>
+                <span>${e.role || '-'}</span>
+                <span>${e.phone || '-'}</span>
+                <span>${e.salary ? e.salary.toFixed(2) : '0.00'}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteEmployee('${e.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+// ================================================================
+// 29. دوال الشركاء (Partners) - كاملة
+// ================================================================
+window.renderPartners = function() {
+    const container = document.getElementById('partnerList');
+    if (!container) return;
+    if (appData.partners.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-handshake"></i><span>لا يوجد شركاء</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>الاسم</span><span>نسبة الشراكة</span><span>الهاتف</span><span></span></div>`;
+    appData.partners.forEach(p => {
+        html += `
+            <div class="table-row">
+                <span><strong>${p.name}</strong></span>
+                <span>${p.share || 0}%</span>
+                <span>${p.phone || '-'}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deletePartner('${p.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+// ================================================================
+// 30. دوال المشاريع (Projects) - كاملة
+// ================================================================
+window.renderProjects = function() {
+    const container = document.getElementById('projectList');
+    if (!container) return;
+    if (appData.projects.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-project-diagram"></i><span>لا توجد مشاريع</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>المشروع</span><span>الميزانية</span><span>تاريخ البدء</span><span>الحالة</span><span></span></div>`;
+    appData.projects.forEach(p => {
+        html += `
+            <div class="table-row">
+                <span><strong>${p.name}</strong></span>
+                <span>${p.budget ? p.budget.toFixed(2) : '0.00'}</span>
+                <span>${p.start || '-'}</span>
+                <span style="color:#f39c12;">${p.status || 'قيد التنفيذ'}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteProject('${p.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+// ================================================================
+// 31. دوال التصنيع (Manufacturing) - كاملة
+// ================================================================
+window.renderManufacturing = function() {
+    const container = document.getElementById('manufactureList');
+    if (!container) return;
+    if (appData.manufacturing.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-industry"></i><span>لا توجد أوامر تصنيع</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>المنتج</span><span>الكمية</span><span>التاريخ</span><span>التكلفة</span><span>الحالة</span><span></span></div>`;
+    appData.manufacturing.slice().reverse().forEach(m => {
+        html += `
+            <div class="table-row">
+                <span><strong>${m.product}</strong></span>
+                <span>${m.qty}</span>
+                <span>${m.start}</span>
+                <span>${m.cost.toFixed(2)}</span>
+                <span style="color:#f39c12;">${m.status || 'قيد التنفيذ'}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteManufacture('${m.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+// ================================================================
+// 32. دوال المناديب (Delegates) - كاملة
+// ================================================================
+window.renderDelegates = function() {
+    const container = document.getElementById('delegateList');
+    if (!container) return;
+    if (appData.delegates.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-user-tie"></i><span>لا يوجد مناديب</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>الاسم</span><span>الهاتف</span><span>المنطقة</span><span>العمولة</span><span></span></div>`;
+    appData.delegates.forEach(d => {
+        html += `
+            <div class="table-row">
+                <span><strong>${d.name}</strong></span>
+                <span>${d.phone || '-'}</span>
+                <span>${d.area || '-'}</span>
+                <span>${d.commission || 0}%</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteDelegate('${d.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+// ================================================================
+// 33. دوال الشيكات (Cheques) - كاملة
+// ================================================================
+window.renderCheques = function() {
+    const container = document.getElementById('chequeList');
+    if (!container) return;
+    if (appData.cheques.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-check-double"></i><span>لا توجد شيكات</span></div>`;
+        return;
+    }
+    let html = `<div class="table-header"><span>الرقم</span><span>المبلغ</span><span>التاريخ</span><span>الجهة</span><span>الحالة</span><span></span></div>`;
+    appData.cheques.slice().reverse().forEach(c => {
+        const statusColors = { 'تحت التحصيل': '#f39c12', 'محصل': '#2ecc71', 'مرتجع': '#e74c6f' };
+        html += `
+            <div class="table-row">
+                <span><strong>${c.number}</strong></span>
+                <span>${c.amount.toFixed(2)}</span>
+                <span>${c.date}</span>
+                <span>${c.party}</span>
+                <span style="color:${statusColors[c.status] || '#6c63ff'};font-weight:700;">${c.status}</span>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteCheque('${c.id}')"><i class="fas fa-trash"></i></button></td>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+};
+
+// ================================================================
+// 34. دوال حذف الأقسام الأخرى
+// ================================================================
+window.deleteEmployee = function(id) {
+    if (!confirm('حذف الموظف؟')) return;
+    appData.employees = appData.employees.filter(e => e.id !== id);
+    saveToLocalStorage('employees', appData.employees);
+    refreshAllData();
+    showToast('تم الحذف', 'info');
+};
+
+window.deletePartner = function(id) {
+    if (!confirm('حذف الشريك؟')) return;
+    appData.partners = appData.partners.filter(p => p.id !== id);
+    saveToLocalStorage('partners', appData.partners);
+    refreshAllData();
+    showToast('تم الحذف', 'info');
+};
+
+window.deleteProject = function(id) {
+    if (!confirm('حذف المشروع؟')) return;
+    appData.projects = appData.projects.filter(p => p.id !== id);
+    saveToLocalStorage('projects', appData.projects);
+    refreshAllData();
+    showToast('تم الحذف', 'info');
+};
+
+window.deleteManufacture = function(id) {
+    if (!confirm('حذف أمر التصنيع؟')) return;
+    appData.manufacturing = appData.manufacturing.filter(m => m.id !== id);
+    saveToLocalStorage('manufacturing', appData.manufacturing);
+    refreshAllData();
+    showToast('تم الحذف', 'info');
+};
+
+window.deleteDelegate = function(id) {
+    if (!confirm('حذف المندوب؟')) return;
+    appData.delegates = appData.delegates.filter(d => d.id !== id);
+    saveToLocalStorage('delegates', appData.delegates);
+    refreshAllData();
+    showToast('تم الحذف', 'info');
+};
+
+window.deleteCheque = function(id) {
+    if (!confirm('حذف الشيك؟')) return;
+    appData.cheques = appData.cheques.filter(c => c.id !== id);
+    saveToLocalStorage('cheques', appData.cheques);
+    refreshAllData();
+    showToast('تم الحذف', 'info');
+};
+
+// ================================================================
+// 35. إضافة دوال الحذف في refreshAllData
+// ================================================================
+// أضف هذه السطور داخل دالة refreshAllData بعد renderCheques():
+/*
+renderCustomers();
+renderSuppliers();
+renderExpenses();
+renderTreasury();
+renderReturns();
+renderBonds();
+*/
+// ================================================================
+
+// ================================================================
+// 36. دوال تغيير كلمة المرور (في الإعدادات)
+// ================================================================
+window.changePassword = function() {
+    const oldPass = prompt('🔒 أدخل كلمة المرور الحالية:');
+    if (!oldPass) return;
+    
+    const users = getFromLocalStorage('users');
+    const user = users.find(u => u.email === currentUser.email);
+    if (!user || user.password !== oldPass) {
+        showToast('❌ كلمة المرور الحالية غير صحيحة', 'error');
+        return;
+    }
+    
+    const newPass = prompt('🔑 أدخل كلمة المرور الجديدة (6 أحرف على الأقل):');
+    if (!newPass || newPass.length < 6) {
+        showToast('❌ كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
+        return;
+    }
+    
+    const confirmPass = prompt('✅ تأكيد كلمة المرور الجديدة:');
+    if (newPass !== confirmPass) {
+        showToast('❌ كلمة المرور غير متطابقة', 'error');
+        return;
+    }
+    
+    user.password = newPass;
+    saveToLocalStorage('users', users);
+    showToast('✅ تم تغيير كلمة المرور بنجاح', 'success');
+};
+
+// ================================================================
+// 37. إضافة زر تغيير كلمة المرور في الإعدادات
+// ================================================================
+// أضف هذا الكود في صفحة الإعدادات (في HTML):
+/*
+<div class="settings-card" style="border-color:#6c63ff;">
+    <div style="display:flex;align-items:center;gap:14px;">
+        <i class="fas fa-key icon-big" style="color:#6c63ff;"></i>
+        <div style="flex:1;">
+            <div class="title">تغيير كلمة المرور</div>
+            <div class="desc">تغيير كلمة مرور حسابك الحالية.</div>
+        </div>
+        <button class="btn btn-primary" onclick="changePassword()"><i class="fas fa-key"></i> تغيير</button>
+    </div>
+</div>
+*/
+
         console.log('✅ تم تحميل تطبيق الميزان بنجاح مع جميع الصفحات');
     </script>
 </body>
