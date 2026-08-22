@@ -17,12 +17,202 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>" />
 
     <style>
-        /* ===== أساسيات ===== */
+        /* ===== الأساسيات ===== */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Tajawal', 'Segoe UI', sans-serif;
+        }
+
+        /* ===== المتغيرات العامة ===== */
+        :root {
+            --bg-primary: #f0f2f8;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a2e;
+            --text-secondary: #5a6a7e;
+            --text-light: #8a9aa8;
+            --border-color: #e2e6ee;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --accent: #6c63ff;
+            --accent-light: #8b83ff;
+            --accent-dark: #5a52e0;
+            --success: #2ecc71;
+            --danger: #e74c6f;
+            --warning: #f39c12;
+            --info: #3498db;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 12px 12px 80px;
+            transition: var(--transition);
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* ===== الوضع المظلم ===== */
+        body.dark-mode {
+            --bg-primary: #0d0b1a;
+            --bg-secondary: #16132b;
+            --bg-card: #1a1630;
+            --text-primary: #f0edff;
+            --text-secondary: #b0a8d0;
+            --text-light: #6a65a0;
+            --border-color: #2a2550;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 8px 30px rgba(108, 99, 255, 0.15);
+        }
+
+        body.dark-mode .top-header {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color);
+        }
+        body.dark-mode .page-content {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color);
+        }
+        body.dark-mode .grid-item {
+            background: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+        }
+        body.dark-mode .grid-item:hover {
+            border-color: var(--accent) !important;
+        }
+        body.dark-mode .grid-item span {
+            color: var(--text-primary) !important;
+        }
+        body.dark-mode .main-card {
+            background: var(--bg-card) !important;
+            border-right-color: var(--accent) !important;
+        }
+        body.dark-mode .main-card p {
+            color: var(--text-secondary) !important;
+        }
+        body.dark-mode .dashboard-widget {
+            background: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+        }
+        body.dark-mode .dashboard-widget .widget-value {
+            color: var(--text-primary) !important;
+        }
+        body.dark-mode .stat-card {
+            background: var(--bg-card) !important;
+        }
+        body.dark-mode .stat-card .number {
+            color: var(--accent-light) !important;
+        }
+        body.dark-mode .balance-detail {
+            background: var(--bg-card) !important;
+        }
+        body.dark-mode .balance-detail .amount {
+            color: var(--text-primary) !important;
+        }
+        body.dark-mode .settings-card {
+            background: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+        }
+        body.dark-mode .company-settings-box {
+            background: var(--bg-card) !important;
+            border-color: var(--border-color) !important;
+        }
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group select,
+        body.dark-mode .form-group textarea,
+        body.dark-mode .search-box input {
+            background: #2a2550 !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-color) !important;
+        }
+        body.dark-mode .form-group label {
+            color: var(--text-secondary) !important;
+        }
+        body.dark-mode .table-row {
+            border-bottom-color: var(--border-color) !important;
+        }
+        body.dark-mode .table-row:hover {
+            background: #2a2550 !important;
+        }
+        body.dark-mode .invoice-row {
+            border-bottom-color: var(--border-color) !important;
+        }
+        body.dark-mode .invoice-row:hover {
+            background: #2a2550 !important;
+        }
+        body.dark-mode .filter-chip {
+            background: var(--bg-card) !important;
+            color: var(--text-secondary) !important;
+            border-color: var(--border-color) !important;
+        }
+        body.dark-mode .filter-chip.active {
+            background: var(--accent) !important;
+            color: #fff !important;
+        }
+        body.dark-mode .more-panel {
+            background: var(--bg-card) !important;
+        }
+        body.dark-mode .more-item {
+            background: #2a2550 !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-color) !important;
+        }
+        body.dark-mode .more-item span {
+            color: var(--text-primary) !important;
+        }
+        body.dark-mode .more-item:hover {
+            background: var(--accent) !important;
+        }
+        body.dark-mode .more-item:hover span {
+            color: #fff !important;
+        }
+        body.dark-mode .bottom-nav {
+            background: var(--bg-card) !important;
+            border-top-color: var(--border-color) !important;
+        }
+        body.dark-mode .nav-item {
+            color: var(--text-light) !important;
+        }
+        body.dark-mode .nav-item.active {
+            color: var(--accent-light) !important;
+        }
+        body.dark-mode .trial-badge {
+            background: var(--accent) !important;
+        }
+        body.dark-mode .trial-badge.expired {
+            background: var(--danger) !important;
+        }
+        body.dark-mode .trial-badge.active {
+            background: var(--success) !important;
+        }
+        body.dark-mode .logout-btn {
+            background: var(--danger) !important;
+        }
+        body.dark-mode .logout-btn:hover {
+            background: #c0392b !important;
+        }
+        body.dark-mode .balance-card {
+            background: linear-gradient(135deg, var(--accent), var(--accent-light)) !important;
+        }
+        body.dark-mode .modal-box {
+            background: var(--bg-card) !important;
+        }
+        body.dark-mode .modal-box h3 {
+            color: var(--text-primary) !important;
+        }
+        body.dark-mode .modal-close {
+            color: var(--text-light) !important;
+        }
+        body.dark-mode .toast {
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
         }
 
         /* ===== تحسين الخطوط ===== */
@@ -34,35 +224,35 @@
         .grid-item span,
         .more-item span,
         .nav-item span {
-            font-size: 12px !important;
-            font-weight: 600 !important;
-            color: #1a1a2e !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            color: var(--text-primary) !important;
         }
 
         h1,
         .app-info h1 {
             font-size: 26px !important;
             font-weight: 900 !important;
-            color: #1a1a2e !important;
+            color: var(--text-primary) !important;
         }
         h2,
         .page-content h2 {
-            font-size: 20px !important;
-            font-weight: 800 !important;
-            color: #1a1a2e !important;
-            margin-bottom: 11px !important;
+            font-size: 22px !important;
+            font-weight: 900 !important;
+            color: var(--text-primary) !important;
+            margin-bottom: 12px !important;
         }
         h3,
         .section-title {
-            font-size: 17px !important;
-            font-weight: 700 !important;
-            color: #1a1a2e !important;
+            font-size: 18px !important;
+            font-weight: 800 !important;
+            color: var(--text-primary) !important;
             margin-bottom: 10px !important;
         }
         h4 {
-            font-size: 13px !important;
-            font-weight: 600 !important;
-            color: #1a1a2e !important;
+            font-size: 15px !important;
+            font-weight: 700 !important;
+            color: var(--text-primary) !important;
         }
 
         p,
@@ -72,88 +262,137 @@
         .sub-title,
         .widget-sub,
         .label {
-            font-size: 12px !important;
+            font-size: 14px !important;
             font-weight: 600 !important;
-            color: #1a1a2e !important;
+            color: var(--text-secondary) !important;
         }
 
         .table-row,
         .invoice-row,
         .table-header,
         .invoice-header {
-            font-size: 12px !important;
-            font-weight: 600 !important;
-            color: #1a1a2e !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: var(--text-primary) !important;
             padding: 6px 0 !important;
             gap: 4px !important;
         }
 
         .dashboard-widget .widget-value {
-            font-size: 24px !important;
-            font-weight: 800 !important;
-            color: #1a1a2e !important;
+            font-size: 26px !important;
+            font-weight: 900 !important;
+            color: var(--text-primary) !important;
         }
         .stat-card .number {
             font-size: 20px !important;
-            font-weight: 800 !important;
-            color: #1a1a2e !important;
+            font-weight: 900 !important;
+            color: var(--accent) !important;
         }
         .balance-card .amount {
             font-size: 30px !important;
-            font-weight: 800 !important;
+            font-weight: 900 !important;
+            color: #fff !important;
         }
 
-        /* ===== أزرار ===== */
+        /* ===== أزرار موحدة ===== */
         .btn {
-            font-size: 12px !important;
+            font-size: 14px !important;
             font-weight: 700 !important;
-            padding: 8px 14px !important;
-            height: 34px !important;
-            border-radius: 8px !important;
+            padding: 8px 18px !important;
+            height: 38px !important;
+            border-radius: 10px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            transition: var(--transition) !important;
+            border: none !important;
+            cursor: pointer !important;
         }
+
         .btn-sm {
             font-size: 12px !important;
             font-weight: 700 !important;
             padding: 4px 10px !important;
-            min-width: 28px !important;
-            height: 24px !important;
+            min-width: 30px !important;
+            height: 28px !important;
             border-radius: 6px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 4px !important;
+            transition: var(--transition) !important;
+            border: none !important;
+            cursor: pointer !important;
         }
+
         .btn-sm i {
             font-size: 12px !important;
         }
+
         .btn-block {
-            width: 100%;
+            width: 100% !important;
             height: 40px !important;
         }
+
         .btn-primary {
-            background: linear-gradient(135deg, #6c63ff, #5a52e0) !important;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark)) !important;
             color: #fff !important;
-            box-shadow: 0 4px 18px rgba(108, 99, 255, 0.25) !important;
+            box-shadow: 0 4px 16px rgba(108, 99, 255, 0.25) !important;
         }
         .btn-primary:hover {
             transform: translateY(-2px) !important;
-            box-shadow: 0 6px 24px rgba(108, 99, 255, 0.35) !important;
+            box-shadow: 0 8px 28px rgba(108, 99, 255, 0.35) !important;
         }
+
         .btn-success {
-            background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
+            background: linear-gradient(135deg, var(--success), #27ae60) !important;
             color: #fff !important;
-            box-shadow: 0 4px 18px rgba(46, 204, 113, 0.25) !important;
+            box-shadow: 0 4px 16px rgba(46, 204, 113, 0.25) !important;
         }
+        .btn-success:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 28px rgba(46, 204, 113, 0.35) !important;
+        }
+
         .btn-danger {
-            background: linear-gradient(135deg, #e74c6f, #c0392b) !important;
+            background: linear-gradient(135deg, var(--danger), #c0392b) !important;
             color: #fff !important;
-            box-shadow: 0 4px 18px rgba(231, 76, 111, 0.25) !important;
+            box-shadow: 0 4px 16px rgba(231, 76, 111, 0.25) !important;
         }
+        .btn-danger:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 28px rgba(231, 76, 111, 0.35) !important;
+        }
+
         .btn-warning {
-            background: linear-gradient(135deg, #f39c12, #d68910) !important;
+            background: linear-gradient(135deg, var(--warning), #d68910) !important;
             color: #fff !important;
-            box-shadow: 0 4px 18px rgba(243, 156, 18, 0.25) !important;
+            box-shadow: 0 4px 16px rgba(243, 156, 18, 0.25) !important;
         }
+        .btn-warning:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 28px rgba(243, 156, 18, 0.35) !important;
+        }
+
         .btn-info {
-            background: linear-gradient(135deg, #3498db, #2980b9) !important;
+            background: linear-gradient(135deg, var(--info), #2980b9) !important;
             color: #fff !important;
-            box-shadow: 0 4px 18px rgba(52, 152, 219, 0.25) !important;
+            box-shadow: 0 4px 16px rgba(52, 152, 219, 0.25) !important;
+        }
+        .btn-info:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 28px rgba(52, 152, 219, 0.35) !important;
+        }
+
+        .btn-outline {
+            background: transparent !important;
+            border: 2px solid var(--accent) !important;
+            color: var(--accent) !important;
+        }
+        .btn-outline:hover {
+            background: var(--accent) !important;
+            color: #fff !important;
         }
 
         /* ===== حقول الإدخال ===== */
@@ -165,28 +404,29 @@
             font-weight: 700 !important;
             margin-bottom: 4px !important;
             display: block !important;
-            color: #1a1a2e !important;
+            color: var(--text-secondary) !important;
         }
         .form-group input,
         .form-group select,
         .form-group textarea {
+            width: 100% !important;
             font-size: 14px !important;
-            font-weight: 700 !important;
+            font-weight: 600 !important;
             padding: 8px 14px !important;
             height: 38px !important;
             min-height: 38px !important;
-            border-radius: 8px !important;
-            border: 2px solid #d0d0e8 !important;
-            background: #f8f8fc !important;
-            color: #1a1a2e !important;
-            width: 100% !important;
+            border-radius: 10px !important;
+            border: 2px solid var(--border-color) !important;
+            background: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
+            transition: var(--transition) !important;
         }
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none !important;
-            border-color: #6c63ff !important;
-            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1) !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1) !important;
         }
         .form-row {
             display: grid;
@@ -205,9 +445,16 @@
             padding: 8px 14px !important;
             font-size: 14px !important;
             height: 36px !important;
-            border-radius: 8px !important;
-            border: 2px solid #d0d0e8 !important;
-            background: #f8f8fc !important;
+            border-radius: 10px !important;
+            border: 2px solid var(--border-color) !important;
+            background: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
+            transition: var(--transition) !important;
+        }
+        .search-box input:focus {
+            outline: none !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1) !important;
         }
         .search-box .btn {
             padding: 8px 16px !important;
@@ -217,499 +464,357 @@
 
         /* ===== البطاقات ===== */
         .dashboard-widget {
-            padding: 14px !important;
-            margin-bottom: 10px !important;
-            border-radius: 12px !important;
-            border: 2px solid #e8e8f0 !important;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-bottom: 10px;
+            border: 2px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .dashboard-widget:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
         }
         .dashboard-widget .widget-title {
-            font-size: 14px !important;
-            font-weight: 700 !important;
-            color: #6c63ff !important;
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--accent);
+            margin-bottom: 4px;
         }
         .dashboard-widget .widget-sub {
-            font-size: 12px !important;
-            color: #8888aa !important;
+            font-size: 11px;
+            color: var(--text-light);
         }
+
         .stat-card {
-            padding: 12px !important;
-            border-radius: 10px !important;
-            background: #f8f8fc !important;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            text-align: center;
+            transition: var(--transition);
+            border: 2px solid var(--border-color);
+        }
+        .stat-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        .stat-card .number {
+            font-size: 20px;
+            font-weight: 900;
         }
         .stat-card .label {
-            font-size: 12px !important;
-            color: #8888aa !important;
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 2px;
+            font-weight: 600;
         }
+
+        /* ألوان البطاقات */
+        .stat-card:nth-child(1) .number { color: var(--accent) !important; }
+        .stat-card:nth-child(2) .number { color: var(--danger) !important; }
+        .stat-card:nth-child(3) .number { color: var(--success) !important; }
+        .stat-card:nth-child(4) .number { color: var(--warning) !important; }
+        .stat-card:nth-child(5) .number { color: var(--info) !important; }
+
         .balance-card {
-            padding: 16px !important;
-            border-radius: 14px !important;
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
+            color: #fff;
+            border-radius: var(--radius);
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 20px rgba(108, 99, 255, 0.2);
         }
+        .balance-card .label {
+            font-size: 12px;
+            opacity: 0.85;
+            font-weight: 600;
+            color: #fff !important;
+        }
+        .balance-card .amount {
+            font-size: 28px;
+            font-weight: 900;
+            color: #fff !important;
+        }
+
         .balance-detail {
-            padding: 8px 4px !important;
-            border-radius: 8px !important;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 8px 4px;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .balance-detail:hover {
+            border-color: var(--accent);
         }
         .balance-detail .label {
-            font-size: 10px !important;
+            font-size: 9px;
+            color: var(--text-light);
+            font-weight: 600;
         }
         .balance-detail .amount {
-            font-size: 15px !important;
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--text-primary);
         }
 
         /* ===== الشبكة ===== */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px !important;
-            margin-bottom: 18px !important;
+            gap: 8px;
+            margin-bottom: 18px;
         }
         .grid-item {
-            padding: 10px 4px 8px !important;
-            border-radius: 10px !important;
-            background: #ffffff !important;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-            border: 2px solid transparent !important;
-            transition: 0.2s !important;
-            cursor: pointer !important;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 10px 4px 8px;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            transition: var(--transition);
+            cursor: pointer;
         }
         .grid-item i {
-            font-size: 22px !important;
-            color: #6c63ff !important;
-            display: block !important;
-            margin-bottom: 2px !important;
+            font-size: 20px;
+            color: var(--accent);
+            display: block;
+            margin-bottom: 2px;
         }
         .grid-item span {
-            font-size: 12px !important;
-            font-weight: 700 !important;
-            color: #1a1a2e !important;
-            display: block !important;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: block;
         }
         .grid-item:hover {
-            transform: translateY(-2px) !important;
-            border-color: #6c63ff !important;
-            box-shadow: 0 6px 20px rgba(108, 99, 255, 0.15) !important;
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
         }
 
-        /* ===== المزيد ===== */
-        .more-item {
-            padding: 12px 4px 10px !important;
-            border-radius: 14px !important;
+        /* ===== الجداول ===== */
+        .table-header {
+            display: grid;
+            gap: 4px;
+            padding: 6px 0;
+            font-weight: 800;
+            font-size: 11px;
+            color: var(--text-light);
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 4px;
         }
-        .more-item i {
-            font-size: 26px !important;
+        .table-row {
+            display: grid;
+            gap: 4px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+            font-size: 12px;
+            transition: var(--transition);
         }
-        .more-item span {
-            font-size: 13px !important;
+        .table-row:hover {
+            background: rgba(108, 99, 255, 0.04);
+            border-radius: 8px;
+            padding-right: 4px;
         }
-
-        /* ===== التبويبات السفلية ===== */
-        .nav-item {
-            font-size: 12px !important;
-            font-weight: 700 !important;
-            padding: 4px 10px !important;
-        }
-        .nav-item i {
-            font-size: 22px !important;
-        }
-
-        /* ===== شاشة الدخول ===== */
-        #loginScreen .login-box h1 {
-            font-size: 34px !important;
-        }
-        #loginScreen .login-box .sub {
-            font-size: 16px !important;
-        }
-        #loginScreen .login-box .form-group input {
-            font-size: 16px !important;
-            padding: 12px !important;
-            height: 44px !important;
-        }
-        #loginScreen .login-box .btn-primary {
-            font-size: 18px !important;
-            padding: 14px !important;
-            height: 46px !important;
-        }
-
-        /* ===== أزرار التعديل والحذف ===== */
-        .table-row .actions,
-        .invoice-row .actions {
+        .table-row .actions {
             display: flex !important;
             gap: 6px !important;
             justify-content: center !important;
             align-items: center !important;
         }
-        .table-row .btn-sm,
-        .invoice-row .btn-sm {
-            padding: 4px 8px !important;
-            font-size: 11px !important;
-            min-width: 26px !important;
-            height: 24px !important;
-            border-radius: 4px !important;
+
+        .invoice-header {
+            display: grid;
+            gap: 3px;
+            padding: 6px 0;
+            font-weight: 800;
+            font-size: 10px;
+            color: var(--text-light);
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 4px;
         }
-        .table-row .btn-sm i,
-        .invoice-row .btn-sm i {
-            font-size: 10px !important;
+        .invoice-row {
+            display: grid;
+            gap: 3px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+            font-size: 11px;
+            transition: var(--transition);
+        }
+        .invoice-row:hover {
+            background: rgba(108, 99, 255, 0.04);
+            border-radius: 8px;
+            padding-right: 3px;
         }
 
-        /* ===== تحسين التجاوب ===== */
-        @media (max-width: 768px) {
-            .form-row {
-                grid-template-columns: 1fr !important;
-                gap: 8px !important;
-            }
-            .grid-container {
-                grid-template-columns: repeat(3, 1fr) !important;
-            }
-            .bottom-nav {
-                max-width: 100% !important;
-                border-radius: 0 !important;
-                padding: 6px 0 12px !important;
-            }
-            .nav-item {
-                font-size: 11px !important;
-                padding: 2px 6px !important;
-            }
-            .nav-item i {
-                font-size: 18px !important;
-            }
-            .invoice-row {
-                font-size: 11px !important;
-            }
-            .table-row {
-                font-size: 12px !important;
-            }
-            .page-content {
-                padding: 14px !important;
-            }
-            .top-header {
-                padding: 12px 16px !important;
-                border-radius: 18px !important;
-            }
-            .app-info h1 {
-                font-size: 22px !important;
-            }
-            .dashboard-widget .widget-value {
-                font-size: 22px !important;
-            }
-            .stat-card .number {
-                font-size: 18px !important;
-            }
-            .balance-card .amount {
-                font-size: 26px !important;
-            }
+        /* ===== المزيد ===== */
+        .more-item {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 12px 4px 10px;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        .more-item i {
+            font-size: 22px;
+            color: var(--accent);
+            display: block;
+            margin-bottom: 4px;
+        }
+        .more-item span {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .more-item:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+        .more-item:hover i,
+        .more-item:hover span {
+            color: #fff !important;
         }
 
-        @media (max-width: 480px) {
-            .grid-container {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 6px !important;
-            }
-            .grid-item {
-                padding: 8px 2px !important;
-            }
-            .grid-item i {
-                font-size: 18px !important;
-            }
-            .grid-item span {
-                font-size: 11px !important;
-            }
-            .btn {
-                font-size: 12px !important;
-                padding: 4px 12px !important;
-                height: 32px !important;
-            }
-            .form-group input,
-            .form-group select,
-            .form-group textarea {
-                font-size: 13px !important;
-                height: 34px !important;
-                padding: 6px 10px !important;
-            }
-            .search-box input {
-                font-size: 13px !important;
-                height: 32px !important;
-                padding: 6px 10px !important;
-            }
-            .search-box .btn {
-                font-size: 13px !important;
-                height: 32px !important;
-                padding: 6px 12px !important;
-            }
-            .invoice-header,
-            .invoice-row {
-                font-size: 10px !important;
-                padding: 4px 0 !important;
-                gap: 2px !important;
-            }
-            .table-header,
-            .table-row {
-                font-size: 11px !important;
-                padding: 4px 0 !important;
-                gap: 2px !important;
-            }
-            .table-row .btn-sm,
-            .invoice-row .btn-sm {
-                padding: 2px 6px !important;
-                font-size: 9px !important;
-                min-width: 20px !important;
-                height: 20px !important;
-            }
-            .table-row .btn-sm i,
-            .invoice-row .btn-sm i {
-                font-size: 9px !important;
-            }
-            .page-content h2 {
-                font-size: 18px !important;
-            }
-            .section-title {
-                font-size: 15px !important;
-            }
-            .dashboard-widget .widget-value {
-                font-size: 18px !important;
-            }
-            .stat-card .number {
-                font-size: 15px !important;
-            }
-            .balance-card .amount {
-                font-size: 22px !important;
-            }
-            .more-item {
-                padding: 8px 2px 6px !important;
-            }
-            .more-item i {
-                font-size: 20px !important;
-            }
-            .more-item span {
-                font-size: 11px !important;
-            }
-        }
-
-        /* ===== باقي الأنماط الأساسية ===== */
-        body {
-            background: #f0edff;
-            color: #1a1a2e;
-            padding: 10px 10px 80px;
-            transition: background 0.3s ease, color 0.3s ease;
+        /* ===== التبويبات ===== */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
             max-width: 1200px;
-            margin: 0 auto;
-            min-height: 100vh;
-            position: relative;
+            background: var(--bg-secondary);
+            display: flex;
+            justify-content: space-around;
+            padding: 6px 0 12px;
+            border-top: 2px solid var(--border-color);
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
+            border-radius: 24px 24px 0 0;
+            z-index: 100;
+            transition: var(--transition);
         }
-        body.dark-mode {
-            background: #0d0b1a;
-            color: #f0edff;
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-light);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            padding: 2px 8px;
+            background: transparent;
+            border: none;
+            min-width: 40px;
         }
-        body.dark-mode .top-header {
-            background: #1a1630;
-            box-shadow: 0 4px 20px rgba(108, 99, 255, 0.15);
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 2px;
+            transition: var(--transition);
         }
-        body.dark-mode .top-header .sub-title {
-            color: #b0a8d0;
+        .nav-item.active {
+            color: var(--accent);
+            font-weight: 800;
         }
-        body.dark-mode .main-card {
-            background: #1a1630;
-            border-right-color: #8b83ff;
-            box-shadow: 0 6px 24px rgba(108, 99, 255, 0.25);
+        .nav-item.active i {
+            transform: translateY(-2px);
         }
-        body.dark-mode .main-card p {
-            color: #b0a8d0;
-        }
-        body.dark-mode .grid-item {
-            background: #1a1630;
-            color: #f0edff;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-            border: 1px solid #2a2550;
-        }
-        body.dark-mode .grid-item i {
-            color: #8b83ff;
-        }
-        body.dark-mode .grid-item span {
-            color: #f0edff;
-        }
-        body.dark-mode .bottom-nav {
-            background: #1a1630;
-            border-top: 1px solid #2a2550;
-            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
-        }
-        body.dark-mode .nav-item {
-            color: #6a65a0;
-        }
-        body.dark-mode .nav-item.active {
-            color: #8b83ff;
-        }
-        body.dark-mode .section-title {
-            color: #b0a8d0;
-        }
-        body.dark-mode .more-overlay {
-            background: rgba(0, 0, 0, 0.7);
-        }
-        body.dark-mode .more-panel {
-            background: #1a1630;
-        }
-        body.dark-mode .more-panel h2 {
-            color: #f0edff;
-        }
-        body.dark-mode .more-item {
-            color: #f0edff;
-            background: #2a2550;
-            border: 1px solid #3a3570;
-        }
-        body.dark-mode .more-item i {
-            color: #8b83ff;
-        }
-        body.dark-mode .more-close {
-            color: #aaa;
-        }
-        body.dark-mode .toggle-btn {
-            background: #8b83ff;
-            color: #fff;
-        }
-        body.dark-mode .page-content {
-            background: #1a1630;
-        }
-        body.dark-mode .page-content h2 {
-            color: #f0edff;
-        }
-        body.dark-mode .page-content p {
-            color: #b0a8d0;
-        }
-        body.dark-mode .form-group label {
-            color: #b0a8d0;
-        }
-        body.dark-mode .form-group input,
-        body.dark-mode .form-group select,
-        body.dark-mode .form-group textarea {
-            background: #2a2550;
-            color: #f0edff;
-            border-color: #3a3570;
-        }
-        body.dark-mode .btn {
-            color: #fff;
-        }
-        body.dark-mode .btn-primary {
-            background: #8b83ff;
-        }
-        body.dark-mode .btn-danger {
-            background: #e74c6f;
-        }
-        body.dark-mode .btn-success {
-            background: #2ecc71;
-        }
-        body.dark-mode .btn-warning {
-            background: #f39c12;
-        }
-        body.dark-mode .btn-info {
-            background: #3498db;
-        }
-        body.dark-mode .table-row {
-            border-bottom-color: #2a2550;
-        }
-        body.dark-mode .table-row:hover {
-            background: #2a2550;
-        }
-        body.dark-mode .balance-card {
-            background: #2a2550;
-        }
-        body.dark-mode .stat-card {
-            background: #2a2550;
-        }
-        body.dark-mode .search-box input {
-            background: #2a2550;
-            color: #f0edff;
-            border-color: #3a3570;
-        }
-        body.dark-mode .search-box input::placeholder {
-            color: #6a65a0;
-        }
-        body.dark-mode .modal-box {
-            background: #1a1630;
-        }
-        body.dark-mode .modal-box h3 {
-            color: #f0edff;
-        }
-        body.dark-mode .modal-close {
-            color: #aaa;
-        }
-        body.dark-mode .filter-chip {
-            background: #2a2550;
-            color: #b0a8d0;
-            border-color: #3a3570;
-        }
-        body.dark-mode .filter-chip.active {
-            background: #8b83ff;
-            color: #fff;
-        }
-        body.dark-mode .balance-detail {
-            background: #2a2550;
-        }
-        body.dark-mode .balance-detail .label {
-            color: #b0a8d0;
-        }
-        body.dark-mode .balance-detail .amount {
-            color: #f0edff;
-        }
-        body.dark-mode .payment-methods label {
-            border-color: #3a3570;
-            color: #b0a8d0;
-        }
-        body.dark-mode .payment-methods label.selected {
-            border-color: #8b83ff;
-            background: #2a2550;
-        }
-        body.dark-mode .invoice-row:hover {
-            background: #2a2550;
-        }
-        body.dark-mode .return-badge {
-            background: #e74c6f;
-            color: #fff;
-        }
-        body.dark-mode .dashboard-widget {
-            background: #1a1630;
-            border-color: #2a2550;
-        }
-        body.dark-mode .progress-bar-bg {
-            background: #2a2550;
-        }
-        body.dark-mode .progress-bar-fill {
-            background: #8b83ff;
-        }
-        body.dark-mode .alert-banner {
-            background: #2a2550;
-            border-right-color: #e74c6f;
-        }
-        body.dark-mode .company-settings-box {
-            background: #1a1630;
-            border-color: #2a2550;
-        }
-        body.dark-mode .settings-card {
-            background: #1a1630;
-            border-color: #2a2550;
-        }
-        body.dark-mode .trial-badge {
-            background: #8b83ff;
-            color: #fff;
-        }
-        body.dark-mode .trial-badge.expired {
-            background: #e74c6f;
-        }
-        body.dark-mode .trial-badge.active {
-            background: #2ecc71;
-        }
-        body.dark-mode .logout-btn {
-            background: #e74c6f;
-            color: #fff;
-        }
-        body.dark-mode .logout-btn:hover {
-            background: #c0392b;
+        .nav-item:hover {
+            color: var(--accent);
         }
 
+        /* ===== إعدادات ===== */
+        .settings-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            margin-bottom: 12px;
+            border: 2px solid var(--border-color);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .settings-card:hover {
+            border-color: var(--accent);
+            box-shadow: var(--shadow-hover);
+        }
+        .settings-card .icon-big {
+            font-size: 28px;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .settings-card .title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .settings-card .desc {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+        .settings-card .btn {
+            flex-shrink: 0;
+        }
+
+        /* ===== شركة ===== */
+        .company-settings-box {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            margin-bottom: 12px;
+            border: 2px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .company-settings-box:hover {
+            border-color: var(--accent);
+        }
+        .logo-preview {
+            width: 80px;
+            height: 80px;
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-sm);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .logo-preview:hover {
+            border-color: var(--accent);
+        }
+        .logo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .logo-preview .placeholder {
+            color: var(--text-light);
+            font-size: 12px;
+        }
+
+        /* ===== باقي الأنماط ===== */
         .top-header {
-            background: #ffffff;
-            border-radius: 28px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
             padding: 14px 18px;
             margin-bottom: 16px;
-            box-shadow: 0 4px 20px rgba(108, 99, 255, 0.08);
-            transition: background 0.3s;
-            position: relative;
+            box-shadow: var(--shadow);
+            border: 2px solid var(--border-color);
+            transition: var(--transition);
         }
         .app-info {
             display: flex;
@@ -719,20 +824,20 @@
             gap: 6px;
         }
         .app-info h1 {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 900;
-            color: #6c63ff;
-            letter-spacing: -0.5px;
+            color: var(--accent);
             cursor: pointer;
         }
         .sub-title {
             font-size: 12px;
-            color: #8888aa;
+            color: var(--text-light);
             font-weight: 600;
             margin-top: 2px;
         }
+
         .toggle-btn {
-            background: #6c63ff;
+            background: var(--accent);
             color: #fff;
             border: none;
             border-radius: 50%;
@@ -740,7 +845,7 @@
             height: 34px;
             font-size: 16px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -750,8 +855,9 @@
             transform: scale(1.08);
             box-shadow: 0 4px 20px rgba(108, 99, 255, 0.5);
         }
+
         .logout-btn {
-            background: #e74c6f;
+            background: var(--danger);
             color: #fff;
             border: none;
             padding: 4px 12px;
@@ -759,7 +865,7 @@
             font-size: 11px;
             font-weight: 700;
             cursor: pointer;
-            transition: 0.2s;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             gap: 4px;
@@ -768,8 +874,9 @@
         .logout-btn:hover {
             background: #c0392b;
         }
+
         .trial-badge {
-            background: #f39c12;
+            background: var(--warning);
             color: #fff;
             padding: 3px 10px;
             border-radius: 16px;
@@ -780,24 +887,25 @@
             align-items: center;
         }
         .trial-badge.expired {
-            background: #e74c6f;
+            background: var(--danger);
         }
         .trial-badge.active {
-            background: #2ecc71;
+            background: var(--success);
         }
 
         .main-card {
-            background: #ffffff;
-            border-radius: 16px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
             padding: 14px 18px;
             margin-bottom: 20px;
-            box-shadow: 0 6px 24px rgba(108, 99, 255, 0.12);
-            border-right: 5px solid #6c63ff;
+            box-shadow: var(--shadow);
+            border-right: 5px solid var(--accent);
             cursor: pointer;
-            transition: 0.3s;
+            transition: var(--transition);
+            border: 2px solid var(--border-color);
         }
         .main-card:hover {
-            box-shadow: 0 10px 36px rgba(108, 99, 255, 0.2);
+            box-shadow: var(--shadow-hover);
             transform: translateY(-2px);
         }
         .card-content {
@@ -807,20 +915,21 @@
         }
         .card-icon {
             font-size: 28px;
-            color: #6c63ff;
+            color: var(--accent);
         }
         .card-content h2 {
             font-size: 18px;
             font-weight: 800;
+            color: var(--text-primary);
         }
         .card-content p {
             font-size: 12px;
-            color: #8888aa;
+            color: var(--text-light);
             font-weight: 500;
         }
         .arrow-icon {
             margin-right: auto;
-            color: #cccce0;
+            color: var(--text-light);
             font-size: 18px;
         }
 
@@ -828,62 +937,301 @@
             font-size: 16px;
             font-weight: 800;
             margin-bottom: 10px;
-            color: #444466;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             gap: 6px;
         }
         .section-title i {
-            color: #6c63ff;
+            color: var(--accent);
             font-size: 16px;
         }
 
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-            margin-bottom: 20px;
+        .page-container {
+            display: none;
+            animation: fadeIn 0.35s ease;
         }
-        .grid-item {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 10px 4px 8px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            transition: 0.25s ease;
-            cursor: pointer;
-            border: 2px solid transparent;
-            width: 100%;
+        .page-container.active {
+            display: block;
         }
-        .grid-item i {
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .page-content {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 16px 14px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            border: 2px solid var(--border-color);
+            transition: var(--transition);
+        }
+        .page-content h2 {
             font-size: 20px;
-            color: #6c63ff;
-            transition: 0.2s;
-            display: block;
-            margin-bottom: 2px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
-        .grid-item span {
-            font-size: 11px;
+        .page-content h2 i {
+            color: var(--accent);
+            font-size: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 20px 0;
+            color: var(--text-light);
+        }
+        .empty-state i {
+            font-size: 36px;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--text-light);
+        }
+        .empty-state span {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .filter-chip {
+            padding: 4px 12px;
+            border-radius: 16px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            font-size: 12px;
             font-weight: 700;
-            color: #333355;
-            display: block;
-            line-height: 1.2;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-secondary);
         }
-        .grid-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 24px rgba(108, 99, 255, 0.15);
-            border-color: #6c63ff;
+        .filter-chip.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 4px 16px rgba(108, 99, 255, 0.2);
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .payment-methods label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .payment-methods label:hover {
+            border-color: var(--accent);
+        }
+        .payment-methods input[type="radio"] {
+            accent-color: var(--accent);
+            width: 14px;
+            height: 14px;
+        }
+        .payment-methods label.selected {
+            border-color: var(--accent);
+            background: rgba(108, 99, 255, 0.08);
+            box-shadow: 0 4px 16px rgba(108, 99, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 700;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: var(--shadow-hover);
+            border: 2px solid var(--border-color);
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .toast.success {
+            border-color: var(--success);
+        }
+        .toast.error {
+            border-color: var(--danger);
+        }
+        .toast.warning {
+            border-color: var(--warning);
+        }
+        .toast.info {
+            border-color: var(--accent);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal-box {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 20px;
+            max-width: 400px;
+            width: 92%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+            box-shadow: var(--shadow-hover);
+            border: 2px solid var(--border-color);
+        }
+        .modal-box h3 {
+            margin-bottom: 12px;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .modal-close {
+            float: left;
+            background: none;
+            border: none;
+            font-size: 22px;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .modal-close:hover {
+            color: var(--accent);
+        }
+
+        .export-options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .more-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        .more-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .more-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%) translateY(100%);
+            width: 100%;
+            max-width: 500px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius) var(--radius) 0 0;
+            padding: 16px 14px 20px;
+            z-index: 999;
+            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+            box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.12);
+            max-height: 70vh;
+            overflow-y: auto;
+            border: 2px solid var(--border-color);
+            border-bottom: none;
+        }
+        .more-panel.open {
+            transform: translateX(-50%) translateY(0);
+        }
+        .more-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .more-panel h2 {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+        .more-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-light);
+            cursor: pointer;
+            padding: 0 6px;
+            transition: var(--transition);
+        }
+        .more-close:hover {
+            color: var(--accent);
+            transform: rotate(90deg);
+        }
+        .more-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
         }
 
         .report-quick-btn {
-            background: #6c63ff;
+            background: var(--accent);
             color: #fff !important;
             border: none !important;
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             padding: 10px 4px 8px;
             text-align: center;
             box-shadow: 0 4px 16px rgba(108, 99, 255, 0.15);
-            transition: 0.25s ease;
+            transition: var(--transition);
             cursor: pointer;
             width: 100%;
         }
@@ -905,275 +1253,34 @@
             box-shadow: 0 8px 28px rgba(108, 99, 255, 0.3);
         }
         .report-quick-btn.sales {
-            background: #6c63ff;
+            background: var(--accent);
         }
         .report-quick-btn.purchases {
-            background: #2ecc71;
+            background: var(--success);
         }
         .report-quick-btn.expenses {
-            background: #e74c6f;
+            background: var(--danger);
         }
         .report-quick-btn.profit {
-            background: #f39c12;
+            background: var(--warning);
         }
 
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 1200px;
-            background: #ffffff;
+        .alert-banner {
+            background: rgba(231, 76, 111, 0.08);
+            border-right: 4px solid var(--danger);
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
             display: flex;
-            justify-content: space-around;
-            padding: 6px 0 12px;
-            border-top: 1px solid #eeeef4;
-            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
-            border-radius: 24px 24px 0 0;
-            transition: background 0.3s, box-shadow 0.3s;
-            z-index: 100;
-        }
-        .nav-item {
-            display: flex;
-            flex-direction: column;
             align-items: center;
-            color: #a0a0c0;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            padding: 2px 8px;
-            background: transparent;
-            border: none;
-            min-width: 40px;
-        }
-        .nav-item i {
-            font-size: 20px;
-            margin-bottom: 2px;
-            transition: 0.2s;
-        }
-        .nav-item.active {
-            color: #6c63ff;
-            font-weight: 800;
-        }
-        .nav-item.active i {
-            transform: translateY(-2px);
-        }
-        .nav-item:hover {
-            color: #6c63ff;
-        }
-
-        .more-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 998;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.35s ease, visibility 0.35s ease;
-        }
-        .more-overlay.open {
-            opacity: 1;
-            visibility: visible;
-        }
-        .more-panel {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%) translateY(100%);
-            width: 100%;
-            max-width: 500px;
-            background: #ffffff;
-            border-radius: 24px 24px 0 0;
-            padding: 16px 14px 20px;
-            z-index: 999;
-            transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
-            box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.12);
-            max-height: 70vh;
-            overflow-y: auto;
-        }
-        .more-panel.open {
-            transform: translateX(-50%) translateY(0);
-        }
-        .more-panel-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #eeeef4;
-        }
-        .more-panel h2 {
-            font-size: 18px;
-            font-weight: 800;
-            color: #1a1a2e;
-        }
-        .more-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #aaa;
-            cursor: pointer;
-            padding: 0 6px;
-            transition: 0.2s;
-        }
-        .more-close:hover {
-            color: #6c63ff;
-            transform: rotate(90deg);
-        }
-        .more-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
             gap: 8px;
-        }
-        .more-item {
-            background: #f5f6fc;
-            border-radius: 14px;
-            padding: 12px 4px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.25s;
-            border: 2px solid transparent;
-            width: 100%;
-        }
-        .more-item i {
-            font-size: 22px;
-            color: #6c63ff;
-            display: block;
-            margin-bottom: 4px;
-        }
-        .more-item span {
-            font-size: 12px;
-            font-weight: 700;
-            color: #333355;
-        }
-        .more-item:hover {
-            background: #eaeaff;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(108, 99, 255, 0.12);
-            border-color: #6c63ff;
-        }
-
-        .page-container {
-            display: none;
-            animation: fadeIn 0.35s ease;
-        }
-        .page-container.active {
-            display: block;
-        }
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .page-content {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 16px 14px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-            transition: background 0.3s;
-        }
-        .page-content h2 {
-            font-size: 20px;
-            font-weight: 800;
-            color: #1a1a2e;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .page-content h2 i {
-            color: #6c63ff;
-            font-size: 20px;
-        }
-
-        .table-header {
-            display: grid;
-            grid-template-columns: 1.2fr 1.2fr 0.8fr 0.8fr 0.6fr;
-            gap: 4px;
-            padding: 6px 0;
-            font-weight: 800;
-            font-size: 11px;
-            color: #8888aa;
-            border-bottom: 2px solid #eeeef4;
-            margin-bottom: 4px;
-        }
-        .table-row {
-            display: grid;
-            grid-template-columns: 1.2fr 1.2fr 0.8fr 0.8fr 0.6fr;
-            gap: 4px;
-            padding: 8px 0;
-            border-bottom: 1px solid #eeeef4;
-            align-items: center;
-            font-size: 12px;
-            transition: 0.2s;
-        }
-        .table-row:hover {
-            background: #f8f8ff;
-            border-radius: 8px;
-            padding-right: 4px;
-        }
-
-        .invoice-header {
-            display: grid;
-            grid-template-columns: 0.8fr 1fr 0.6fr 0.7fr 0.6fr 0.5fr 0.7fr;
-            gap: 3px;
-            padding: 6px 0;
-            font-weight: 800;
-            font-size: 10px;
-            color: #8888aa;
-            border-bottom: 2px solid #eeeef4;
-            margin-bottom: 4px;
-        }
-        .invoice-row {
-            display: grid;
-            grid-template-columns: 0.8fr 1fr 0.6fr 0.7fr 0.6fr 0.5fr 0.7fr;
-            gap: 3px;
-            padding: 8px 0;
-            border-bottom: 1px solid #eeeef4;
-            align-items: center;
-            font-size: 11px;
-            transition: 0.2s;
-        }
-        .invoice-row:hover {
-            background: #f8f8ff;
-            border-radius: 8px;
-            padding-right: 3px;
-        }
-        .return-badge {
-            display: inline-block;
-            background: #e74c6f;
-            color: #fff;
-            padding: 1px 6px;
-            border-radius: 8px;
-            font-size: 8px;
-            font-weight: 700;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 20px 0;
-            color: #aaaac0;
-        }
-        .empty-state i {
-            font-size: 36px;
-            margin-bottom: 8px;
-            display: block;
-            color: #d0d0e8;
-        }
-        .empty-state span {
-            font-size: 14px;
             font-weight: 600;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+        .alert-banner i {
+            color: var(--danger);
+            font-size: 16px;
         }
 
         .stats-row {
@@ -1182,290 +1289,16 @@
             gap: 8px;
             margin-bottom: 12px;
         }
-        .stat-card {
-            background: #f8f8fc;
-            border-radius: 10px;
-            padding: 10px 8px;
-            text-align: center;
-            transition: 0.2s;
-        }
-        .stat-card .number {
-            font-size: 18px;
-            font-weight: 900;
-            color: #6c63ff;
-        }
-        .stat-card .label {
-            font-size: 11px;
-            color: #8888aa;
-            margin-top: 2px;
-            font-weight: 600;
-        }
 
-        .balance-card {
-            background: linear-gradient(135deg, #6c63ff, #8b83ff);
-            color: #fff;
-            border-radius: 14px;
-            padding: 16px;
-            text-align: center;
-            margin-bottom: 12px;
-        }
-        .balance-card .amount {
-            font-size: 28px;
-            font-weight: 900;
-        }
-        .balance-card .label {
-            font-size: 12px;
-            opacity: 0.85;
-            font-weight: 600;
-        }
         .balance-details {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
             gap: 4px;
             margin-bottom: 12px;
         }
-        .balance-detail {
-            background: #f8f8fc;
-            border-radius: 8px;
-            padding: 8px 2px;
-            text-align: center;
-            transition: 0.2s;
-        }
-        .balance-detail .label {
-            font-size: 9px;
-            color: #8888aa;
-            font-weight: 600;
-        }
-        .balance-detail .amount {
-            font-size: 14px;
-            font-weight: 800;
-            color: #1a1a2e;
-        }
 
-        .filter-chips {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
-        .filter-chip {
-            padding: 4px 12px;
-            border-radius: 16px;
-            border: 2px solid #e8e8f0;
-            background: #fff;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #333355;
-        }
-        .filter-chip.active {
-            background: #6c63ff;
-            color: #fff;
-            border-color: #6c63ff;
-            box-shadow: 0 4px 16px rgba(108, 99, 255, 0.2);
-        }
-
-        .payment-methods {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
-            margin-bottom: 10px;
-        }
-        .payment-methods label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
-            border: 2px solid #e8e8f0;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 13px;
-            font-weight: 600;
-        }
-        .payment-methods label:hover {
-            border-color: #6c63ff;
-        }
-        .payment-methods input[type="radio"] {
-            accent-color: #6c63ff;
-            width: 14px;
-            height: 14px;
-        }
-        .payment-methods label.selected {
-            border-color: #6c63ff;
-            background: #f0eeff;
-            box-shadow: 0 4px 16px rgba(108, 99, 255, 0.1);
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #333;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            z-index: 9999;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-            max-width: 90%;
-            text-align: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        }
-        .toast.show {
-            opacity: 1;
-        }
-        .toast.success {
-            background: #2ecc71;
-        }
-        .toast.error {
-            background: #e74c6f;
-        }
-        .toast.warning {
-            background: #f39c12;
-        }
-        .toast.info {
-            background: #6c63ff;
-        }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 9998;
-            display: none;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-overlay.show {
-            display: flex;
-        }
-        .modal-box {
-            background: #fff;
-            border-radius: 20px;
-            padding: 20px;
-            max-width: 400px;
-            width: 92%;
-            max-height: 90vh;
-            overflow-y: auto;
-            animation: fadeIn 0.3s ease;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-        }
-        .modal-box h3 {
-            margin-bottom: 12px;
-            font-size: 18px;
-            font-weight: 800;
-            color: #1a1a2e;
-        }
-        .modal-close {
-            float: left;
-            background: none;
-            border: none;
-            font-size: 22px;
-            color: #aaa;
-            cursor: pointer;
-        }
-        .modal-close:hover {
-            color: #6c63ff;
-        }
-
-        .settings-card {
-            background: #f8f8fc;
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 12px;
-            border: 2px solid #e8e8f0;
-            transition: 0.2s;
-        }
-        .settings-card:hover {
-            border-color: #6c63ff;
-        }
-        .settings-card .icon-big {
-            font-size: 28px;
-            color: #6c63ff;
-            margin-bottom: 4px;
-        }
-        .settings-card .title {
-            font-size: 15px;
-            font-weight: 800;
-            color: #1a1a2e;
-        }
-        .settings-card .desc {
-            font-size: 12px;
-            color: #8888aa;
-            margin-top: 2px;
-        }
-
-        .company-settings-box {
-            background: #f8f8fc;
-            border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 12px;
-            border: 2px solid #e8e8f0;
-        }
-        .logo-preview {
-            width: 80px;
-            height: 80px;
-            border: 2px dashed #ccc;
-            border-radius: 12px;
-            margin: 0 auto 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            background: #fff;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .logo-preview:hover {
-            border-color: #6c63ff;
-        }
-        .logo-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-        .logo-preview .placeholder {
-            color: #aaa;
-            font-size: 12px;
-        }
-
-        .dashboard-widget {
-            background: #fff;
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 10px;
-            border: 2px solid #e8e8f0;
-            transition: 0.2s;
-        }
-        .dashboard-widget:hover {
-            border-color: #6c63ff;
-        }
-        .dashboard-widget .widget-title {
-            font-weight: 800;
-            font-size: 13px;
-            color: #6c63ff;
-            margin-bottom: 4px;
-        }
-        .dashboard-widget .widget-value {
-            font-size: 24px;
-            font-weight: 900;
-            color: #1a1a2e;
-        }
-        .dashboard-widget .widget-sub {
-            font-size: 11px;
-            color: #8888aa;
-        }
         .progress-bar-bg {
-            background: #e8e8f0;
+            background: var(--border-color);
             border-radius: 8px;
             height: 6px;
             overflow: hidden;
@@ -1473,33 +1306,19 @@
         }
         .progress-bar-fill {
             height: 100%;
-            background: #6c63ff;
+            background: var(--accent);
             border-radius: 8px;
             transition: width 0.6s ease;
         }
 
-        .alert-banner {
-            background: #fff5f5;
-            border-right: 4px solid #e74c6f;
-            padding: 8px 14px;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 600;
-            font-size: 13px;
-        }
-        .alert-banner i {
-            color: #e74c6f;
-            font-size: 16px;
-        }
-
-        .export-options {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
+        .return-badge {
+            display: inline-block;
+            background: var(--danger);
+            color: #fff;
+            padding: 1px 6px;
+            border-radius: 8px;
+            font-size: 8px;
+            font-weight: 700;
         }
 
         /* ===== شاشة الدخول ===== */
@@ -1508,7 +1327,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #6c63ff, #8b83ff, #6c63ff);
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
             background-size: 400% 400%;
             animation: gradientShift 8s ease infinite;
             position: fixed;
@@ -1518,7 +1337,6 @@
             height: 100%;
             z-index: 9999;
             padding: 20px;
-            font-family: 'Tajawal', sans-serif;
         }
         @keyframes gradientShift {
             0% {
@@ -1531,27 +1349,17 @@
                 background-position: 0% 50%;
             }
         }
+
         #loginScreen .login-box {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            border-radius: 24px;
+            border-radius: var(--radius);
             padding: 36px 28px;
             max-width: 400px;
             width: 100%;
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25), 0 10px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
             text-align: center;
             animation: slideUp 0.6s ease;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(40px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
         #loginScreen .login-box .logo-icon {
             font-size: 56px;
@@ -1561,15 +1369,15 @@
         #loginScreen .login-box h1 {
             font-size: 34px;
             font-weight: 900;
-            color: #6c63ff;
+            color: var(--accent);
             margin-bottom: 2px;
         }
         #loginScreen .login-box .sub {
-            color: #8888aa;
+            color: var(--text-light);
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 20px;
-            border-bottom: 2px solid #f0f0f5;
+            border-bottom: 2px solid var(--border-color);
             padding-bottom: 12px;
         }
         #loginScreen .login-box .form-group {
@@ -1581,36 +1389,36 @@
             font-weight: 700;
             margin-bottom: 4px;
             font-size: 13px;
-            color: #444466;
+            color: var(--text-secondary);
         }
         #loginScreen .login-box .form-group input {
             width: 100%;
             padding: 10px 14px;
-            border: 2px solid #e8e8f0;
-            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-sm);
             font-size: 15px;
-            transition: all 0.3s ease;
-            background: #f8f8fc;
-            color: #1a1a2e;
-            direction: ltr;
+            transition: var(--transition);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             height: 42px;
+            direction: ltr;
         }
         #loginScreen .login-box .form-group input:focus {
             outline: none;
-            border-color: #6c63ff;
+            border-color: var(--accent);
             box-shadow: 0 0 0 4px rgba(108, 99, 255, 0.1);
         }
         #loginScreen .login-box .btn-primary {
             width: 100%;
             padding: 12px;
             font-size: 17px;
-            background: linear-gradient(135deg, #6c63ff, #7b73ff);
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
             color: #fff;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             font-weight: 800;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             margin-top: 4px;
             box-shadow: 0 4px 16px rgba(108, 99, 255, 0.3);
             height: 44px;
@@ -1622,27 +1430,27 @@
         #loginScreen .login-box .toggle-link {
             margin-top: 14px;
             font-size: 13px;
-            color: #8888aa;
+            color: var(--text-light);
         }
         #loginScreen .login-box .toggle-link a {
-            color: #6c63ff;
+            color: var(--accent);
             font-weight: 700;
             cursor: pointer;
             text-decoration: none;
-            transition: 0.2s;
+            transition: var(--transition);
         }
         #loginScreen .login-box .toggle-link a:hover {
-            color: #5a52e0;
+            color: var(--accent-dark);
             text-decoration: underline;
         }
         #loginScreen .login-box .error-msg {
-            color: #e74c6f;
+            color: var(--danger);
             font-size: 13px;
             margin-bottom: 10px;
             min-height: 20px;
             font-weight: 600;
             padding: 4px 10px;
-            background: #fff5f5;
+            background: rgba(231, 76, 111, 0.08);
             border-radius: 8px;
             display: none;
         }
@@ -1654,7 +1462,7 @@
             align-items: center;
             margin: 14px 0;
             gap: 10px;
-            color: #cccce0;
+            color: var(--text-light);
             font-size: 11px;
         }
         #loginScreen .login-box .divider::before,
@@ -1662,7 +1470,7 @@
             content: '';
             flex: 1;
             height: 1px;
-            background: #e8e8f0;
+            background: var(--border-color);
         }
 
         /* ===== نافذة الدفع ===== */
@@ -1678,108 +1486,112 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            backdrop-filter: blur(4px);
         }
         .payment-overlay.show {
             display: flex;
         }
         .payment-box {
-            background: #fff;
-            border-radius: 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
             padding: 24px 20px;
             max-width: 400px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow-hover);
             text-align: center;
             animation: fadeIn 0.3s ease;
+            border: 2px solid var(--border-color);
         }
         .payment-box h2 {
             font-size: 22px;
-            color: #1a1a2e;
+            color: var(--text-primary);
             margin-bottom: 10px;
         }
         .payment-box p {
-            color: #555;
+            color: var(--text-secondary);
             font-size: 14px;
             line-height: 1.6;
         }
         .payment-box .payment-details {
-            background: #f8f8fc;
-            border-radius: 10px;
+            background: var(--bg-primary);
+            border-radius: var(--radius-sm);
             padding: 12px;
             margin: 12px 0;
             text-align: right;
         }
         .payment-box .payment-details .label {
             font-weight: 700;
-            color: #333;
+            color: var(--text-secondary);
         }
         .payment-box .payment-details .value {
-            color: #6c63ff;
+            color: var(--accent);
             font-weight: 700;
             font-size: 16px;
         }
         .payment-box .btn-success {
-            background: #2ecc71;
+            background: var(--success);
             color: #fff;
             border: none;
             padding: 10px 20px;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             font-size: 15px;
             font-weight: 800;
             cursor: pointer;
-            transition: 0.2s;
+            transition: var(--transition);
             width: 100%;
         }
         .payment-box .btn-success:hover {
             background: #27ae60;
+            transform: translateY(-2px);
         }
         .payment-box .btn-outline {
             background: transparent;
-            border: 2px solid #6c63ff;
-            color: #6c63ff;
+            border: 2px solid var(--accent);
+            color: var(--accent);
             padding: 8px 16px;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             font-weight: 700;
             cursor: pointer;
-            transition: 0.2s;
+            transition: var(--transition);
             width: 100%;
             margin-top: 8px;
         }
         .payment-box .btn-outline:hover {
-            background: #6c63ff;
+            background: var(--accent);
             color: #fff;
         }
         .payment-box .instapay-link {
             display: inline-block;
-            background: #6c63ff;
+            background: var(--accent);
             color: #fff;
             padding: 8px 16px;
-            border-radius: 10px;
+            border-radius: var(--radius-sm);
             text-decoration: none;
             font-weight: 700;
             margin-top: 6px;
-            transition: 0.2s;
+            transition: var(--transition);
         }
         .payment-box .instapay-link:hover {
-            background: #5a52e0;
+            background: var(--accent-dark);
+            transform: translateY(-2px);
         }
 
-        /* ===== التجاوب العام ===== */
+        /* ===== التجاوب ===== */
         @media (max-width: 768px) {
             body {
                 padding: 8px 8px 75px;
             }
             .top-header {
                 padding: 10px 14px;
-                border-radius: 16px;
+                border-radius: var(--radius-sm);
             }
             .page-content {
                 padding: 12px 10px;
-                border-radius: 12px;
+                border-radius: var(--radius-sm);
             }
             .grid-container {
                 grid-template-columns: repeat(3, 1fr);
-                gap: 4px;
+                gap: 6px;
             }
             .grid-item {
                 padding: 6px 2px;
@@ -1847,14 +1659,14 @@
             .btn {
                 font-size: 12px;
                 padding: 5px 12px;
-                height: 30px;
+                height: 32px;
             }
             .form-group input,
             .form-group select,
             .form-group textarea {
                 font-size: 13px;
-                height: 32px;
-                padding: 4px 10px;
+                height: 34px;
+                padding: 6px 10px;
             }
             #loginScreen .login-box {
                 padding: 28px 20px;
@@ -1864,13 +1676,17 @@
             }
             .search-box input {
                 font-size: 12px;
-                height: 30px;
-                padding: 4px 10px;
+                height: 32px;
+                padding: 6px 10px;
             }
             .search-box .btn {
                 font-size: 12px;
-                height: 30px;
-                padding: 4px 10px;
+                height: 32px;
+                padding: 6px 12px;
+            }
+            .settings-card {
+                flex-wrap: wrap;
+                padding: 12px;
             }
         }
 
@@ -1879,7 +1695,7 @@
                 grid-template-columns: repeat(2, 1fr);
             }
             .app-info h1 {
-                font-size: 18px !important;
+                font-size: 20px !important;
             }
             .top-header {
                 padding: 8px 10px;
@@ -1922,14 +1738,14 @@
             }
             .table-row .btn-sm,
             .invoice-row .btn-sm {
-                padding: 2px 4px;
-                font-size: 8px;
-                min-width: 18px;
-                height: 18px;
+                padding: 2px 6px;
+                font-size: 9px;
+                min-width: 22px;
+                height: 22px;
             }
             .table-row .btn-sm i,
             .invoice-row .btn-sm i {
-                font-size: 8px;
+                font-size: 9px;
             }
             .dashboard-widget .widget-value {
                 font-size: 17px;
@@ -1955,12 +1771,12 @@
             .search-box input {
                 font-size: 11px;
                 height: 28px;
-                padding: 3px 8px;
+                padding: 4px 8px;
             }
             .search-box .btn {
                 font-size: 11px;
                 height: 28px;
-                padding: 3px 8px;
+                padding: 4px 8px;
             }
             .modal-box {
                 padding: 16px;
@@ -1991,6 +1807,12 @@
             .nav-item i {
                 font-size: 14px;
             }
+            .balance-details {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+            .more-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (min-width: 1024px) {
@@ -2016,6 +1838,9 @@
             }
             .more-panel.open {
                 transform: translateX(-50%) translateY(0);
+            }
+            .settings-card {
+                padding: 16px 20px;
             }
         }
     </style>
@@ -2045,15 +1870,13 @@
                     <i class="fas fa-sign-in-alt"></i> دخول
                 </button>
                 <div class="toggle-link" style="margin-top:6px;">
-                    <a onclick="resetPassword()" style="color:#e74c6f;cursor:pointer;">
+                    <a onclick="resetPassword()" style="color:var(--danger);cursor:pointer;">
                         <i class="fas fa-key"></i> نسيت كلمة المرور؟
                     </a>
                 </div>
             </form>
 
-            <div class="divider">أو</div>
-
-            <div class="toggle-link">
+            <div class="toggle-link" style="margin-top:14px;">
                 ليس لديك حساب؟ <a onclick="showSignup()">إنشاء حساب جديد</a>
             </div>
 
@@ -2082,16 +1905,16 @@
     <div class="payment-overlay" id="paymentOverlay">
         <div class="payment-box">
             <h2>🔒 انتهت الفترة التجريبية</h2>
-            <p style="color:#e74c6f;font-size:16px;font-weight:700;">
+            <p style="color:var(--danger);font-size:16px;font-weight:700;">
                 ⏰ انتهت أيام التجربة (7 أيام)
             </p>
             <p>لتستمر في استخدام التطبيق، يرجى الاشتراك عن طريق الدفع عبر:</p>
             <div class="payment-details">
-                <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-color);">
                     <span class="label">📱 فودافون كاش</span>
                     <span class="value">01011993799</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-color);">
                     <span class="label">📲 إنستاباي</span>
                     <span class="value">
                         <a href="https://ipn.eg/S/rashedrabia/instapay/5GGJzk" target="_blank" class="instapay-link">
@@ -2099,7 +1922,7 @@
                         </a>
                     </span>
                 </div>
-                <div style="padding:4px 0;color:#888;font-size:12px;">
+                <div style="padding:4px 0;color:var(--text-light);font-size:12px;">
                     <i class="fas fa-info-circle"></i> بعد الدفع، اضغط الزر أدناه لتفعيل اشتراكك.
                 </div>
             </div>
@@ -2136,7 +1959,7 @@
                     <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
                 </div>
             </div>
-            <p class="sub-title"><i class="fas fa-calculator" style="margin-left:4px;color:#6c63ff;"></i> نظام محاسبة ونقاط بيع متكامل - الميزان</p>
+            <p class="sub-title"><i class="fas fa-calculator" style="margin-left:4px;color:var(--accent);"></i> نظام محاسبة ونقاط بيع متكامل - الميزان</p>
         </header>
 
         <!-- ================================================================ -->
@@ -2157,7 +1980,7 @@
                 </div>
                 <div class="dashboard-widget">
                     <div class="widget-title">📊 صافي الأرباح</div>
-                    <div class="widget-value" id="homeProfit" style="color:#2ecc71;">0.00</div>
+                    <div class="widget-value" id="homeProfit" style="color:var(--success);">0.00</div>
                     <div class="widget-sub">🇪🇬 جنيه مصري</div>
                 </div>
             </div>
@@ -2230,7 +2053,7 @@
         </div>
 
         <!-- ================================================================ -->
-        <!-- ===== باقي الصفحات ===== -->
+        <!-- ===== باقي الصفحات (مختصرة) ===== -->
         <!-- ================================================================ -->
 
         <!-- ===== INVENTORY ===== -->
@@ -2246,8 +2069,8 @@
                     <input type="text" id="inventorySearch" placeholder="🔍 بحث باسم المنتج..." oninput="filterProducts()" />
                     <button class="btn btn-primary" onclick="filterProducts()"><i class="fas fa-search"></i></button>
                 </div>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة منتج جديد</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة منتج جديد</h4>
                     <div class="form-group"><label>اسم المنتج</label><input type="text" id="productName" placeholder="مثال: هاتف Samsung" /></div>
                     <div class="form-row">
                         <div class="form-group"><label>سعر الشراء</label><input type="number" id="productBuyPrice" placeholder="0.00" /></div>
@@ -2271,8 +2094,8 @@
                     <button class="btn btn-info" onclick="printPurchaseInvoice()" style="flex:1;"><i class="fas fa-print"></i> طباعة</button>
                     <button class="btn btn-success" onclick="exportInvoicesExcel('purchase')" style="flex:1;"><i class="fas fa-file-excel"></i> Excel</button>
                 </div>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة فاتورة شراء</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة فاتورة شراء</h4>
                     <div class="form-group"><label>المورد</label>
                         <select id="purchaseSupplierSelect" onchange="document.getElementById('purchaseSupplier').value=this.value"><option value="">اختر مورد...</option></select>
                         <input type="text" id="purchaseSupplier" placeholder="أو اكتب اسم المورد" style="margin-top:4px;" />
@@ -2314,8 +2137,8 @@
                     <button class="btn btn-info" onclick="printSaleInvoice()" style="flex:1;"><i class="fas fa-print"></i> طباعة</button>
                     <button class="btn btn-success" onclick="exportInvoicesExcel('sale')" style="flex:1;"><i class="fas fa-file-excel"></i> Excel</button>
                 </div>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة فاتورة بيع</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة فاتورة بيع</h4>
                     <div class="form-group"><label>العميل</label>
                         <select id="salesCustomerSelect" onchange="document.getElementById('salesCustomer').value=this.value"><option value="">اختر عميل...</option></select>
                         <input type="text" id="salesCustomer" placeholder="أو اكتب اسم العميل" style="margin-top:4px;" />
@@ -2389,38 +2212,38 @@
                 <h2><i class="fas fa-calculator"></i> المحاسبات</h2>
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
                     <div class="stat-card" onclick="showAccountingDetail('مراجعة الميزانية')" style="cursor:pointer;">
-                        <i class="fas fa-balance-scale" style="font-size:24px;color:#6c63ff;"></i>
+                        <i class="fas fa-balance-scale" style="font-size:24px;color:var(--accent);"></i>
                         <div class="number" style="font-size:13px;">مراجعة الميزانية</div>
                         <div class="label">الميزانية العمومية</div>
                     </div>
                     <div class="stat-card" onclick="showAccountingDetail('ميزانية الدخل')" style="cursor:pointer;">
-                        <i class="fas fa-chart-line" style="font-size:24px;color:#6c63ff;"></i>
+                        <i class="fas fa-chart-line" style="font-size:24px;color:var(--accent);"></i>
                         <div class="number" style="font-size:13px;">ميزانية الدخل</div>
                         <div class="label">قائمة الدخل</div>
                     </div>
                     <div class="stat-card" onclick="showAccountingDetail('التدفقات النقدية')" style="cursor:pointer;">
-                        <i class="fas fa-money-bill-wave" style="font-size:24px;color:#6c63ff;"></i>
+                        <i class="fas fa-money-bill-wave" style="font-size:24px;color:var(--accent);"></i>
                         <div class="number" style="font-size:13px;">التدفقات النقدية</div>
                         <div class="label">حركات النقد</div>
                     </div>
                     <div class="stat-card" onclick="showAccountingDetail('دفتر الأستاذ')" style="cursor:pointer;">
-                        <i class="fas fa-book" style="font-size:24px;color:#6c63ff;"></i>
+                        <i class="fas fa-book" style="font-size:24px;color:var(--accent);"></i>
                         <div class="number" style="font-size:13px;">دفتر الأستاذ</div>
                         <div class="label">دفتر الأستاذ العام</div>
                     </div>
                     <div class="stat-card" onclick="showAccountingDetail('ميزان المراجعة')" style="cursor:pointer;">
-                        <i class="fas fa-check-double" style="font-size:24px;color:#6c63ff;"></i>
+                        <i class="fas fa-check-double" style="font-size:24px;color:var(--accent);"></i>
                         <div class="number" style="font-size:13px;">ميزان المراجعة</div>
                         <div class="label">مراجعة الحسابات</div>
                     </div>
                     <div class="stat-card" onclick="showAccountingDetail('القوائم المالية')" style="cursor:pointer;">
-                        <i class="fas fa-file-alt" style="font-size:24px;color:#6c63ff;"></i>
+                        <i class="fas fa-file-alt" style="font-size:24px;color:var(--accent);"></i>
                         <div class="number" style="font-size:13px;">قوائم مالية</div>
                         <div class="label">تقارير مالية</div>
                     </div>
                 </div>
-                <div style="background:#f8f8fc;border-radius:12px;padding:14px;">
-                    <h4 style="color:#6c63ff;margin-bottom:8px;font-size:14px;"><i class="fas fa-info-circle"></i> تفاصيل المحاسبة</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:14px;">
+                    <h4 style="color:var(--accent);margin-bottom:8px;font-size:14px;"><i class="fas fa-info-circle"></i> تفاصيل المحاسبة</h4>
                     <div id="accountingDetailContent">
                         <div class="stats-row">
                             <div class="stat-card"><div class="number" id="accTotalAssets">0</div><div class="label">إجمالي الأصول</div></div>
@@ -2433,12 +2256,36 @@
             </div>
         </div>
 
+        <!-- ===== INVOICES ===== -->
+        <div id="page-invoices" class="page-container">
+            <div class="page-content">
+                <h2><i class="fas fa-file-invoice"></i> الفواتير</h2>
+                <div class="export-options">
+                    <button class="btn btn-success" onclick="exportAllInvoicesExcel()" style="flex:1;"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button class="btn btn-info" onclick="printAllInvoices()" style="flex:1;"><i class="fas fa-print"></i> طباعة</button>
+                </div>
+                <div class="filter-chips">
+                    <button class="filter-chip active" data-filter="all" onclick="filterAllInvoices('all')">الكل</button>
+                    <button class="filter-chip" data-filter="sale" onclick="filterAllInvoices('sale')">🟢 مبيعات</button>
+                    <button class="filter-chip" data-filter="purchase" onclick="filterAllInvoices('purchase')">🔵 مشتريات</button>
+                    <button class="filter-chip" data-filter="return" onclick="filterAllInvoices('return')">🔴 مرتجعات</button>
+                    <button class="filter-chip" data-filter="expense" onclick="filterAllInvoices('expense')">🟡 مصروفات</button>
+                    <button class="filter-chip" data-filter="bond" onclick="filterAllInvoices('bond')">🟣 سندات</button>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="allInvoicesSearch" placeholder="🔍 بحث..." oninput="filterAllInvoices()" />
+                    <button class="btn btn-primary" onclick="filterAllInvoices()"><i class="fas fa-search"></i></button>
+                </div>
+                <div id="allInvoicesList"><div class="empty-state"><i class="fas fa-file-invoice"></i><span>لا توجد فواتير</span></div></div>
+            </div>
+        </div>
+
         <!-- ===== CUSTOMERS ===== -->
         <div id="page-customers" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-users"></i> إدارة العملاء</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-user-plus"></i> إضافة عميل جديد</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-user-plus"></i> إضافة عميل جديد</h4>
                     <div class="form-group"><label>اسم العميل</label><input type="text" id="customerName" placeholder="مثال: أحمد محمد" /></div>
                     <div class="form-row">
                         <div class="form-group"><label>الهاتف</label><input type="text" id="customerPhone" placeholder="05xxxxxxxx" /></div>
@@ -2455,8 +2302,8 @@
         <div id="page-suppliers" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-truck"></i> إدارة الموردين</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-user-plus"></i> إضافة مورد جديد</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-user-plus"></i> إضافة مورد جديد</h4>
                     <div class="form-group"><label>اسم المورد</label><input type="text" id="supplierName" placeholder="مثال: شركة الاتصالات" /></div>
                     <div class="form-row">
                         <div class="form-group"><label>الهاتف</label><input type="text" id="supplierPhone" placeholder="05xxxxxxxx" /></div>
@@ -2473,8 +2320,8 @@
         <div id="page-expenses" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-money-bill-wave"></i> المصروفات</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة مصروف جديد</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة مصروف جديد</h4>
                     <div class="form-group"><label>البيان</label><input type="text" id="expenseNote" placeholder="مثال: فاتورة كهرباء" /></div>
                     <div class="form-row">
                         <div class="form-group"><label>المبلغ</label><input type="number" id="expenseAmount" placeholder="0.00" /></div>
@@ -2516,7 +2363,7 @@
                 <div class="balance-card">
                     <div class="label">إجمالي الرصيد</div>
                     <div class="amount" id="treasuryBalance">0.00</div>
-                    <div style="font-size:11px;opacity:0.7;margin-top:2px;">جنيه مصري 🇪🇬</div>
+                    <div style="font-size:11px;opacity:0.7;margin-top:2px;color:#fff;">جنيه مصري 🇪🇬</div>
                 </div>
                 <div class="balance-details">
                     <div class="balance-detail"><div class="label">💰 نقدي</div><div class="amount" id="balCash">0.00</div></div>
@@ -2525,8 +2372,8 @@
                     <div class="balance-detail"><div class="label">🏦 بنك</div><div class="amount" id="balBank">0.00</div></div>
                     <div class="balance-detail"><div class="label">📮 بريد</div><div class="amount" id="balPost">0.00</div></div>
                 </div>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-money-bill-wave"></i> إيداع / سحب</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-money-bill-wave"></i> إيداع / سحب</h4>
                     <div class="form-group"><label>نوع العملية</label>
                         <select id="treasuryType"><option value="deposit">إيداع</option><option value="withdraw">سحب</option></select>
                     </div>
@@ -2551,8 +2398,8 @@
         <div id="page-bonds" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-file-signature"></i> السندات</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة سند جديد</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة سند جديد</h4>
                     <div class="form-group"><label>نوع السند</label>
                         <select id="bondType" onchange="toggleBondFields()">
                             <option value="collect">📥 تحصيل عميل</option>
@@ -2593,8 +2440,8 @@
         <div id="page-returns" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-undo-alt"></i> مرتجعات البيع والشراء</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;border-right:4px solid #e74c6f;">
-                    <h4 style="margin-bottom:8px;color:#e74c6f;font-size:14px;"><i class="fas fa-undo"></i> مرتجع بيع</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;border-right:4px solid var(--danger);">
+                    <h4 style="margin-bottom:8px;color:var(--danger);font-size:14px;"><i class="fas fa-undo"></i> مرتجع بيع</h4>
                     <div class="form-group"><label>العميل</label>
                         <select id="returnCustomerSelect" onchange="document.getElementById('returnCustomer').value=this.value"><option value="">اختر عميل...</option></select>
                         <input type="text" id="returnCustomer" placeholder="أو اكتب اسم العميل" style="margin-top:4px;" />
@@ -2609,8 +2456,8 @@
                     </div>
                     <button class="btn btn-danger btn-block" onclick="addReturnSale()"><i class="fas fa-undo-alt"></i> إضافة مرتجع بيع</button>
                 </div>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;border-right:4px solid #f39c12;">
-                    <h4 style="margin-bottom:8px;color:#f39c12;font-size:14px;"><i class="fas fa-undo"></i> مرتجع شراء</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;border-right:4px solid var(--warning);">
+                    <h4 style="margin-bottom:8px;color:var(--warning);font-size:14px;"><i class="fas fa-undo"></i> مرتجع شراء</h4>
                     <div class="form-group"><label>المورد</label>
                         <select id="returnSupplierSelect" onchange="document.getElementById('returnSupplier').value=this.value"><option value="">اختر مورد...</option></select>
                         <input type="text" id="returnSupplier" placeholder="أو اكتب اسم المورد" style="margin-top:4px;" />
@@ -2629,36 +2476,12 @@
             </div>
         </div>
 
-        <!-- ===== INVOICES ===== -->
-        <div id="page-invoices" class="page-container">
-            <div class="page-content">
-                <h2><i class="fas fa-file-invoice"></i> الفواتير</h2>
-                <div class="export-options">
-                    <button class="btn btn-success" onclick="exportAllInvoicesExcel()" style="flex:1;"><i class="fas fa-file-excel"></i> Excel</button>
-                    <button class="btn btn-info" onclick="printAllInvoices()" style="flex:1;"><i class="fas fa-print"></i> طباعة</button>
-                </div>
-                <div class="filter-chips">
-                    <button class="filter-chip active" data-filter="all" onclick="filterAllInvoices('all')">الكل</button>
-                    <button class="filter-chip" data-filter="sale" onclick="filterAllInvoices('sale')">🟢 مبيعات</button>
-                    <button class="filter-chip" data-filter="purchase" onclick="filterAllInvoices('purchase')">🔵 مشتريات</button>
-                    <button class="filter-chip" data-filter="return" onclick="filterAllInvoices('return')">🔴 مرتجعات</button>
-                    <button class="filter-chip" data-filter="expense" onclick="filterAllInvoices('expense')">🟡 مصروفات</button>
-                    <button class="filter-chip" data-filter="bond" onclick="filterAllInvoices('bond')">🟣 سندات</button>
-                </div>
-                <div class="search-box">
-                    <input type="text" id="allInvoicesSearch" placeholder="🔍 بحث..." oninput="filterAllInvoices()" />
-                    <button class="btn btn-primary" onclick="filterAllInvoices()"><i class="fas fa-search"></i></button>
-                </div>
-                <div id="allInvoicesList"><div class="empty-state"><i class="fas fa-file-invoice"></i><span>لا توجد فواتير</span></div></div>
-            </div>
-        </div>
-
         <!-- ===== EMPLOYEES ===== -->
         <div id="page-employees" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-user-cog"></i> إدارة الموظفين</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;"><i class="fas fa-user-plus"></i> إضافة موظف</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-user-plus"></i> إضافة موظف</h4>
                     <div class="form-group"><label>الاسم</label><input type="text" id="empName" placeholder="اسم الموظف" /></div>
                     <div class="form-row">
                         <div class="form-group"><label>الوظيفة</label><input type="text" id="empRole" placeholder="مثال: محاسب" /></div>
@@ -2675,8 +2498,8 @@
         <div id="page-partners" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-handshake"></i> إدارة الشركاء</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;"><i class="fas fa-user-plus"></i> إضافة شريك</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-user-plus"></i> إضافة شريك</h4>
                     <div class="form-group"><label>اسم الشريك</label><input type="text" id="partnerName" placeholder="اسم الشريك" /></div>
                     <div class="form-row">
                         <div class="form-group"><label>نسبة الشراكة %</label><input type="number" id="partnerShare" placeholder="50" /></div>
@@ -2692,8 +2515,8 @@
         <div id="page-projects" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-project-diagram"></i> إدارة المشاريع</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;"><i class="fas fa-plus-circle"></i> إضافة مشروع</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة مشروع</h4>
                     <div class="form-group"><label>اسم المشروع</label><input type="text" id="projectName" placeholder="اسم المشروع" /></div>
                     <div class="form-row">
                         <div class="form-group"><label>الميزانية</label><input type="number" id="projectBudget" placeholder="0.00" /></div>
@@ -2710,8 +2533,8 @@
         <div id="page-manufacturing" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-industry"></i> إدارة التصنيع</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;border-right:4px solid #f39c12;">
-                    <h4 style="margin-bottom:8px;color:#f39c12;font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة أمر تصنيع</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;border-right:4px solid var(--warning);">
+                    <h4 style="margin-bottom:8px;color:var(--warning);font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة أمر تصنيع</h4>
                     <div class="form-group"><label>اسم المنتج النهائي</label><input type="text" id="manufactureProduct" placeholder="مثال: كرسي خشبي" /></div>
                     <div class="form-row">
                         <div class="form-group"><label>الكمية المطلوبة</label><input type="number" id="manufactureQty" placeholder="0" /></div>
@@ -2731,8 +2554,8 @@
         <div id="page-delegates" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-user-tie"></i> إدارة المناديب</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;border-right:4px solid #6c63ff;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-user-plus"></i> إضافة مندوب</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;border-right:4px solid var(--accent);">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-user-plus"></i> إضافة مندوب</h4>
                     <div class="form-group"><label>اسم المندوب</label><input type="text" id="delegateName" placeholder="اسم المندوب" /></div>
                     <div class="form-row">
                         <div class="form-group"><label>الهاتف</label><input type="text" id="delegatePhone" placeholder="05xxxxxxxx" /></div>
@@ -2749,8 +2572,8 @@
         <div id="page-cheques" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-check-double"></i> إدارة الشيكات</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:12px;margin-bottom:12px;border-right:4px solid #3498db;">
-                    <h4 style="margin-bottom:8px;color:#3498db;font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة شيك</h4>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;border-right:4px solid var(--info);">
+                    <h4 style="margin-bottom:8px;color:var(--info);font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة شيك</h4>
                     <div class="form-group"><label>رقم الشيك</label><input type="text" id="chequeNumber" placeholder="رقم الشيك" /></div>
                     <div class="form-row">
                         <div class="form-group"><label>المبلغ</label><input type="number" id="chequeAmount" placeholder="0.00" /></div>
@@ -2774,23 +2597,23 @@
         <div id="page-contact" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-headset"></i> تواصل معنا</h2>
-                <div style="background:#f8f8fc;border-radius:12px;padding:14px;text-align:center;border:2px solid #6c63ff;">
-                    <i class="fas fa-headset" style="font-size:48px;color:#6c63ff;margin-bottom:10px;display:block;"></i>
-                    <h3 style="color:#1a1a2e;font-size:18px;">فريق دعم الميزان</h3>
-                    <p style="color:#888;font-size:13px;margin:4px 0;">نحن هنا لمساعدتك في أي استفسار أو مشكلة تواجهها</p>
+                <div style="background:var(--bg-primary);border-radius:var(--radius-sm);padding:14px;text-align:center;border:2px solid var(--accent);">
+                    <i class="fas fa-headset" style="font-size:48px;color:var(--accent);margin-bottom:10px;display:block;"></i>
+                    <h3 style="color:var(--text-primary);font-size:18px;">فريق دعم الميزان</h3>
+                    <p style="color:var(--text-secondary);font-size:13px;margin:4px 0;">نحن هنا لمساعدتك في أي استفسار أو مشكلة تواجهها</p>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;text-align:right;max-width:280px;margin:10px auto;">
-                        <div style="font-weight:700;color:#6c63ff;font-size:13px;">📧 البريد الإلكتروني</div>
-                        <div style="font-size:13px;">support@mizan.com</div>
-                        <div style="font-weight:700;color:#6c63ff;font-size:13px;">📱 واتساب</div>
-                        <div style="font-size:13px;">01011993799</div>
-                        <div style="font-weight:700;color:#6c63ff;font-size:13px;">🌐 الموقع</div>
-                        <div style="font-size:13px;">www.mizan.com</div>
+                        <div style="font-weight:700;color:var(--accent);font-size:13px;">📧 البريد الإلكتروني</div>
+                        <div style="font-size:13px;color:var(--text-secondary);">support@mizan.com</div>
+                        <div style="font-weight:700;color:var(--accent);font-size:13px;">📱 واتساب</div>
+                        <div style="font-size:13px;color:var(--text-secondary);">01011993799</div>
+                        <div style="font-weight:700;color:var(--accent);font-size:13px;">🌐 الموقع</div>
+                        <div style="font-size:13px;color:var(--text-secondary);">www.mizan.com</div>
                     </div>
                     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;">
-                        <a href="#" style="color:#6c63ff;font-size:24px;"><i class="fab fa-facebook"></i></a>
-                        <a href="#" style="color:#6c63ff;font-size:24px;"><i class="fab fa-whatsapp"></i></a>
-                        <a href="#" style="color:#6c63ff;font-size:24px;"><i class="fab fa-twitter"></i></a>
-                        <a href="#" style="color:#6c63ff;font-size:24px;"><i class="fab fa-youtube"></i></a>
+                        <a href="#" style="color:var(--accent);font-size:24px;"><i class="fab fa-facebook"></i></a>
+                        <a href="#" style="color:var(--accent);font-size:24px;"><i class="fab fa-whatsapp"></i></a>
+                        <a href="#" style="color:var(--accent);font-size:24px;"><i class="fab fa-twitter"></i></a>
+                        <a href="#" style="color:var(--accent);font-size:24px;"><i class="fab fa-youtube"></i></a>
                     </div>
                 </div>
             </div>
@@ -2800,96 +2623,78 @@
         <div id="page-settings" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-cog"></i> إعدادات النظام</h2>
-                <p style="color:#888;margin-bottom:12px;font-size:13px;">إدارة بيانات النظام والنسخ الاحتياطي والتحكم في التطبيق.</p>
+                <p style="color:var(--text-light);margin-bottom:12px;font-size:13px;">إدارة بيانات النظام والنسخ الاحتياطي والتحكم في التطبيق.</p>
 
                 <!-- تغيير كلمة المرور -->
-                <div class="settings-card" style="border-color:#6c63ff;">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <i class="fas fa-key icon-big" style="color:#6c63ff;font-size:24px;"></i>
-                        <div style="flex:1;">
-                            <div class="title">تغيير كلمة المرور</div>
-                            <div class="desc">تغيير كلمة مرور حسابك الحالية.</div>
-                        </div>
-                        <button class="btn btn-primary" onclick="changePassword()" style="height:32px;padding:4px 14px;font-size:12px;"><i class="fas fa-key"></i> تغيير</button>
+                <div class="settings-card">
+                    <i class="fas fa-key icon-big"></i>
+                    <div style="flex:1;">
+                        <div class="title">تغيير كلمة المرور</div>
+                        <div class="desc">تغيير كلمة مرور حسابك الحالية.</div>
                     </div>
+                    <button class="btn btn-primary" onclick="changePassword()"><i class="fas fa-key"></i> تغيير</button>
                 </div>
 
-                <!-- دفع (فودافون وإنستاباي) -->
-                <div class="settings-card" style="border-color:#25D366;background:#f0fff4;">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <i class="fas fa-credit-card icon-big" style="color:#25D366;font-size:24px;"></i>
-                        <div style="flex:1;">
-                            <div class="title">💳 الاشتراك المدفوع</div>
-                            <div class="desc">قم بشراء اشتراكك للاستمرار في استخدام التطبيق بعد انتهاء الفترة التجريبية.</div>
-                        </div>
-                        <button class="btn btn-success" onclick="showPaymentOptions()" style="height:32px;padding:4px 14px;font-size:12px;">
-                            <i class="fas fa-credit-card"></i> اشتراك
-                        </button>
+                <!-- دفع -->
+                <div class="settings-card" style="border-color:var(--success);background:rgba(46,204,113,0.05);">
+                    <i class="fas fa-credit-card icon-big" style="color:var(--success);"></i>
+                    <div style="flex:1;">
+                        <div class="title">💳 الاشتراك المدفوع</div>
+                        <div class="desc">قم بشراء اشتراكك للاستمرار في استخدام التطبيق بعد انتهاء الفترة التجريبية.</div>
                     </div>
+                    <button class="btn btn-success" onclick="showPaymentOptions()"><i class="fas fa-credit-card"></i> اشتراك</button>
                 </div>
 
                 <div class="settings-card">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <i class="fas fa-trash-alt icon-big" style="color:#e74c6f;font-size:24px;"></i>
-                        <div style="flex:1;">
-                            <div class="title">مسح كل البيانات</div>
-                            <div class="desc">حذف جميع البيانات نهائياً (لا يمكن التراجع).</div>
-                        </div>
-                        <button class="btn btn-danger" onclick="clearAllData()" style="height:32px;padding:4px 14px;font-size:12px;"><i class="fas fa-trash-alt"></i> مسح</button>
+                    <i class="fas fa-trash-alt icon-big" style="color:var(--danger);"></i>
+                    <div style="flex:1;">
+                        <div class="title">مسح كل البيانات</div>
+                        <div class="desc">حذف جميع البيانات نهائياً (لا يمكن التراجع).</div>
                     </div>
+                    <button class="btn btn-danger" onclick="clearAllData()"><i class="fas fa-trash-alt"></i> مسح</button>
                 </div>
 
                 <div class="settings-card">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <i class="fas fa-download icon-big" style="color:#2ecc71;font-size:24px;"></i>
-                        <div style="flex:1;">
-                            <div class="title">تصدير نسخة احتياطية</div>
-                            <div class="desc">تحميل جميع البيانات في ملف JSON للاحتفاظ بها.</div>
-                        </div>
-                        <button class="btn btn-success" onclick="exportBackup()" style="height:32px;padding:4px 14px;font-size:12px;"><i class="fas fa-download"></i> تصدير</button>
+                    <i class="fas fa-download icon-big" style="color:var(--success);"></i>
+                    <div style="flex:1;">
+                        <div class="title">تصدير نسخة احتياطية</div>
+                        <div class="desc">تحميل جميع البيانات في ملف JSON للاحتفاظ بها.</div>
                     </div>
+                    <button class="btn btn-success" onclick="exportBackup()"><i class="fas fa-download"></i> تصدير</button>
                 </div>
 
                 <div class="settings-card">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <i class="fas fa-upload icon-big" style="color:#f39c12;font-size:24px;"></i>
-                        <div style="flex:1;">
-                            <div class="title">استعادة نسخة احتياطية</div>
-                            <div class="desc">رفع ملف JSON واستعادة البيانات (سيتم استبدال البيانات الحالية).</div>
-                        </div>
-                        <button class="btn btn-warning" onclick="importBackup()" style="height:32px;padding:4px 14px;font-size:12px;"><i class="fas fa-upload"></i> استعادة</button>
+                    <i class="fas fa-upload icon-big" style="color:var(--warning);"></i>
+                    <div style="flex:1;">
+                        <div class="title">استعادة نسخة احتياطية</div>
+                        <div class="desc">رفع ملف JSON واستعادة البيانات (سيتم استبدال البيانات الحالية).</div>
                     </div>
+                    <button class="btn btn-warning" onclick="importBackup()"><i class="fas fa-upload"></i> استعادة</button>
                 </div>
 
                 <div class="settings-card">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <i class="fas fa-moon icon-big" style="color:#6c63ff;font-size:24px;"></i>
-                        <div style="flex:1;">
-                            <div class="title">الوضع المظلم</div>
-                            <div class="desc">تبديل واجهة التطبيق بين الوضع الفاتح والمظلم.</div>
-                        </div>
-                        <button class="btn btn-primary" onclick="toggleDarkMode()" style="height:32px;padding:4px 14px;font-size:12px;"><i class="fas fa-adjust"></i> تبديل</button>
+                    <i class="fas fa-moon icon-big"></i>
+                    <div style="flex:1;">
+                        <div class="title">الوضع المظلم</div>
+                        <div class="desc">تبديل واجهة التطبيق بين الوضع الفاتح والمظلم.</div>
                     </div>
+                    <button class="btn btn-primary" onclick="toggleDarkMode()"><i class="fas fa-adjust"></i> تبديل</button>
                 </div>
 
                 <div class="settings-card">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <i class="fas fa-chart-bar icon-big" style="color:#3498db;font-size:24px;"></i>
-                        <div style="flex:1;">
-                            <div class="title">إعادة تحميل الرسوم البيانية</div>
-                            <div class="desc">تحديث الرسوم البيانية على الصفحة الرئيسية يدوياً.</div>
-                        </div>
-                        <button class="btn btn-info" onclick="renderCharts(); showToast('تم تحديث الرسوم البيانية', 'success');" style="height:32px;padding:4px 14px;font-size:12px;"><i class="fas fa-sync-alt"></i> تحديث</button>
+                    <i class="fas fa-chart-bar icon-big" style="color:var(--info);"></i>
+                    <div style="flex:1;">
+                        <div class="title">إعادة تحميل الرسوم البيانية</div>
+                        <div class="desc">تحديث الرسوم البيانية على الصفحة الرئيسية يدوياً.</div>
                     </div>
+                    <button class="btn btn-info" onclick="renderCharts(); showToast('تم تحديث الرسوم البيانية', 'success');"><i class="fas fa-sync-alt"></i> تحديث</button>
                 </div>
 
-                <div class="settings-card" style="border-color:#6c63ff;background:#f0edff;">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <i class="fas fa-info-circle icon-big" style="color:#6c63ff;font-size:24px;"></i>
-                        <div style="flex:1;">
-                            <div class="title">معلومات التطبيق</div>
-                            <div class="desc">نسخة: 2.0 | نظام محاسبة ونقاط بيع متكامل - الميزان</div>
-                        </div>
+                <div class="settings-card" style="border-color:var(--accent);background:rgba(108,99,255,0.05);">
+                    <i class="fas fa-info-circle icon-big" style="color:var(--accent);"></i>
+                    <div style="flex:1;">
+                        <div class="title">معلومات التطبيق</div>
+                        <div class="desc">نسخة: 2.0 | نظام محاسبة ونقاط بيع متكامل - الميزان</div>
                     </div>
                 </div>
             </div>
@@ -2900,7 +2705,7 @@
             <div class="page-content">
                 <h2><i class="fas fa-building"></i> إعدادات الشركة</h2>
                 <div class="company-settings-box">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-edit"></i> بيانات الشركة</h4>
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-edit"></i> بيانات الشركة</h4>
                     <div style="text-align:center;margin-bottom:10px;">
                         <div class="logo-preview" onclick="document.getElementById('logoInput').click();">
                             <img id="logoImage" style="display:none;" />
@@ -2909,10 +2714,10 @@
                         <input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)" />
                         <button class="btn btn-sm btn-info" onclick="document.getElementById('logoInput').click();" style="margin-top:4px;font-size:11px;padding:3px 10px;height:28px;"><i class="fas fa-upload"></i> رفع شعار</button>
                         <button class="btn btn-sm btn-danger" onclick="removeLogo()" style="margin-top:4px;font-size:11px;padding:3px 10px;height:28px;"><i class="fas fa-times"></i> إزالة</button>
-                        <p style="font-size:10px;color:#888;margin-top:2px;">اضغط على الصورة لرفع شعار جديد</p>
+                        <p style="font-size:10px;color:var(--text-light);margin-top:2px;">اضغط على الصورة لرفع شعار جديد</p>
                     </div>
                     <div class="form-group">
-                        <label>اسم الشركة / المحل <span style="color:#e74c6f;">*</span></label>
+                        <label>اسم الشركة / المحل <span style="color:var(--danger);">*</span></label>
                         <input type="text" id="companyName" placeholder="مثال: مؤسسة الميزان للتجارة" />
                     </div>
                     <div class="form-group">
@@ -2945,34 +2750,34 @@
                     </div>
                     <button class="btn btn-primary btn-block" onclick="saveCompanySettings()"><i class="fas fa-save"></i> حفظ بيانات الشركة</button>
                 </div>
-                <div class="company-settings-box" style="border-color:#6c63ff;">
-                    <h4 style="margin-bottom:8px;color:#6c63ff;font-size:14px;"><i class="fas fa-eye"></i> معاينة الفاتورة</h4>
-                    <div id="invoicePreview" style="background:#fff;padding:14px;border-radius:10px;border:1px solid #ddd;max-width:350px;margin:0 auto;text-align:center;">
+                <div class="company-settings-box" style="border-color:var(--accent);">
+                    <h4 style="margin-bottom:8px;color:var(--accent);font-size:14px;"><i class="fas fa-eye"></i> معاينة الفاتورة</h4>
+                    <div id="invoicePreview" style="background:var(--bg-primary);padding:14px;border-radius:var(--radius-sm);border:1px solid var(--border-color);max-width:350px;margin:0 auto;text-align:center;">
                         <div id="previewLogo" style="max-width:60px;margin:0 auto 6px;"></div>
-                        <div id="previewCompanyName" style="font-size:16px;font-weight:800;color:#1a1a2e;">اسم الشركة</div>
-                        <div id="previewAddress" style="font-size:11px;color:#888;">العنوان</div>
-                        <div id="previewPhone" style="font-size:11px;color:#888;">📞 هاتف</div>
-                        <div id="previewEmail" style="font-size:11px;color:#888;">✉️ بريد</div>
-                        <div id="previewCommercial" style="font-size:10px;color:#888;">سجل تجاري: -</div>
-                        <div id="previewTax" style="font-size:10px;color:#888;">بطاقة ضريبية: -</div>
-                        <hr style="margin:8px 0;" />
-                        <div style="font-size:13px;color:#6c63ff;font-weight:700;">فاتورة بيع</div>
-                        <div style="font-size:11px;color:#888;">رقم الفاتورة: #12345</div>
-                        <div style="font-size:11px;color:#888;">التاريخ: 01/01/2025</div>
-                        <hr style="margin:8px 0;" />
-                        <div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">
+                        <div id="previewCompanyName" style="font-size:16px;font-weight:800;color:var(--text-primary);">اسم الشركة</div>
+                        <div id="previewAddress" style="font-size:11px;color:var(--text-light);">العنوان</div>
+                        <div id="previewPhone" style="font-size:11px;color:var(--text-light);">📞 هاتف</div>
+                        <div id="previewEmail" style="font-size:11px;color:var(--text-light);">✉️ بريد</div>
+                        <div id="previewCommercial" style="font-size:10px;color:var(--text-light);">سجل تجاري: -</div>
+                        <div id="previewTax" style="font-size:10px;color:var(--text-light);">بطاقة ضريبية: -</div>
+                        <hr style="margin:8px 0;border-color:var(--border-color);" />
+                        <div style="font-size:13px;color:var(--accent);font-weight:700;">فاتورة بيع</div>
+                        <div style="font-size:11px;color:var(--text-light);">رقم الفاتورة: #12345</div>
+                        <div style="font-size:11px;color:var(--text-light);">التاريخ: 01/01/2025</div>
+                        <hr style="margin:8px 0;border-color:var(--border-color);" />
+                        <div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;color:var(--text-primary);">
                             <span>منتج 1</span><span>1 × 100.00</span>
                         </div>
-                        <div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">
+                        <div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;color:var(--text-primary);">
                             <span>منتج 2</span><span>2 × 50.00</span>
                         </div>
-                        <hr style="margin:8px 0;" />
-                        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;">
+                        <hr style="margin:8px 0;border-color:var(--border-color);" />
+                        <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:var(--text-primary);">
                             <span>الإجمالي</span><span>200.00 🇪🇬</span>
                         </div>
-                        <hr style="margin:8px 0;" />
-                        <div style="font-size:10px;color:#888;">شكراً لتعاملكم معنا</div>
-                        <div style="font-size:10px;color:#6c63ff;font-weight:700;">نظام محاسبة ونقاط بيع - الميزان</div>
+                        <hr style="margin:8px 0;border-color:var(--border-color);" />
+                        <div style="font-size:10px;color:var(--text-light);">شكراً لتعاملكم معنا</div>
+                        <div style="font-size:10px;color:var(--accent);font-weight:700;">نظام محاسبة ونقاط بيع - الميزان</div>
                     </div>
                 </div>
             </div>
@@ -2995,7 +2800,7 @@
         <div class="more-overlay" id="moreOverlay" onclick="closeMorePanel()"></div>
         <div class="more-panel" id="morePanel">
             <div class="more-panel-header">
-                <h2><i class="fas fa-th-list" style="color:#6c63ff;margin-left:8px;"></i>المزيد</h2>
+                <h2><i class="fas fa-th-list" style="color:var(--accent);margin-left:8px;"></i>المزيد</h2>
                 <button class="more-close" onclick="closeMorePanel()">&times;</button>
             </div>
             <div class="more-grid">
@@ -3362,13 +3167,12 @@
                     renderReports('all');
                 }
             }
-            
-            // تحديث الفواتير إذا كانت الصفحة مفتوحة
+
             const invoicesPage = document.getElementById('page-invoices');
             if (invoicesPage && invoicesPage.classList.contains('active')) {
                 filterAllInvoices();
             }
-            
+
             console.log('✅ تم تحديث جميع البيانات والواجهات');
         }
 
@@ -3559,7 +3363,7 @@
             let html =
                 `<div class="table-header"><span>المنتج</span><span>سعر الشراء</span><span>سعر البيع</span><span>الكمية</span><span></span></div>`;
             filtered.forEach(p => {
-                const lowClass = p.qty <= p.min ? 'style="color:#e74c6f;font-weight:700;"' : '';
+                const lowClass = p.qty <= p.min ? 'style="color:var(--danger);font-weight:700;"' : '';
                 html += `
                         <div class="table-row">
                             <span><strong>${p.name}</strong></span>
@@ -3913,7 +3717,7 @@
         };
 
         // ================================================================
-        // 14. دوال المشتريات والمبيعات مع الربط والتعديل
+        // 14. دوال المشتريات والمبيعات (مختصرة)
         // ================================================================
         window.updatePurchasePrice = function() {
             const productId = parseInt(document.getElementById('purchaseProduct').value);
@@ -3937,30 +3741,16 @@
             if (isNaN(price) || price <= 0) { showToast('الرجاء إدخال سعر صحيح', 'error'); return; }
             const product = appData.products.find(p => p.id === productId);
             if (!product) { showToast('المنتج غير موجود', 'error'); return; }
-
             product.qty += qty;
             product.buyPrice = price;
             saveToLocalStorage('products', appData.products);
-
             if (payment === 'نقدي') {
                 window.addTreasuryTransactionManual('withdraw', qty * price, `شراء ${product.name} من ${supplier}`, 'نقدي', date);
             }
-
-            const purchase = {
-                id: Date.now(),
-                supplier,
-                productId,
-                productName: product.name,
-                qty,
-                price,
-                total: qty * price,
-                date,
-                payment,
-                type: 'purchase'
-            };
+            const purchase = { id: Date.now(), supplier, productId, productName: product.name, qty, price, total: qty * price,
+                date, payment, type: 'purchase' };
             appData.purchases.push(purchase);
             saveToLocalStorage('purchases', appData.purchases);
-
             const ids = ['purchaseSupplier', 'purchaseQty', 'purchasePrice'];
             ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             refreshAllData();
@@ -4010,11 +3800,9 @@
             filterPurchases();
         };
 
-        // تعديل وحذف فواتير الشراء
         window.editPurchase = function(id) {
             const purchase = appData.purchases.find(p => p.id === id);
             if (!purchase) { showToast('الفاتورة غير موجودة', 'error'); return; }
-
             const html = `
                     <div class="form-group"><label>المورد</label><input type="text" id="editPurchaseSupplier" value="${purchase.supplier}" /></div>
                     <div class="form-group"><label>المنتج</label>
@@ -4035,32 +3823,26 @@
         window.savePurchaseEdit = function(id) {
             const purchase = appData.purchases.find(p => p.id === id);
             if (!purchase) { showToast('الفاتورة غير موجودة', 'error'); return; }
-
             const supplier = document.getElementById('editPurchaseSupplier').value.trim();
             const productId = parseInt(document.getElementById('editPurchaseProduct').value);
             const qty = parseInt(document.getElementById('editPurchaseQty').value);
             const price = parseFloat(document.getElementById('editPurchasePrice').value);
             const date = document.getElementById('editPurchaseDate').value;
-
             if (!supplier || !productId || !qty || isNaN(price) || !date) {
                 showToast('الرجاء ملء جميع الحقول', 'error');
                 return;
             }
-
             const oldProduct = appData.products.find(p => p.id === purchase.productId);
             if (oldProduct) oldProduct.qty -= purchase.qty;
-
             purchase.supplier = supplier;
             purchase.productId = productId;
             purchase.qty = qty;
             purchase.price = price;
             purchase.total = qty * price;
             purchase.date = date;
-
             const newProduct = appData.products.find(p => p.id === productId);
             purchase.productName = newProduct ? newProduct.name : 'غير معروف';
             if (newProduct) newProduct.qty += qty;
-
             saveToLocalStorage('purchases', appData.purchases);
             saveToLocalStorage('products', appData.products);
             closeModal();
@@ -4082,7 +3864,6 @@
             showToast('تم الحذف', 'info');
         };
 
-        // ===== فواتير البيع =====
         window.updateSalesPrice = function() {
             const productId = parseInt(document.getElementById('salesProduct').value);
             if (!productId) return;
@@ -4106,30 +3887,16 @@
             const product = appData.products.find(p => p.id === productId);
             if (!product) { showToast('المنتج غير موجود', 'error'); return; }
             if (product.qty < qty) { showToast(`الكمية غير متوفرة (المتاح: ${product.qty})`, 'error'); return; }
-
             product.qty -= qty;
             saveToLocalStorage('products', appData.products);
-
             if (payment === 'نقدي') {
                 window.addTreasuryTransactionManual('deposit', qty * price, `بيع ${product.name} للعميل ${customer}`, 'نقدي',
                     date);
             }
-
-            const sale = {
-                id: Date.now(),
-                customer,
-                productId,
-                productName: product.name,
-                qty,
-                price,
-                total: qty * price,
-                date,
-                payment,
-                type: 'sale'
-            };
+            const sale = { id: Date.now(), customer, productId, productName: product.name, qty, price, total: qty * price,
+                date, payment, type: 'sale' };
             appData.sales.push(sale);
             saveToLocalStorage('sales', appData.sales);
-
             const ids = ['salesCustomer', 'salesQty', 'salesPrice'];
             ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
             refreshAllData();
@@ -4179,11 +3946,9 @@
             filterSales();
         };
 
-        // تعديل وحذف فواتير البيع
         window.editSale = function(id) {
             const sale = appData.sales.find(s => s.id === id);
             if (!sale) { showToast('الفاتورة غير موجودة', 'error'); return; }
-
             const html = `
                     <div class="form-group"><label>العميل</label><input type="text" id="editSaleCustomer" value="${sale.customer}" /></div>
                     <div class="form-group"><label>المنتج</label>
@@ -4204,32 +3969,26 @@
         window.saveSaleEdit = function(id) {
             const sale = appData.sales.find(s => s.id === id);
             if (!sale) { showToast('الفاتورة غير موجودة', 'error'); return; }
-
             const customer = document.getElementById('editSaleCustomer').value.trim();
             const productId = parseInt(document.getElementById('editSaleProduct').value);
             const qty = parseInt(document.getElementById('editSaleQty').value);
             const price = parseFloat(document.getElementById('editSalePrice').value);
             const date = document.getElementById('editSaleDate').value;
-
             if (!customer || !productId || !qty || isNaN(price) || !date) {
                 showToast('الرجاء ملء جميع الحقول', 'error');
                 return;
             }
-
             const oldProduct = appData.products.find(p => p.id === sale.productId);
             if (oldProduct) oldProduct.qty += sale.qty;
-
             sale.customer = customer;
             sale.productId = productId;
             sale.qty = qty;
             sale.price = price;
             sale.total = qty * price;
             sale.date = date;
-
             const newProduct = appData.products.find(p => p.id === productId);
             sale.productName = newProduct ? newProduct.name : 'غير معروف';
             if (newProduct) newProduct.qty -= qty;
-
             saveToLocalStorage('sales', appData.sales);
             saveToLocalStorage('products', appData.products);
             closeModal();
@@ -4252,7 +4011,7 @@
         };
 
         // ================================================================
-        // 15. دوال المرتجعات (Returns)
+        // 15. دوال المرتجعات والمصروفات والسندات والموظفين وغيرها (مختصرة)
         // ================================================================
         window.renderReturns = function() {
             const container = document.getElementById('returnList');
@@ -4300,18 +4059,8 @@
             saveToLocalStorage('products', appData.products);
             window.addTreasuryTransactionManual('withdraw', qty * price, `مرتجع بيع من ${customer} - ${product.name}`, 'نقدي',
                 date);
-            const returnItem = {
-                id: Date.now(),
-                type: 'sale',
-                party: customer,
-                productName: product.name,
-                qty,
-                price,
-                total: qty * price,
-                date,
-                typeLabel: 'مرتجع بيع',
-                icon: '🔴'
-            };
+            const returnItem = { id: Date.now(), type: 'sale', party: customer, productName: product.name, qty, price,
+                total: qty * price, date, typeLabel: 'مرتجع بيع', icon: '🔴' };
             appData.returns.push(returnItem);
             saveToLocalStorage('returns', appData.returns);
             refreshAllData();
@@ -4337,18 +4086,8 @@
             saveToLocalStorage('products', appData.products);
             window.addTreasuryTransactionManual('deposit', qty * price, `مرتجع شراء من ${supplier} - ${product.name}`, 'نقدي',
                 date);
-            const returnItem = {
-                id: Date.now(),
-                type: 'purchase',
-                party: supplier,
-                productName: product.name,
-                qty,
-                price,
-                total: qty * price,
-                date,
-                typeLabel: 'مرتجع شراء',
-                icon: '🟡'
-            };
+            const returnItem = { id: Date.now(), type: 'purchase', party: supplier, productName: product.name, qty, price,
+                total: qty * price, date, typeLabel: 'مرتجع شراء', icon: '🟡' };
             appData.returns.push(returnItem);
             saveToLocalStorage('returns', appData.returns);
             refreshAllData();
@@ -4358,7 +4097,6 @@
         window.editReturn = function(id) {
             const returnItem = appData.returns.find(r => r.id === id);
             if (!returnItem) { showToast('المرتجع غير موجود', 'error'); return; }
-
             const html = `
                     <div class="form-group"><label>الطرف</label><input type="text" id="editReturnParty" value="${returnItem.party}" /></div>
                     <div class="form-group"><label>المنتج</label><input type="text" id="editReturnProduct" value="${returnItem.productName}" /></div>
@@ -4374,23 +4112,19 @@
         window.saveReturnEdit = function(id) {
             const returnItem = appData.returns.find(r => r.id === id);
             if (!returnItem) { showToast('المرتجع غير موجود', 'error'); return; }
-
             const party = document.getElementById('editReturnParty').value.trim();
             const productName = document.getElementById('editReturnProduct').value.trim();
             const qty = parseInt(document.getElementById('editReturnQty').value);
             const price = parseFloat(document.getElementById('editReturnPrice').value);
-
             if (!party || !productName || !qty || isNaN(price)) {
                 showToast('الرجاء ملء جميع الحقول', 'error');
                 return;
             }
-
             returnItem.party = party;
             returnItem.productName = productName;
             returnItem.qty = qty;
             returnItem.price = price;
             returnItem.total = qty * price;
-
             saveToLocalStorage('returns', appData.returns);
             closeModal();
             refreshAllData();
@@ -4422,9 +4156,6 @@
             }
         };
 
-        // ================================================================
-        // 16. دوال المصروفات (Expenses)
-        // ================================================================
         window.renderExpenses = function() {
             const container = document.getElementById('expenseList');
             if (!container) return;
@@ -4472,7 +4203,6 @@
         window.editExpense = function(id) {
             const expense = appData.expenses.find(e => e.id === id);
             if (!expense) { showToast('المصروف غير موجود', 'error'); return; }
-
             const html = `
                     <div class="form-group"><label>البيان</label><input type="text" id="editExpenseNote" value="${expense.note}" /></div>
                     <div class="form-row">
@@ -4499,24 +4229,20 @@
         window.saveExpenseEdit = function(id) {
             const expense = appData.expenses.find(e => e.id === id);
             if (!expense) { showToast('المصروف غير موجود', 'error'); return; }
-
             const note = document.getElementById('editExpenseNote').value.trim();
             const amount = parseFloat(document.getElementById('editExpenseAmount').value);
             const category = document.getElementById('editExpenseCategory').value;
             const date = document.getElementById('editExpenseDate').value;
             const payment = document.getElementById('editExpensePayment').value;
-
             if (!note || isNaN(amount) || amount <= 0 || !date) {
                 showToast('الرجاء ملء جميع الحقول', 'error');
                 return;
             }
-
             expense.note = note;
             expense.amount = amount;
             expense.category = category;
             expense.date = date;
             expense.payment = payment;
-
             saveToLocalStorage('expenses', appData.expenses);
             closeModal();
             refreshAllData();
@@ -4531,9 +4257,6 @@
             showToast('تم الحذف', 'info');
         };
 
-        // ================================================================
-        // 17. دوال الخزنة (Treasury) - عرض مع تعديل وحذف
-        // ================================================================
         window.renderTreasury = function() {
             const container = document.getElementById('treasuryList');
             if (!container) return;
@@ -4565,7 +4288,6 @@
         window.editTreasury = function(id) {
             const transaction = appData.treasury.find(t => t.id === id);
             if (!transaction) { showToast('الحركة غير موجودة', 'error'); return; }
-
             const html = `
                     <div class="form-group"><label>النوع</label>
                         <select id="editTreasuryType">
@@ -4588,22 +4310,15 @@
         window.saveTreasuryEdit = function(id) {
             const transaction = appData.treasury.find(t => t.id === id);
             if (!transaction) { showToast('الحركة غير موجودة', 'error'); return; }
-
             const type = document.getElementById('editTreasuryType').value;
             const amount = parseFloat(document.getElementById('editTreasuryAmount').value);
             const method = document.getElementById('editTreasuryPayment').value;
             const note = document.getElementById('editTreasuryNote').value.trim();
-
-            if (isNaN(amount) || amount <= 0) {
-                showToast('الرجاء إدخال مبلغ صحيح', 'error');
-                return;
-            }
-
+            if (isNaN(amount) || amount <= 0) { showToast('الرجاء إدخال مبلغ صحيح', 'error'); return; }
             transaction.type = type;
             transaction.amount = amount;
             transaction.method = method;
             transaction.note = note;
-
             saveToLocalStorage('treasury', appData.treasury);
             closeModal();
             refreshAllData();
@@ -4618,9 +4333,6 @@
             showToast('تم الحذف', 'info');
         };
 
-        // ================================================================
-        // 18. دوال السندات (Bonds)
-        // ================================================================
         window.renderBonds = function() {
             const container = document.getElementById('bondList');
             if (!container) return;
@@ -4688,17 +4400,9 @@
             } else {
                 window.addTreasuryTransactionManual('withdraw', amount, `سداد لـ ${partyName}: ${note}`, payment, date);
             }
-            const bond = {
-                id: Date.now(),
-                type: type,
-                partyName: partyName,
-                amount: amount,
-                date: date,
-                note: note,
-                payment: payment,
-                typeLabel: type === 'collect' ? 'تحصيل عميل' : 'سداد مورد',
-                icon: type === 'collect' ? '📥' : '📤'
-            };
+            const bond = { id: Date.now(), type: type, partyName: partyName, amount: amount, date: date, note: note,
+                payment: payment, typeLabel: type === 'collect' ? 'تحصيل عميل' : 'سداد مورد', icon: type === 'collect' ?
+                '📥' : '📤' };
             appData.bonds.push(bond);
             saveToLocalStorage('bonds', appData.bonds);
             document.getElementById('bondAmount').value = '';
@@ -4710,7 +4414,6 @@
         window.editBond = function(id) {
             const bond = appData.bonds.find(b => b.id === id);
             if (!bond) { showToast('السند غير موجود', 'error'); return; }
-
             const html = `
                     <div class="form-group"><label>نوع السند</label>
                         <select id="editBondType">
@@ -4729,24 +4432,20 @@
         window.saveBondEdit = function(id) {
             const bond = appData.bonds.find(b => b.id === id);
             if (!bond) { showToast('السند غير موجود', 'error'); return; }
-
             const type = document.getElementById('editBondType').value;
             const partyName = document.getElementById('editBondParty').value.trim();
             const amount = parseFloat(document.getElementById('editBondAmount').value);
             const note = document.getElementById('editBondNote').value.trim();
-
             if (!partyName || isNaN(amount) || amount <= 0) {
                 showToast('الرجاء ملء جميع الحقول', 'error');
                 return;
             }
-
             bond.type = type;
             bond.partyName = partyName;
             bond.amount = amount;
             bond.note = note;
             bond.typeLabel = type === 'collect' ? 'تحصيل عميل' : 'سداد مورد';
             bond.icon = type === 'collect' ? '📥' : '📤';
-
             saveToLocalStorage('bonds', appData.bonds);
             closeModal();
             refreshAllData();
@@ -4780,9 +4479,6 @@
             }
         };
 
-        // ================================================================
-        // 19. دوال الموظفين (Employees)
-        // ================================================================
         window.renderEmployees = function() {
             const container = document.getElementById('employeeList');
             if (!container) return;
@@ -4798,9 +4494,7 @@
                         <span>${e.role || '-'}</span>
                         <span>${e.phone || '-'}</span>
                         <span>${e.salary ? e.salary.toFixed(2) : '0.00'}</span>
-                        <td>
-                            <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${e.id}')"><i class="fas fa-trash"></i></button>
-                        </td>
+                        <td><button class="btn btn-danger btn-sm" onclick="deleteEmployee('${e.id}')"><i class="fas fa-trash"></i></button></td>
                     </div>
                 `;
             });
@@ -4832,9 +4526,6 @@
             showToast('تم الحذف', 'info');
         };
 
-        // ================================================================
-        // 20. دوال الشركاء (Partners)
-        // ================================================================
         window.renderPartners = function() {
             const container = document.getElementById('partnerList');
             if (!container) return;
@@ -4880,9 +4571,6 @@
             showToast('تم الحذف', 'info');
         };
 
-        // ================================================================
-        // 21. دوال المشاريع (Projects)
-        // ================================================================
         window.renderProjects = function() {
             const container = document.getElementById('projectList');
             if (!container) return;
@@ -4930,9 +4618,6 @@
             showToast('تم الحذف', 'info');
         };
 
-        // ================================================================
-        // 22. دوال التصنيع (Manufacturing)
-        // ================================================================
         window.renderManufacturing = function() {
             const container = document.getElementById('manufactureList');
             if (!container) return;
@@ -4983,9 +4668,6 @@
             showToast('تم الحذف', 'info');
         };
 
-        // ================================================================
-        // 23. دوال المناديب (Delegates)
-        // ================================================================
         window.renderDelegates = function() {
             const container = document.getElementById('delegateList');
             if (!container) return;
@@ -5033,9 +4715,6 @@
             showToast('تم الحذف', 'info');
         };
 
-        // ================================================================
-        // 24. دوال الشيكات (Cheques)
-        // ================================================================
         window.renderCheques = function() {
             const container = document.getElementById('chequeList');
             if (!container) return;
@@ -5089,7 +4768,7 @@
         };
 
         // ================================================================
-        // 25. دوال التقارير والمحاسبة
+        // 26. دوال التقارير والمحاسبة
         // ================================================================
         window.renderReports = function(type) {
             const chips = document.querySelectorAll('#page-reports .filter-chip');
@@ -5132,8 +4811,8 @@
             if (!container) return;
             let html = '';
             if (type === 'all' || type === 'sales') {
-                html += `<h4 style="margin:10px 0 6px;color:#6c63ff;font-size:15px;">📊 المبيعات</h4>`;
-                if (appData.sales.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد مبيعات</p>`;
+                html += `<h4 style="margin:10px 0 6px;color:var(--accent);font-size:15px;">📊 المبيعات</h4>`;
+                if (appData.sales.length === 0) html += `<p style="color:var(--text-light);font-size:13px;">لا توجد مبيعات</p>`;
                 else {
                     html +=
                         `<div class="invoice-header"><span>العميل</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>التاريخ</span><span></span><span></span></div>`;
@@ -5152,8 +4831,8 @@
                 }
             }
             if (type === 'all' || type === 'purchases') {
-                html += `<h4 style="margin:10px 0 6px;color:#6c63ff;font-size:15px;">📊 المشتريات</h4>`;
-                if (appData.purchases.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد مشتريات</p>`;
+                html += `<h4 style="margin:10px 0 6px;color:var(--accent);font-size:15px;">📊 المشتريات</h4>`;
+                if (appData.purchases.length === 0) html += `<p style="color:var(--text-light);font-size:13px;">لا توجد مشتريات</p>`;
                 else {
                     html +=
                         `<div class="invoice-header"><span>المورد</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>التاريخ</span><span></span><span></span></div>`;
@@ -5173,7 +4852,7 @@
             }
             if (type === 'all' || type === 'returns') {
                 html += `<h4 style="margin:10px 0 6px;color:#e74c6f;font-size:15px;">📊 المرتجعات</h4>`;
-                if (appData.returns.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد مرتجعات</p>`;
+                if (appData.returns.length === 0) html += `<p style="color:var(--text-light);font-size:13px;">لا توجد مرتجعات</p>`;
                 else {
                     html +=
                         `<div class="invoice-header"><span>النوع</span><span>الطرف</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>التاريخ</span><span></span></div>`;
@@ -5195,7 +4874,7 @@
             }
             if (type === 'all' || type === 'expenses') {
                 html += `<h4 style="margin:10px 0 6px;color:#e74c6f;font-size:15px;">📊 المصروفات</h4>`;
-                if (appData.expenses.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد مصروفات</p>`;
+                if (appData.expenses.length === 0) html += `<p style="color:var(--text-light);font-size:13px;">لا توجد مصروفات</p>`;
                 else {
                     html +=
                         `<div class="invoice-header"><span>البيان</span><span>التصنيف</span><span>المبلغ</span><span>التاريخ</span><span></span><span></span><span></span></div>`;
@@ -5213,8 +4892,8 @@
                 }
             }
             if (type === 'all' || type === 'bonds') {
-                html += `<h4 style="margin:10px 0 6px;color:#6c63ff;font-size:15px;">📊 السندات</h4>`;
-                if (appData.bonds.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد سندات</p>`;
+                html += `<h4 style="margin:10px 0 6px;color:var(--accent);font-size:15px;">📊 السندات</h4>`;
+                if (appData.bonds.length === 0) html += `<p style="color:var(--text-light);font-size:13px;">لا توجد سندات</p>`;
                 else {
                     html +=
                         `<div class="invoice-header"><span>النوع</span><span>الطرف</span><span>المبلغ</span><span>الدفع</span><span>التاريخ</span><span></span><span></span></div>`;
@@ -5234,26 +4913,26 @@
                 }
             }
             if (type === 'profit') {
-                html += `<h4 style="margin:10px 0 6px;color:#6c63ff;font-size:15px;">💰 تفاصيل الأرباح</h4>`;
+                html += `<h4 style="margin:10px 0 6px;color:var(--accent);font-size:15px;">💰 تفاصيل الأرباح</h4>`;
                 html += `
-                        <div style="background:#f8f8fc;border-radius:10px;padding:12px;margin-top:6px;text-align:center;">
-                            <div style="font-size:15px;font-weight:700;color:#2ecc71;">إجمالي المبيعات: ${totalSales.toFixed(2)} 🇪🇬</div>
-                            <div style="font-size:15px;font-weight:700;color:#e74c6f;">إجمالي المرتجعات: ${totalReturns.toFixed(2)} 🇪🇬</div>
-                            <div style="font-size:15px;font-weight:700;color:#3498db;">صافي المبيعات: ${netSales.toFixed(2)} 🇪🇬</div>
-                            <div style="font-size:15px;font-weight:700;color:#e74c6f;">إجمالي المشتريات: ${totalPurchases.toFixed(2)} 🇪🇬</div>
-                            <div style="font-size:15px;font-weight:700;color:#e74c6f;">إجمالي المصروفات: ${totalExpenses.toFixed(2)} 🇪🇬</div>
+                        <div style="background:var(--bg-primary);border-radius:10px;padding:12px;margin-top:6px;text-align:center;">
+                            <div style="font-size:15px;font-weight:700;color:var(--success);">إجمالي المبيعات: ${totalSales.toFixed(2)} 🇪🇬</div>
+                            <div style="font-size:15px;font-weight:700;color:var(--danger);">إجمالي المرتجعات: ${totalReturns.toFixed(2)} 🇪🇬</div>
+                            <div style="font-size:15px;font-weight:700;color:var(--info);">صافي المبيعات: ${netSales.toFixed(2)} 🇪🇬</div>
+                            <div style="font-size:15px;font-weight:700;color:var(--danger);">إجمالي المشتريات: ${totalPurchases.toFixed(2)} 🇪🇬</div>
+                            <div style="font-size:15px;font-weight:700;color:var(--danger);">إجمالي المصروفات: ${totalExpenses.toFixed(2)} 🇪🇬</div>
                             <div style="font-size:20px;font-weight:900;color:${profit >= 0 ? '#2ecc71' : '#e74c6f'};margin-top:8px;">
                                 ${profit >= 0 ? '✅' : '❌'} صافي الأرباح: ${profit.toFixed(2)} 🇪🇬
                             </div>
-                            <div style="font-size:14px;font-weight:700;color:#6c63ff;margin-top:4px;">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent);margin-top:4px;">
                                 📊 صافي السندات: ${netBonds.toFixed(2)} 🇪🇬
                             </div>
                         </div>
                     `;
             }
             if (type === 'inventory') {
-                html += `<h4 style="margin:10px 0 6px;color:#6c63ff;font-size:15px;">📦 تقرير المخزون</h4>`;
-                if (appData.products.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد منتجات</p>`;
+                html += `<h4 style="margin:10px 0 6px;color:var(--accent);font-size:15px;">📦 تقرير المخزون</h4>`;
+                if (appData.products.length === 0) html += `<p style="color:var(--text-light);font-size:13px;">لا توجد منتجات</p>`;
                 else {
                     html +=
                         `<div class="table-header"><span>المنتج</span><span>سعر الشراء</span><span>سعر البيع</span><span>الكمية</span><span>القيمة</span></div>`;
@@ -5282,16 +4961,16 @@
             const equity = totalAssets - totalLiabilities;
             let html = `
                     <div style="margin-top:8px;">
-                        <div style="background:#fff;border-radius:10px;padding:12px;border:2px solid #e8e8f0;margin-bottom:8px;">
-                            <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
-                                <span style="font-weight:700;color:#2ecc71;font-size:13px;">✅ إجمالي الأصول</span>
-                                <span style="font-size:13px;">${totalAssets.toFixed(2)} 🇪🇬</span>
+                        <div style="background:var(--bg-secondary);border-radius:10px;padding:12px;border:2px solid var(--border-color);margin-bottom:8px;">
+                            <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-color);">
+                                <span style="font-weight:700;color:var(--success);font-size:13px;">✅ إجمالي الأصول</span>
+                                <span style="font-size:13px;color:var(--text-primary);">${totalAssets.toFixed(2)} 🇪🇬</span>
                             </div>
-                            <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
-                                <span style="font-weight:700;color:#e74c6f;font-size:13px;">❌ إجمالي الخصوم</span>
-                                <span style="font-size:13px;">${totalLiabilities.toFixed(2)} 🇪🇬</span>
+                            <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border-color);">
+                                <span style="font-weight:700;color:var(--danger);font-size:13px;">❌ إجمالي الخصوم</span>
+                                <span style="font-size:13px;color:var(--text-primary);">${totalLiabilities.toFixed(2)} 🇪🇬</span>
                             </div>
-                            <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:16px;font-weight:800;color:#6c63ff;">
+                            <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:16px;font-weight:800;color:var(--accent);">
                                 <span>💰 حقوق الملكية</span>
                                 <span>${equity.toFixed(2)} 🇪🇬</span>
                             </div>
@@ -5314,80 +4993,131 @@
         };
 
         // ================================================================
-        // 26. تغيير كلمة المرور
+        // 27. دوال الفواتير
         // ================================================================
-        window.changePassword = function() {
-            if (!currentUser) {
-                showToast('❌ يرجى تسجيل الدخول أولاً', 'error');
+        window.filterAllInvoices = function(filter) {
+            if (!filter) filter = 'all';
+            const searchInput = document.getElementById('allInvoicesSearch');
+            const container = document.getElementById('allInvoicesList');
+            if (!container) return;
+
+            const search = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            const sales = appData.sales.map(s => ({ ...s, type: 'sale', party: s.customer, icon: '🟢', typeLabel: 'بيع' }));
+            const purchases = appData.purchases.map(p => ({ ...p, type: 'purchase', party: p.supplier, icon: '🔵',
+                typeLabel: 'شراء' }));
+            const returns = appData.returns.map(r => ({ ...r, type: 'return', party: r.party, icon: r.icon || '🔴',
+                typeLabel: r.typeLabel || 'مرتجع' }));
+            const expenses = appData.expenses.map(e => ({ ...e, type: 'expense', party: e.category, icon: '🟡',
+                typeLabel: 'مصروف', productName: e.note, qty: 1, total: e.amount }));
+            const bonds = appData.bonds.map(b => ({ ...b, type: 'bond', party: b.partyName, icon: b.icon || '🟣',
+                typeLabel: b.typeLabel || 'سند', productName: b.note, qty: 1, total: b.amount }));
+
+            let all = [...sales, ...purchases, ...returns, ...expenses, ...bonds];
+
+            if (filter === 'sale') all = all.filter(i => i.type === 'sale');
+            else if (filter === 'purchase') all = all.filter(i => i.type === 'purchase');
+            else if (filter === 'return') all = all.filter(i => i.type === 'return');
+            else if (filter === 'expense') all = all.filter(i => i.type === 'expense');
+            else if (filter === 'bond') all = all.filter(i => i.type === 'bond');
+
+            if (search) {
+                all = all.filter(i =>
+                    (i.party || '').toLowerCase().includes(search) ||
+                    (i.productName || '').toLowerCase().includes(search) ||
+                    (i.note || '').toLowerCase().includes(search)
+                );
+            }
+
+            document.querySelectorAll('#page-invoices .filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === filter);
+            });
+
+            if (all.length === 0) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-file-invoice"></i><span>لا توجد فواتير</span></div>`;
                 return;
             }
 
-            const html = `
-                    <div class="form-group">
-                        <label>🔒 كلمة المرور الحالية</label>
-                        <input type="password" id="oldPassInput" placeholder="أدخل كلمة المرور الحالية" />
-                    </div>
-                    <div class="form-group">
-                        <label>🔑 كلمة المرور الجديدة</label>
-                        <input type="password" id="newPassInput" placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)" />
-                    </div>
-                    <div class="form-group">
-                        <label>✅ تأكيد كلمة المرور الجديدة</label>
-                        <input type="password" id="confirmPassInput" placeholder="أعد كتابة كلمة المرور الجديدة" />
-                    </div>
-                    <button class="btn btn-primary btn-block" onclick="savePasswordChange()">
-                        <i class="fas fa-save"></i> حفظ التغيير
-                    </button>
-                `;
+            all.sort((a, b) => b.id - a.id);
+            let html =
+                `<div class="invoice-header"><span>النوع</span><span>الطرف</span><span>البيان</span><span>الكمية</span><span>الإجمالي</span><span>التاريخ</span><span></span></div>`;
 
-            openModal('تغيير كلمة المرور', html);
+            all.forEach(i => {
+                const isReturn = i.type === 'return';
+                const payColor = i.payment === 'نقدي' ? '#2ecc71' : i.payment === 'آجل' ? '#f39c12' : '#6c63ff';
+                html += `
+                        <div class="invoice-row" style="${isReturn ? 'background:rgba(231,76,111,0.05);' : ''}">
+                            <span>${i.icon || ''} ${i.typeLabel || i.type}</span>
+                            <span>${i.party || '-'}</span>
+                            <span style="font-size:10px;">${i.productName || i.note || '-'}</span>
+                            <span>${i.qty || 1}</span>
+                            <span style="${isReturn ? 'color:#e74c6f;' : ''}font-weight:700;">${(i.total || i.amount || 0).toFixed(2)}</span>
+                            <span>${i.date || '-'}</span>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="deleteInvoiceItem(${i.id}, '${i.type}')" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </div>
+                    `;
+            });
+
+            container.innerHTML = html;
         };
 
-        window.savePasswordChange = function() {
-            const oldPass = document.getElementById('oldPassInput').value.trim();
-            const newPass = document.getElementById('newPassInput').value.trim();
-            const confirmPass = document.getElementById('confirmPassInput').value.trim();
+        window.deleteInvoiceItem = function(id, type) {
+            if (!confirm('⚠️ هل أنت متأكد من حذف هذا العنصر؟')) return;
+            let key = '';
+            if (type === 'sale') key = 'sales';
+            else if (type === 'purchase') key = 'purchases';
+            else if (type === 'return') key = 'returns';
+            else if (type === 'expense') key = 'expenses';
+            else if (type === 'bond') key = 'bonds';
+            else return;
 
-            if (!oldPass || !newPass || !confirmPass) {
-                showToast('❌ الرجاء ملء جميع الحقول', 'error');
-                return;
-            }
+            appData[key] = appData[key].filter(item => item.id !== id);
+            saveToLocalStorage(key, appData[key]);
+            refreshAllData();
+            showToast('✅ تم الحذف بنجاح', 'success');
+        };
 
-            const users = getFromLocalStorage('users');
-            const user = users.find(u => u.email === currentUser.email);
-
-            if (!user || user.password !== oldPass) {
-                showToast('❌ كلمة المرور الحالية غير صحيحة', 'error');
-                return;
-            }
-
-            if (newPass.length < 6) {
-                showToast('❌ كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل', 'error');
-                return;
-            }
-
-            if (newPass !== confirmPass) {
-                showToast('❌ كلمة المرور غير متطابقة', 'error');
-                return;
-            }
-
-            user.password = newPass;
-            saveToLocalStorage('users', users);
-            closeModal();
-            showToast('✅ تم تغيير كلمة المرور بنجاح', 'success');
+        window.printAllInvoices = function() {
+            const content = document.getElementById('allInvoicesList');
+            if (!content) return;
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            printWindow.document.write(`
+                    <html dir="rtl"><head><title>جميع الفواتير</title>
+                    <style>
+                        body { font-family: 'Tajawal', sans-serif; padding: 30px; background: #fff; direction: rtl; }
+                        .invoice-header, .invoice-row { display: grid; grid-template-columns: 0.8fr 1fr 0.6fr 0.7fr 0.6fr 0.5fr 0.7fr; gap: 4px; padding: 8px 0; border-bottom: 1px solid #eee; }
+                        .invoice-header { font-weight: 800; color: #6c63ff; border-bottom: 2px solid #6c63ff; }
+                        .header-title { text-align: center; border-bottom: 3px solid #6c63ff; padding-bottom: 10px; margin-bottom: 20px; }
+                        .header-title h1 { font-size: 28px; color: #6c63ff; }
+                        .btn { display: none; }
+                        @media print { .btn { display: none; } }
+                    </style>
+                    </head><body>
+                    <div class="header-title">
+                        <h1>📋 جميع الفواتير</h1>
+                        <p>تاريخ التقرير: ${new Date().toLocaleDateString('ar')}</p>
+                    </div>
+                    ${content.innerHTML}
+                    <script>window.onload = function() { window.print(); }<\/script>
+                    </body></html>
+                `);
+            printWindow.document.close();
+            setTimeout(() => { printWindow.print(); }, 500);
+            showToast('تم فتح طباعة جميع الفواتير', 'success');
         };
 
         // ================================================================
-        // 27. دوال النسخ الاحتياطي والتصدير
+        // 28. دوال النسخ الاحتياطي والتصدير
         // ================================================================
         window.exportBackup = function() {
             try {
-                const backup = {
-                    version: '1.0',
-                    date: new Date().toISOString(),
-                    data: appData,
-                    users: getFromLocalStorage('users')
-                };
+                const backup = { version: '1.0', date: new Date().toISOString(), data: appData, users: getFromLocalStorage(
+                        'users') };
                 const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
@@ -5449,7 +5179,7 @@
         };
 
         // ================================================================
-        // 28. دوال الطباعة والتصدير - مختصرة
+        // 29. دوال الطباعة والتصدير (مختصرة)
         // ================================================================
         window.printSaleInvoice = function() {
             if (appData.sales.length === 0) { showToast('لا توجد فواتير بيع', 'warning'); return; }
@@ -5728,7 +5458,7 @@
         };
 
         // ================================================================
-        // 29. دوال الرسوم البيانية واللوحة الرئيسية
+        // 30. دوال الرسوم البيانية واللوحة الرئيسية
         // ================================================================
         window.renderCharts = function() {
             const salesCanvas = document.getElementById('salesChart');
@@ -5811,7 +5541,7 @@
         };
 
         // ================================================================
-        // 30. دوال إعدادات الشركة
+        // 31. دوال إعدادات الشركة
         // ================================================================
         window.saveCompanySettings = function() {
             const name = document.getElementById('companyName').value.trim();
@@ -5889,7 +5619,7 @@
         };
 
         // ================================================================
-        // 31. دوال الدفع
+        // 32. دوال الدفع
         // ================================================================
         window.copyPhoneNumber = function() {
             const phone = '01011993799';
@@ -5919,28 +5649,28 @@
         window.showPaymentOptions = function() {
             const html = `
                     <div style="text-align:center;">
-                        <i class="fas fa-credit-card" style="font-size:40px;color:#6c63ff;display:block;margin-bottom:12px;"></i>
-                        <h3 style="font-size:18px;font-weight:800;color:#1a1a2e;">💳 اختيار طريقة الدفع</h3>
+                        <i class="fas fa-credit-card" style="font-size:40px;color:var(--accent);display:block;margin-bottom:12px;"></i>
+                        <h3 style="font-size:18px;font-weight:800;color:var(--text-primary);">💳 اختيار طريقة الدفع</h3>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;">
-                            <div style="background:#f8f8fc;border-radius:10px;padding:12px;border:2px solid #eee;">
-                                <i class="fas fa-phone" style="font-size:28px;color:#6c63ff;display:block;margin-bottom:6px;"></i>
-                                <div style="font-weight:700;font-size:14px;">📱 فودافون كاش</div>
-                                <div style="font-size:18px;font-weight:900;color:#6c63ff;margin:4px 0;">01011993799</div>
+                            <div style="background:var(--bg-primary);border-radius:10px;padding:12px;border:2px solid var(--border-color);">
+                                <i class="fas fa-phone" style="font-size:28px;color:var(--accent);display:block;margin-bottom:6px;"></i>
+                                <div style="font-weight:700;font-size:14px;color:var(--text-primary);">📱 فودافون كاش</div>
+                                <div style="font-size:18px;font-weight:900;color:var(--accent);margin:4px 0;">01011993799</div>
                                 <button class="btn btn-primary" onclick="copyPhoneNumber(); closeModal();" style="width:100%;font-size:12px;padding:6px;height:30px;">
                                     <i class="fas fa-copy"></i> نسخ الرقم
                                 </button>
                             </div>
-                            <div style="background:#f8f8fc;border-radius:10px;padding:12px;border:2px solid #25D366;">
-                                <i class="fas fa-mobile-alt" style="font-size:28px;color:#25D366;display:block;margin-bottom:6px;"></i>
-                                <div style="font-weight:700;font-size:14px;">📲 إنستاباي</div>
-                                <div style="font-size:12px;font-weight:700;color:#888;margin:4px 0;">ادفع مباشرة</div>
-                                <a href="https://ipn.eg/S/rashedrabia/instapay/5GGJzk" target="_blank" class="btn btn-success" style="width:100%;font-size:12px;padding:6px;text-decoration:none;display:block;background:#25D366;color:#fff;border:none;border-radius:8px;height:30px;display:flex;align-items:center;justify-content:center;">
+                            <div style="background:var(--bg-primary);border-radius:10px;padding:12px;border:2px solid var(--success);">
+                                <i class="fas fa-mobile-alt" style="font-size:28px;color:var(--success);display:block;margin-bottom:6px;"></i>
+                                <div style="font-weight:700;font-size:14px;color:var(--text-primary);">📲 إنستاباي</div>
+                                <div style="font-size:12px;font-weight:700;color:var(--text-light);margin:4px 0;">ادفع مباشرة</div>
+                                <a href="https://ipn.eg/S/rashedrabia/instapay/5GGJzk" target="_blank" class="btn btn-success" style="width:100%;font-size:12px;padding:6px;text-decoration:none;display:block;background:var(--success);color:#fff;border:none;border-radius:8px;height:30px;display:flex;align-items:center;justify-content:center;">
                                     <i class="fas fa-external-link-alt"></i> ادفع الآن
                                 </a>
                             </div>
                         </div>
-                        <p style="font-size:12px;color:#888;">بعد الدفع، اضغط على "لقد قمت بالدفع" في نافذة الدفع.</p>
-                        <button class="btn btn-secondary" onclick="closeModal()" style="width:100%;margin-top:8px;background:#eee;color:#333;border:none;padding:8px;border-radius:8px;font-weight:700;font-size:13px;height:34px;">
+                        <p style="font-size:12px;color:var(--text-light);">بعد الدفع، اضغط على "لقد قمت بالدفع" في نافذة الدفع.</p>
+                        <button class="btn btn-secondary" onclick="closeModal()" style="width:100%;margin-top:8px;background:var(--border-color);color:var(--text-primary);border:none;padding:8px;border-radius:8px;font-weight:700;font-size:13px;height:34px;">
                             إغلاق
                         </button>
                     </div>
@@ -5949,163 +5679,71 @@
         };
 
         // ================================================================
-        // 32. دوال الفواتير
+        // 33. تغيير كلمة المرور
         // ================================================================
-        window.filterAllInvoices = function(filter) {
-            if (!filter) filter = 'all';
-            const searchInput = document.getElementById('allInvoicesSearch');
-            const container = document.getElementById('allInvoicesList');
-            if (!container) return;
-
-            const search = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-            // تجميع جميع البيانات
-            const sales = appData.sales.map(s => ({
-                ...s,
-                type: 'sale',
-                party: s.customer,
-                icon: '🟢',
-                typeLabel: 'بيع'
-            }));
-
-            const purchases = appData.purchases.map(p => ({
-                ...p,
-                type: 'purchase',
-                party: p.supplier,
-                icon: '🔵',
-                typeLabel: 'شراء'
-            }));
-
-            const returns = appData.returns.map(r => ({
-                ...r,
-                type: 'return',
-                party: r.party,
-                icon: r.icon || '🔴',
-                typeLabel: r.typeLabel || 'مرتجع'
-            }));
-
-            const expenses = appData.expenses.map(e => ({
-                ...e,
-                type: 'expense',
-                party: e.category,
-                icon: '🟡',
-                typeLabel: 'مصروف',
-                productName: e.note,
-                qty: 1,
-                total: e.amount
-            }));
-
-            const bonds = appData.bonds.map(b => ({
-                ...b,
-                type: 'bond',
-                party: b.partyName,
-                icon: b.icon || '🟣',
-                typeLabel: b.typeLabel || 'سند',
-                productName: b.note,
-                qty: 1,
-                total: b.amount
-            }));
-
-            let all = [...sales, ...purchases, ...returns, ...expenses, ...bonds];
-
-            if (filter === 'sale') all = all.filter(i => i.type === 'sale');
-            else if (filter === 'purchase') all = all.filter(i => i.type === 'purchase');
-            else if (filter === 'return') all = all.filter(i => i.type === 'return');
-            else if (filter === 'expense') all = all.filter(i => i.type === 'expense');
-            else if (filter === 'bond') all = all.filter(i => i.type === 'bond');
-
-            if (search) {
-                all = all.filter(i =>
-                    (i.party || '').toLowerCase().includes(search) ||
-                    (i.productName || '').toLowerCase().includes(search) ||
-                    (i.note || '').toLowerCase().includes(search)
-                );
-            }
-
-            document.querySelectorAll('#page-invoices .filter-chip').forEach(chip => {
-                chip.classList.toggle('active', chip.dataset.filter === filter);
-            });
-
-            if (all.length === 0) {
-                container.innerHTML =
-                    `<div class="empty-state"><i class="fas fa-file-invoice"></i><span>لا توجد فواتير</span></div>`;
+        window.changePassword = function() {
+            if (!currentUser) {
+                showToast('❌ يرجى تسجيل الدخول أولاً', 'error');
                 return;
             }
 
-            all.sort((a, b) => b.id - a.id);
-            let html =
-                `<div class="invoice-header"><span>النوع</span><span>الطرف</span><span>البيان</span><span>الكمية</span><span>الإجمالي</span><span>التاريخ</span><span></span></div>`;
-
-            all.forEach(i => {
-                const isReturn = i.type === 'return';
-                const payColor = i.payment === 'نقدي' ? '#2ecc71' : i.payment === 'آجل' ? '#f39c12' : '#6c63ff';
-                html += `
-                        <div class="invoice-row" style="${isReturn ? 'background:#fff5f5;' : ''}">
-                            <span>${i.icon || ''} ${i.typeLabel || i.type}</span>
-                            <span>${i.party || '-'}</span>
-                            <span style="font-size:10px;">${i.productName || i.note || '-'}</span>
-                            <span>${i.qty || 1}</span>
-                            <span style="${isReturn ? 'color:#e74c6f;' : ''}font-weight:700;">${(i.total || i.amount || 0).toFixed(2)}</span>
-                            <span>${i.date || '-'}</span>
-                            <td>
-                                <button class="btn btn-danger btn-sm" onclick="deleteInvoiceItem(${i.id}, '${i.type}')" title="حذف">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </div>
-                    `;
-            });
-
-            container.innerHTML = html;
-        };
-
-        window.deleteInvoiceItem = function(id, type) {
-            if (!confirm('⚠️ هل أنت متأكد من حذف هذا العنصر؟')) return;
-            let key = '';
-            if (type === 'sale') key = 'sales';
-            else if (type === 'purchase') key = 'purchases';
-            else if (type === 'return') key = 'returns';
-            else if (type === 'expense') key = 'expenses';
-            else if (type === 'bond') key = 'bonds';
-            else return;
-
-            appData[key] = appData[key].filter(item => item.id !== id);
-            saveToLocalStorage(key, appData[key]);
-            refreshAllData();
-            showToast('✅ تم الحذف بنجاح', 'success');
-        };
-
-        window.printAllInvoices = function() {
-            const content = document.getElementById('allInvoicesList');
-            if (!content) return;
-            const printWindow = window.open('', '_blank', 'width=800,height=600');
-            printWindow.document.write(`
-                    <html dir="rtl"><head><title>جميع الفواتير</title>
-                    <style>
-                        body { font-family: 'Tajawal', sans-serif; padding: 30px; background: #fff; direction: rtl; }
-                        .invoice-header, .invoice-row { display: grid; grid-template-columns: 0.8fr 1fr 0.6fr 0.7fr 0.6fr 0.5fr 0.7fr; gap: 4px; padding: 8px 0; border-bottom: 1px solid #eee; }
-                        .invoice-header { font-weight: 800; color: #6c63ff; border-bottom: 2px solid #6c63ff; }
-                        .header-title { text-align: center; border-bottom: 3px solid #6c63ff; padding-bottom: 10px; margin-bottom: 20px; }
-                        .header-title h1 { font-size: 28px; color: #6c63ff; }
-                        .btn { display: none; }
-                        @media print { .btn { display: none; } }
-                    </style>
-                    </head><body>
-                    <div class="header-title">
-                        <h1>📋 جميع الفواتير</h1>
-                        <p>تاريخ التقرير: ${new Date().toLocaleDateString('ar')}</p>
+            const html = `
+                    <div class="form-group">
+                        <label>🔒 كلمة المرور الحالية</label>
+                        <input type="password" id="oldPassInput" placeholder="أدخل كلمة المرور الحالية" />
                     </div>
-                    ${content.innerHTML}
-                    <script>window.onload = function() { window.print(); }<\/script>
-                    </body></html>
-                `);
-            printWindow.document.close();
-            setTimeout(() => { printWindow.print(); }, 500);
-            showToast('تم فتح طباعة جميع الفواتير', 'success');
+                    <div class="form-group">
+                        <label>🔑 كلمة المرور الجديدة</label>
+                        <input type="password" id="newPassInput" placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)" />
+                    </div>
+                    <div class="form-group">
+                        <label>✅ تأكيد كلمة المرور الجديدة</label>
+                        <input type="password" id="confirmPassInput" placeholder="أعد كتابة كلمة المرور الجديدة" />
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="savePasswordChange()">
+                        <i class="fas fa-save"></i> حفظ التغيير
+                    </button>
+                `;
+
+            openModal('تغيير كلمة المرور', html);
+        };
+
+        window.savePasswordChange = function() {
+            const oldPass = document.getElementById('oldPassInput').value.trim();
+            const newPass = document.getElementById('newPassInput').value.trim();
+            const confirmPass = document.getElementById('confirmPassInput').value.trim();
+
+            if (!oldPass || !newPass || !confirmPass) {
+                showToast('❌ الرجاء ملء جميع الحقول', 'error');
+                return;
+            }
+
+            const users = getFromLocalStorage('users');
+            const user = users.find(u => u.email === currentUser.email);
+
+            if (!user || user.password !== oldPass) {
+                showToast('❌ كلمة المرور الحالية غير صحيحة', 'error');
+                return;
+            }
+
+            if (newPass.length < 6) {
+                showToast('❌ كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل', 'error');
+                return;
+            }
+
+            if (newPass !== confirmPass) {
+                showToast('❌ كلمة المرور غير متطابقة', 'error');
+                return;
+            }
+
+            user.password = newPass;
+            saveToLocalStorage('users', users);
+            closeModal();
+            showToast('✅ تم تغيير كلمة المرور بنجاح', 'success');
         };
 
         // ================================================================
-        // 33. تهيئة التطبيق بعد الدخول
+        // 34. تهيئة التطبيق بعد الدخول
         // ================================================================
         function initializeAppAfterLogin() {
             if (localStorage.getItem('darkMode') === 'true') {
