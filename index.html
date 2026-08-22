@@ -17,13 +17,79 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>" />
 
     <style>
-        /* ===== أساسيات ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Tajawal', 'Segoe UI', sans-serif;
-        }
+       /* ===== ألوان مريحة ===== */
+:root {
+    --bg-primary: #f5f7fc;
+    --bg-secondary: #ffffff;
+    --text-primary: #2c3e50;
+    --text-secondary: #5a6c7d;
+    --border-color: #e8ecf1;
+    --shadow-color: rgba(44, 62, 80, 0.08);
+    --accent-color: #6c63ff;
+    --success-color: #2ecc71;
+    --danger-color: #e74c6f;
+    --warning-color: #f39c12;
+    --info-color: #3498db;
+}
+
+body {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* الوضع المظلم */
+body.dark-mode {
+    --bg-primary: #12121f !important;
+    --bg-secondary: #1a1a2e !important;
+    --text-primary: #e8e8f0 !important;
+    --text-secondary: #a0a0b8 !important;
+    --border-color: #2a2a45 !important;
+    --shadow-color: rgba(0, 0, 0, 0.3) !important;
+}
+
+body.dark-mode .top-header,
+body.dark-mode .page-content,
+body.dark-mode .grid-item,
+body.dark-mode .settings-card,
+body.dark-mode .company-settings-box,
+body.dark-mode .dashboard-widget,
+body.dark-mode .stat-card,
+body.dark-mode .balance-detail {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+body.dark-mode .form-group input,
+body.dark-mode .form-group select,
+body.dark-mode .form-group textarea,
+body.dark-mode .search-box input {
+    background: #2a2a45 !important;
+    color: #e8e8f0 !important;
+    border-color: #3a3a5a !important;
+}
+
+body.dark-mode .table-row,
+body.dark-mode .invoice-row {
+    border-bottom-color: #2a2a45 !important;
+}
+
+body.dark-mode .table-row:hover,
+body.dark-mode .invoice-row:hover {
+    background: #2a2a45 !important;
+}
+
+body.dark-mode .trial-badge {
+    background: #6c63ff !important;
+}
+
+body.dark-mode .logout-btn {
+    background: #e74c6f !important;
+}
+
+body.dark-mode .logout-btn:hover {
+    background: #c0392b !important;
+}
 
         /* ===== تحسين الخطوط ===== */
         body,
