@@ -329,26 +329,64 @@
             height: 46px !important;
         }
 
-        /* ===== أزرار التعديل والحذف ===== */
-        .table-row .actions,
-        .invoice-row .actions {
-            display: flex !important;
-            gap: 6px !important;
-            justify-content: center !important;
-            align-items: center !important;
-        }
-        .table-row .btn-sm,
-        .invoice-row .btn-sm {
-            padding: 4px 8px !important;
-            font-size: 11px !important;
-            min-width: 26px !important;
-            height: 24px !important;
-            border-radius: 4px !important;
-        }
-        .table-row .btn-sm i,
-        .invoice-row .btn-sm i {
-            font-size: 10px !important;
-        }
+        /* ===== توحيد أزرار التعديل والحذف ===== */
+.btn-sm {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 4px 10px !important;
+    min-width: 30px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+}
+
+.btn-sm i {
+    font-size: 12px !important;
+}
+
+/* أزرار التعديل */
+.btn-sm.btn-warning {
+    background: #f39c12 !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+/* أزرار الحذف */
+.btn-sm.btn-danger {
+    background: #e74c6f !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+/* أزرار الدفع في الإعدادات */
+.settings-card .btn {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 6px 16px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+}
+
+/* ===== توحيد الأزرار العامة ===== */
+.btn {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    padding: 8px 18px !important;
+    height: 38px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+}
+
+.btn-block {
+    width: 100% !important;
+    height: 40px !important;
+}
 
         /* ===== تحسين التجاوب ===== */
         @media (max-width: 768px) {
