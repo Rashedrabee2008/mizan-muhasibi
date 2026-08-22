@@ -1,3 +1,4 @@
+rror-msg.show {
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -3102,3 +3103,1279 @@
                 `<div class="invoice-header"><span>المورد</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>الدفع</span><span>التاريخ</span><span></span></div>`;
             filtered.slice().reverse().forEach(p => {
                 const payColor = p.payment === 'نقدي' ? '#
+                                    const payColor = p.payment === 'نقدي' ? '#2ecc71' : p.payment === 'آجل' ? '#f39c12' : '#6c63ff';
+                html += `
+                    <div class="invoice-row">
+                        <span>${p.supplier}</span>
+                        <span>${p.productName}</span>
+                        <span>${p.qty}</span>
+                        <span>${p.total.toFixed(2)}</span>
+                        <span style="color:${payColor};font-weight:700;font-size:10px;">${p.payment || 'نقدي'}</span>
+                        <span>${p.date}</span>
+                        <span></span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderPurchases() {
+            document.getElementById('purchaseSearch').value = '';
+            filterPurchases();
+        }
+
+        // ================================================================
+        // 13. SALES
+        // ================================================================
+        function addSale() {
+            const customer = document.getElementById('salesCustomer').value.trim() ||
+                document.getElementById('salesCustomerSelect').value;
+            const productId = parseInt(document.getElementById('salesProduct').value);
+            const qty = parseInt(document.getElementById('salesQty').value);
+            const price = parseFloat(document.getElementById('salesPrice').value);
+            const date = document.getElementById('salesDate').value || new Date().toISOString().split('T')[0];
+            const payment = getSelectedPayment('sales');
+
+            if (!customer) { showToast('الرجاء إدخال اسم العميل', 'error'); return; }
+            if (!productId) { showToast('الرجاء اختيار منتج', 'error'); return; }
+            if (!qty || qty <= 0) { showToast('الرجاء إدخال كمية صحيحة', 'error'); return; }
+            if (isNaN(price) || price <= 0) { showToast('الرجاء إدخال سعر صحيح', 'error'); return; }
+
+            const product = products.find(p => p.id === productId);
+            if (!product) { showToast('المنتج غير موجود', 'error'); return; }
+            if (product.qty < qty) { showToast('الكمية غير متوفرة', 'error'); return; }
+
+            product.qty -= qty;
+            saveAll();
+
+            if (payment === 'نقدي') {
+                treasury.push({
+                    id: Date.now(),
+                    type: 'deposit',
+                    amount: qty * price,
+                    note: `بيع ${product.name} للعميل ${customer}`,
+                    method: 'نقدي',
+                    date: date,
+                    time: new Date().toLocaleTimeString('ar')
+                });
+                saveAll();
+            }
+
+            sales.push({
+                id: Date.now(),
+                customer,
+                productId,
+                productName: product.name,
+                qty,
+                price,
+                total: qty * price,
+                date,
+                payment,
+                type: 'sale'
+            });
+            saveAll();
+            renderSales();
+            renderProducts();
+            populateProductSelects();
+            document.getElementById('salesCustomer').value = '';
+            document.getElementById('salesQty').value = '';
+            document.getElementById('salesPrice').value = '';
+            showToast(`تم إضافة فاتورة بيع (${payment})`, 'success');
+        }
+
+        function filterSales() {
+            const search = document.getElementById('salesSearch').value.trim().toLowerCase();
+            const container = document.getElementById('salesList');
+            const filtered = sales.filter(s =>
+                s.customer.toLowerCase().includes(search) ||
+                s.productName.toLowerCase().includes(search)
+            );
+            if (filtered.length === 0) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-search"></i><span>لا توجد نتائج</span></div>`;
+                return;
+            }
+            let html =
+                `<div class="invoice-header"><span>العميل</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>الدفع</span><span>التاريخ</span><span></span></div>`;
+            filtered.slice().reverse().forEach(s => {
+                const payColor = s.payment === 'نقدي' ? '#2ecc71' : s.payment === 'آجل' ? '#f39c12' : '#6c63ff';
+                html += `
+                    <div class="invoice-row">
+                        <span>${s.customer}</span>
+                        <span>${s.productName}</span>
+                        <span>${s.qty}</span>
+                        <span>${s.total.toFixed(2)}</span>
+                        <span style="color:${payColor};font-weight:700;font-size:10px;">${s.payment || 'نقدي'}</span>
+                        <span>${s.date}</span>
+                        <span></span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderSales() {
+            document.getElementById('salesSearch').value = '';
+            filterSales();
+        }
+
+        // ================================================================
+        // 14. RETURNS
+        // ================================================================
+        function populateReturnSelects() {
+            populateProductSelect('returnProduct');
+            populateProductSelect('returnPurchaseProduct');
+        }
+
+        let returnFilter = 'all';
+
+        function addReturnSale() {
+            const customer = document.getElementById('returnCustomer').value.trim() ||
+                document.getElementById('returnCustomerSelect').value;
+            const productId = parseInt(document.getElementById('returnProduct').value);
+            const qty = parseInt(document.getElementById('returnQty').value);
+            const price = parseFloat(document.getElementById('returnPrice').value);
+            const date = document.getElementById('returnDate').value || new Date().toISOString().split('T')[0];
+
+            if (!customer) { showToast('الرجاء إدخال اسم العميل', 'error'); return; }
+            if (!productId) { showToast('الرجاء اختيار منتج', 'error'); return; }
+            if (!qty || qty <= 0) { showToast('الرجاء إدخال كمية صحيحة', 'error'); return; }
+            if (isNaN(price) || price <= 0) { showToast('الرجاء إدخال سعر صحيح', 'error'); return; }
+
+            const product = products.find(p => p.id === productId);
+            if (!product) { showToast('المنتج غير موجود', 'error'); return; }
+
+            product.qty += qty;
+            saveAll();
+
+            treasury.push({
+                id: Date.now(),
+                type: 'withdraw',
+                amount: qty * price,
+                note: `مرتجع بيع من ${customer} - ${product.name}`,
+                method: 'نقدي',
+                date: date,
+                time: new Date().toLocaleTimeString('ar')
+            });
+            saveAll();
+
+            returns.push({
+                id: Date.now(),
+                type: 'sale',
+                party: customer,
+                productName: product.name,
+                qty,
+                price,
+                total: qty * price,
+                date,
+                typeLabel: 'مرتجع بيع',
+                icon: '🔴'
+            });
+            saveAll();
+            renderReturns();
+            renderProducts();
+            populateReturnSelects();
+            showToast('تم إضافة مرتجع بيع', 'success');
+        }
+
+        function addReturnPurchase() {
+            const supplier = document.getElementById('returnSupplier').value.trim() ||
+                document.getElementById('returnSupplierSelect').value;
+            const productId = parseInt(document.getElementById('returnPurchaseProduct').value);
+            const qty = parseInt(document.getElementById('returnPurchaseQty').value);
+            const price = parseFloat(document.getElementById('returnPurchasePrice').value);
+            const date = document.getElementById('returnPurchaseDate').value || new Date().toISOString().split('T')[0];
+
+            if (!supplier) { showToast('الرجاء إدخال اسم المورد', 'error'); return; }
+            if (!productId) { showToast('الرجاء اختيار منتج', 'error'); return; }
+            if (!qty || qty <= 0) { showToast('الرجاء إدخال كمية صحيحة', 'error'); return; }
+            if (isNaN(price) || price <= 0) { showToast('الرجاء إدخال سعر صحيح', 'error'); return; }
+
+            const product = products.find(p => p.id === productId);
+            if (!product) { showToast('المنتج غير موجود', 'error'); return; }
+            if (product.qty < qty) { showToast('الكمية غير متوفرة', 'error'); return; }
+
+            product.qty -= qty;
+            saveAll();
+
+            treasury.push({
+                id: Date.now(),
+                type: 'deposit',
+                amount: qty * price,
+                note: `مرتجع شراء من ${supplier} - ${product.name}`,
+                method: 'نقدي',
+                date: date,
+                time: new Date().toLocaleTimeString('ar')
+            });
+            saveAll();
+
+            returns.push({
+                id: Date.now(),
+                type: 'purchase',
+                party: supplier,
+                productName: product.name,
+                qty,
+                price,
+                total: qty * price,
+                date,
+                typeLabel: 'مرتجع شراء',
+                icon: '🟡'
+            });
+            saveAll();
+            renderReturns();
+            renderProducts();
+            populateReturnSelects();
+            showToast('تم إضافة مرتجع شراء', 'success');
+        }
+
+        function filterReturns(filter) {
+            if (filter) returnFilter = filter;
+            const container = document.getElementById('returnList');
+            document.querySelectorAll('#page-returns .filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === returnFilter);
+            });
+            let filtered = returns;
+            if (returnFilter !== 'all') {
+                filtered = filtered.filter(r => r.type === returnFilter);
+            }
+            if (filtered.length === 0) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-undo-alt"></i><span>لا توجد مرتجعات</span></div>`;
+                return;
+            }
+            let html =
+                `<div class="invoice-header"><span>النوع</span><span>الطرف</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>التاريخ</span><span></span></div>`;
+            filtered.slice().reverse().forEach(r => {
+                const color = r.type === 'sale' ? '#e74c6f' : '#f39c12';
+                html += `
+                    <div class="invoice-row">
+                        <span>${r.icon} ${r.typeLabel}</span>
+                        <span>${r.party}</span>
+                        <span>${r.productName}</span>
+                        <span>${r.qty}</span>
+                        <span style="color:${color};font-weight:700;">${r.total.toFixed(2)}</span>
+                        <span>${r.date}</span>
+                        <span></span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderReturns() {
+            filterReturns(returnFilter);
+        }
+
+        // ================================================================
+        // 15. EXPENSES
+        // ================================================================
+        function addExpense() {
+            const note = document.getElementById('expenseNote').value.trim();
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const category = document.getElementById('expenseCategory').value;
+            const date = document.getElementById('expenseDate').value || new Date().toISOString().split('T')[0];
+            const payment = document.getElementById('expensePayment').value;
+
+            if (!note) { showToast('الرجاء إدخال بيان المصروف', 'error'); return; }
+            if (isNaN(amount) || amount <= 0) { showToast('الرجاء إدخال مبلغ صحيح', 'error'); return; }
+
+            treasury.push({
+                id: Date.now(),
+                type: 'withdraw',
+                amount: amount,
+                note: `مصروف: ${note} (${category})`,
+                method: payment,
+                date: date,
+                time: new Date().toLocaleTimeString('ar')
+            });
+            expenses.push({ id: Date.now(), note, amount, category, date, payment, type: 'expense' });
+            saveAll();
+            renderExpenses();
+            renderTreasury();
+            updateTreasuryBalances();
+            document.getElementById('expenseNote').value = '';
+            document.getElementById('expenseAmount').value = '';
+            showToast('تم إضافة المصروف', 'success');
+        }
+
+        function filterExpenses() {
+            const search = document.getElementById('expenseSearch').value.trim().toLowerCase();
+            const container = document.getElementById('expenseList');
+            const filtered = expenses.filter(e =>
+                e.note.toLowerCase().includes(search) ||
+                e.category.toLowerCase().includes(search)
+            );
+            if (filtered.length === 0) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-search"></i><span>لا توجد نتائج</span></div>`;
+                return;
+            }
+            let html =
+                `<div class="invoice-header"><span>البيان</span><span>التصنيف</span><span>المبلغ</span><span>الدفع</span><span>التاريخ</span><span></span><span></span></div>`;
+            filtered.slice().reverse().forEach(e => {
+                html += `
+                    <div class="invoice-row">
+                        <span>${e.note}</span>
+                        <span>${e.category}</span>
+                        <span style="color:#e74c6f;font-weight:700;">${e.amount.toFixed(2)}</span>
+                        <span style="font-size:10px;">${e.payment}</span>
+                        <span>${e.date}</span>
+                        <span></span><span></span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderExpenses() {
+            const expenses = getExpenses();
+            document.getElementById('totalExpenses').textContent = expenses.reduce((s, e) => s + e.amount, 0).toFixed(2);
+            document.getElementById('expensesCount').textContent = expenses.length;
+            document.getElementById('avgExpense').textContent = expenses.length > 0 ? (expenses.reduce((s, e) => s + e
+                .amount, 0) / expenses.length).toFixed(2) : '0';
+            document.getElementById('expenseSearch').value = '';
+            filterExpenses();
+        }
+
+        // ================================================================
+        // 16. TREASURY
+        // ================================================================
+        function getTreasuryBalanceByMethod(method) {
+            let balance = 0;
+            treasury.forEach(t => {
+                if (t.method === method) {
+                    if (t.type === 'deposit') balance += t.amount;
+                    else balance -= t.amount;
+                }
+            });
+            return balance;
+        }
+
+        function getTotalTreasuryBalance() {
+            const methods = ['نقدي', 'محفظة', 'إنستاباي', 'بنك', 'بريد'];
+            return methods.reduce((s, m) => s + getTreasuryBalanceByMethod(m), 0);
+        }
+
+        function updateTreasuryBalances() {
+            document.getElementById('treasuryBalance').textContent = getTotalTreasuryBalance().toFixed(2);
+            document.getElementById('balCash').textContent = getTreasuryBalanceByMethod('نقدي').toFixed(2);
+            document.getElementById('balWallet').textContent = getTreasuryBalanceByMethod('محفظة').toFixed(2);
+            document.getElementById('balInstapay').textContent = getTreasuryBalanceByMethod('إنستاباي').toFixed(2);
+            document.getElementById('balBank').textContent = getTreasuryBalanceByMethod('بنك').toFixed(2);
+            document.getElementById('balPost').textContent = getTreasuryBalanceByMethod('بريد').toFixed(2);
+        }
+
+        function addTreasuryTransaction() {
+            const type = document.getElementById('treasuryType').value;
+            const amount = parseFloat(document.getElementById('treasuryAmount').value);
+            const method = document.getElementById('treasuryPayment').value;
+            const note = document.getElementById('treasuryNote').value.trim() || (type === 'deposit' ? 'إيداع' : 'سحب');
+
+            if (isNaN(amount) || amount <= 0) { showToast('مبلغ صحيح', 'error'); return; }
+            if (type === 'withdraw' && amount > getTreasuryBalanceByMethod(method)) {
+                showToast(`الرصيد غير كافي في ${method}`, 'error');
+                return;
+            }
+
+            treasury.push({
+                id: Date.now(),
+                type: type,
+                amount: amount,
+                note: note,
+                method: method,
+                date: new Date().toISOString().split('T')[0],
+                time: new Date().toLocaleTimeString('ar')
+            });
+            saveAll();
+            renderTreasury();
+            updateTreasuryBalances();
+            document.getElementById('treasuryAmount').value = '';
+            document.getElementById('treasuryNote').value = '';
+            showToast(type === 'deposit' ? 'تم الإيداع' : 'تم السحب', 'success');
+        }
+
+        function renderTreasury() {
+            const container = document.getElementById('treasuryList');
+            if (treasury.length === 0) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-coins"></i><span>لا توجد حركات</span></div>`;
+                return;
+            }
+            let html =
+                `<div class="invoice-header"><span>التاريخ</span><span>البيان</span><span>النوع</span><span>المبلغ</span><span>الطريقة</span><span></span><span></span></div>`;
+            treasury.slice().reverse().forEach(t => {
+                const typeText = t.type === 'deposit' ? 'إيداع' : 'سحب';
+                const color = t.type === 'deposit' ? '#2ecc71' : '#e74c6f';
+                const methodIcon = t.method === 'نقدي' ? '💰' : t.method === 'محفظة' ? '📱' : t.method === 'إنستاباي' ?
+                    '📲' : t.method === 'بنك' ? '🏦' : '📮';
+                html += `
+                    <div class="invoice-row">
+                        <span>${t.date}</span>
+                        <span style="font-size:10px;">${t.note}</span>
+                        <span style="color:${color};font-weight:700;">${typeText}</span>
+                        <span style="color:${color};font-weight:700;">${t.amount.toFixed(2)}</span>
+                        <span style="font-size:10px;">${methodIcon} ${t.method}</span>
+                        <span></span><span></span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // ================================================================
+        // 17. BONDS
+        // ================================================================
+        function toggleBondFields() {
+            const type = document.getElementById('bondType').value;
+            document.getElementById('bondCustomerField').style.display = type === 'collect' ? 'block' : 'none';
+            document.getElementById('bondSupplierField').style.display = type === 'pay' ? 'block' : 'none';
+        }
+
+        function populateBondSelects() {
+            const customerSelect = document.getElementById('bondCustomer');
+            if (customerSelect) {
+                customerSelect.innerHTML = '<option value="">اختر عميل...</option>';
+                customers.forEach(c => {
+                    customerSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                });
+            }
+            const supplierSelect = document.getElementById('bondSupplier');
+            if (supplierSelect) {
+                supplierSelect.innerHTML = '<option value="">اختر مورد...</option>';
+                suppliers.forEach(s => {
+                    supplierSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                });
+            }
+        }
+
+        let bondFilter = 'all';
+
+        function addBond() {
+            const type = document.getElementById('bondType').value;
+            let partyName = '';
+
+            if (type === 'collect') {
+                const customerId = parseInt(document.getElementById('bondCustomer').value);
+                const customerName = document.getElementById('bondCustomerName').value.trim();
+                if (customerId) {
+                    const customer = customers.find(c => c.id === customerId);
+                    partyName = customer ? customer.name : 'غير معروف';
+                } else if (customerName) {
+                    partyName = customerName;
+                } else {
+                    showToast('الرجاء اختيار أو كتابة اسم العميل', 'error');
+                    return;
+                }
+            } else {
+                const supplierId = parseInt(document.getElementById('bondSupplier').value);
+                const supplierName = document.getElementById('bondSupplierName').value.trim();
+                if (supplierId) {
+                    const supplier = suppliers.find(s => s.id === supplierId);
+                    partyName = supplier ? supplier.name : 'غير معروف';
+                } else if (supplierName) {
+                    partyName = supplierName;
+                } else {
+                    showToast('الرجاء اختيار أو كتابة اسم المورد', 'error');
+                    return;
+                }
+            }
+
+            const amount = parseFloat(document.getElementById('bondAmount').value);
+            const date = document.getElementById('bondDate').value || new Date().toISOString().split('T')[0];
+            const note = document.getElementById('bondNote').value.trim() || (type === 'collect' ? 'تحصيل عميل' : 'سداد مورد');
+            const payment = document.getElementById('bondPayment').value;
+
+            if (isNaN(amount) || amount <= 0) {
+                showToast('الرجاء إدخال مبلغ صحيح', 'error');
+                return;
+            }
+
+            if (type === 'collect') {
+                treasury.push({
+                    id: Date.now(),
+                    type: 'deposit',
+                    amount: amount,
+                    note: `تحصيل من ${partyName}: ${note}`,
+                    method: payment,
+                    date: date,
+                    time: new Date().toLocaleTimeString('ar')
+                });
+            } else {
+                treasury.push({
+                    id: Date.now(),
+                    type: 'withdraw',
+                    amount: amount,
+                    note: `سداد لـ ${partyName}: ${note}`,
+                    method: payment,
+                    date: date,
+                    time: new Date().toLocaleTimeString('ar')
+                });
+            }
+
+            bonds.push({
+                id: Date.now(),
+                type: type,
+                partyName: partyName,
+                amount: amount,
+                date: date,
+                note: note,
+                payment: payment,
+                typeLabel: type === 'collect' ? 'تحصيل عميل' : 'سداد مورد',
+                icon: type === 'collect' ? '📥' : '📤'
+            });
+            saveAll();
+            renderBonds();
+            renderTreasury();
+            updateTreasuryBalances();
+            document.getElementById('bondAmount').value = '';
+            document.getElementById('bondNote').value = '';
+            showToast(`تم إضافة سند (${type === 'collect' ? 'تحصيل' : 'سداد'})`, 'success');
+        }
+
+        function filterBonds(filter) {
+            if (filter) bondFilter = filter;
+            const container = document.getElementById('bondList');
+            document.querySelectorAll('#page-bonds .filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === bondFilter);
+            });
+            let filtered = bonds;
+            if (bondFilter !== 'all') {
+                filtered = filtered.filter(b => b.type === bondFilter);
+            }
+            if (filtered.length === 0) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-file-signature"></i><span>لا توجد سندات</span></div>`;
+                return;
+            }
+            let html =
+                `<div class="invoice-header"><span>النوع</span><span>الطرف</span><span>المبلغ</span><span>الدفع</span><span>التاريخ</span><span>البيان</span><span></span></div>`;
+            filtered.slice().reverse().forEach(b => {
+                const color = b.type === 'collect' ? '#2ecc71' : '#e74c6f';
+                html += `
+                    <div class="invoice-row">
+                        <span>${b.icon} ${b.typeLabel}</span>
+                        <span>${b.partyName}</span>
+                        <span style="color:${color};font-weight:700;">${b.amount.toFixed(2)}</span>
+                        <span style="font-size:10px;">${b.payment}</span>
+                        <span>${b.date}</span>
+                        <span style="font-size:9px;">${b.note}</span>
+                        <span></span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function renderBonds() {
+            const bonds = getBonds();
+            document.getElementById('totalBonds').textContent = bonds.length;
+            document.getElementById('bondsCollect').textContent = bonds.filter(b => b.type === 'collect').length;
+            document.getElementById('bondsPay').textContent = bonds.filter(b => b.type === 'pay').length;
+            document.getElementById('bondSearch').value = '';
+            filterBonds(bondFilter);
+        }
+
+        // ================================================================
+        // 18. ALL INVOICES
+        // ================================================================
+        function filterAllInvoices(filter) {
+            const search = document.getElementById('allInvoicesSearch').value.trim().toLowerCase();
+            const allSales = sales.map(s => ({ ...s, type: 'sale', party: s.customer, icon: '🟢' }));
+            const allPurchases = purchases.map(p => ({ ...p, type: 'purchase', party: p.supplier, icon: '🔵' }));
+            const allReturns = returns.map(r => ({ ...r, type: 'return', party: r.party, icon: r.icon || '🔴',
+                productName: r.productName, qty: r.qty, total: r.total, typeLabel: r.typeLabel }));
+            const allExpenses = expenses.map(e => ({ ...e, type: 'expense', party: e.category, icon: '🟡', productName: e
+                    .note, qty: 1, total: e.amount }));
+            const allBonds = bonds.map(b => ({ ...b, type: 'bond', party: b.partyName, icon: b.icon || '🟣',
+                productName: b.note, qty: 1, total: b.amount, typeLabel: b.typeLabel }));
+
+            let all = [...allSales, ...allPurchases, ...allReturns, ...allExpenses, ...allBonds];
+
+            document.querySelectorAll('#page-invoices .filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === filter || (filter === 'all' && chip.dataset
+                    .filter === 'all'));
+            });
+
+            if (filter === 'sale') all = all.filter(i => i.type === 'sale');
+            else if (filter === 'purchase') all = all.filter(i => i.type === 'purchase');
+            else if (filter === 'return') all = all.filter(i => i.type === 'return');
+            else if (filter === 'expense') all = all.filter(i => i.type === 'expense');
+            else if (filter === 'bond') all = all.filter(i => i.type === 'bond');
+
+            if (search) {
+                all = all.filter(i =>
+                    (i.party || '').toLowerCase().includes(search) ||
+                    (i.productName || '').toLowerCase().includes(search) ||
+                    (i.note || '').toLowerCase().includes(search)
+                );
+            }
+
+            const container = document.getElementById('allInvoicesList');
+            if (all.length === 0) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-file-invoice"></i><span>لا توجد فواتير</span></div>`;
+                return;
+            }
+
+            all.sort((a, b) => b.id - a.id);
+            let html =
+                `<div class="invoice-header"><span>النوع</span><span>الطرف</span><span>المنتج/البيان</span><span>الكمية</span><span>الإجمالي</span><span>الدفع</span><span>التاريخ</span></div>`;
+            all.forEach(i => {
+                const typeName = i.type === 'sale' ? 'بيع' : i.type === 'purchase' ? 'شراء' : i.type === 'return' ?
+                    i.typeLabel || 'مرتجع' : i.type === 'expense' ? 'مصروف' : i.typeLabel || 'سند';
+                const payColor = i.payment === 'نقدي' ? '#2ecc71' : i.payment === 'آجل' ? '#f39c12' : '#6c63ff';
+                const isReturn = i.type === 'return';
+                html += `
+                    <div class="invoice-row" style="${isReturn ? 'background:#fff5f5;' : ''}">
+                        <span>${i.icon || ''} ${typeName} ${isReturn ? '<span class="return-badge">مرتجع</span>' : ''}</span>
+                        <span>${i.party || '-'}</span>
+                        <span style="font-size:9px;">${i.productName || i.note || '-'}</span>
+                        <span>${i.qty || 1}</span>
+                        <span style="${isReturn ? 'color:#e74c6f;' : ''}font-weight:700;">${(i.total || i.amount || 0).toFixed(2)}</span>
+                        <span style="color:${payColor};font-weight:700;font-size:10px;">${i.payment || 'نقدي'}</span>
+                        <span>${i.date}</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // ================================================================
+        // 19. REPORTS
+        // ================================================================
+        function renderReports(type) {
+            document.querySelectorAll('#page-reports .filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.report === type || (type === 'all' && chip.dataset
+                    .report === 'all'));
+            });
+
+            const totalSales = sales.reduce((s, i) => s + i.total, 0);
+            const totalPurchases = purchases.reduce((s, i) => s + i.total, 0);
+            const totalReturns = returns.reduce((s, i) => s + i.total, 0);
+            const totalExpenses = expenses.reduce((s, i) => s + i.amount, 0);
+            const netSales = totalSales - totalReturns;
+            const profit = netSales - totalPurchases - totalExpenses;
+
+            const totalBondsCollect = bonds.filter(b => b.type === 'collect').reduce((s, b) => s + b.amount, 0);
+            const totalBondsPay = bonds.filter(b => b.type === 'pay').reduce((s, b) => s + b.amount, 0);
+            const netBonds = totalBondsCollect - totalBondsPay;
+
+            document.getElementById('reportTotalSales').textContent = totalSales.toFixed(2);
+            document.getElementById('reportTotalPurchases').textContent = totalPurchases.toFixed(2);
+            document.getElementById('reportTotalReturns').textContent = totalReturns.toFixed(2);
+            document.getElementById('reportTotalExpenses').textContent = totalExpenses.toFixed(2);
+            document.getElementById('reportTotalBonds').textContent = netBonds.toFixed(2);
+            document.getElementById('reportProfit').textContent = profit.toFixed(2);
+
+            const container = document.getElementById('reportDetails');
+            let html = '';
+
+            if (type === 'all' || type === 'sales') {
+                html += `<h4 style="margin:10px 0 6px;color:#6c63ff;font-size:15px;">📊 المبيعات</h4>`;
+                if (sales.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد مبيعات</p>`;
+                else {
+                    html +=
+                        `<div class="invoice-header"><span>العميل</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>التاريخ</span><span></span><span></span></div>`;
+                    sales.slice().reverse().forEach(s => {
+                        html += `
+                            <div class="invoice-row">
+                                <span>${s.customer}</span>
+                                <span>${s.productName}</span>
+                                <span>${s.qty}</span>
+                                <span>${s.total.toFixed(2)}</span>
+                                <span>${s.date}</span>
+                                <span></span><span></span>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            if (type === 'all' || type === 'purchases') {
+                html += `<h4 style="margin:10px 0 6px;color:#6c63ff;font-size:15px;">📊 المشتريات</h4>`;
+                if (purchases.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد مشتريات</p>`;
+                else {
+                    html +=
+                        `<div class="invoice-header"><span>المورد</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>التاريخ</span><span></span><span></span></div>`;
+                    purchases.slice().reverse().forEach(p => {
+                        html += `
+                            <div class="invoice-row">
+                                <span>${p.supplier}</span>
+                                <span>${p.productName}</span>
+                                <span>${p.qty}</span>
+                                <span>${p.total.toFixed(2)}</span>
+                                <span>${p.date}</span>
+                                <span></span><span></span>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            if (type === 'all' || type === 'returns') {
+                html += `<h4 style="margin:10px 0 6px;color:#e74c6f;font-size:15px;">📊 المرتجعات</h4>`;
+                if (returns.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد مرتجعات</p>`;
+                else {
+                    html +=
+                        `<div class="invoice-header"><span>النوع</span><span>الطرف</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>التاريخ</span><span></span></div>`;
+                    returns.slice().reverse().forEach(r => {
+                        const color = r.type === 'sale' ? '#e74c6f' : '#f39c12';
+                        html += `
+                            <div class="invoice-row">
+                                <span>${r.icon} ${r.typeLabel}</span>
+                                <span>${r.party}</span>
+                                <span>${r.productName}</span>
+                                <span>${r.qty}</span>
+                                <span style="color:${color};font-weight:700;">${r.total.toFixed(2)}</span>
+                                <span>${r.date}</span>
+                                <span></span>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            if (type === 'all' || type === 'expenses') {
+                html += `<h4 style="margin:10px 0 6px;color:#e74c6f;font-size:15px;">📊 المصروفات</h4>`;
+                if (expenses.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد مصروفات</p>`;
+                else {
+                    html +=
+                        `<div class="invoice-header"><span>البيان</span><span>التصنيف</span><span>المبلغ</span><span>التاريخ</span><span></span><span></span><span></span></div>`;
+                    expenses.slice().reverse().forEach(e => {
+                        html += `
+                            <div class="invoice-row">
+                                <span>${e.note}</span>
+                                <span>${e.category}</span>
+                                <span style="color:#e74c6f;font-weight:700;">${e.amount.toFixed(2)}</span>
+                                <span>${e.date}</span>
+                                <span></span><span></span><span></span>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            if (type === 'all' || type === 'bonds') {
+                html += `<h4 style="margin:10px 0 6px;color:#6c63ff;font-size:15px;">📊 السندات</h4>`;
+                if (bonds.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد سندات</p>`;
+                else {
+                    html +=
+                        `<div class="invoice-header"><span>النوع</span><span>الطرف</span><span>المبلغ</span><span>الدفع</span><span>التاريخ</span><span></span><span></span></div>`;
+                    bonds.slice().reverse().forEach(b => {
+                        const color = b.type === 'collect' ? '#2ecc71' : '#e74c6f';
+                        html += `
+                            <div class="invoice-row">
+                                <span>${b.icon} ${b.typeLabel}</span>
+                                <span>${b.partyName}</span>
+                                <span style="color:${color};font-weight:700;">${b.amount.toFixed(2)}</span>
+                                <span style="font-size:10px;">${b.payment}</span>
+                                <span>${b.date}</span>
+                                <span></span><span></span>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            if (type === 'profit') {
+                html += `<h4 style="margin:10px 0 6px;color:#6c63ff;font-size:15px;">💰 تفاصيل الأرباح</h4>`;
+                html += `
+                    <div style="background:#f8f8fc;border-radius:12px;padding:14px;margin-top:6px;text-align:center;">
+                        <div style="font-size:15px;font-weight:700;color:#2ecc71;">إجمالي المبيعات: ${totalSales.toFixed(2)} 🇪🇬</div>
+                        <div style="font-size:15px;font-weight:700;color:#e74c6f;">إجمالي المرتجعات: ${totalReturns.toFixed(2)} 🇪🇬</div>
+                        <div style="font-size:15px;font-weight:700;color:#3498db;">صافي المبيعات: ${netSales.toFixed(2)} 🇪🇬</div>
+                        <div style="font-size:15px;font-weight:700;color:#e74c6f;">إجمالي المشتريات: ${totalPurchases.toFixed(2)} 🇪🇬</div>
+                        <div style="font-size:15px;font-weight:700;color:#e74c6f;">إجمالي المصروفات: ${totalExpenses.toFixed(2)} 🇪🇬</div>
+                        <div style="font-size:22px;font-weight:900;color:${profit >= 0 ? '#2ecc71' : '#e74c6f'};margin-top:8px;">
+                            ${profit >= 0 ? '✅' : '❌'} صافي الأرباح: ${profit.toFixed(2)} 🇪🇬
+                        </div>
+                        <div style="font-size:14px;font-weight:700;color:#6c63ff;margin-top:4px;">
+                            📊 صافي السندات: ${netBonds.toFixed(2)} 🇪🇬
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (type === 'inventory') {
+                html += `<h4 style="margin:10px 0 6px;color:#6c63ff;font-size:15px;">📦 تقرير المخزون</h4>`;
+                if (products.length === 0) html += `<p style="color:#888;font-size:13px;">لا توجد منتجات</p>`;
+                else {
+                    html +=
+                        `<div class="table-header"><span>المنتج</span><span>سعر الشراء</span><span>سعر البيع</span><span>الكمية</span><span>القيمة</span></div>`;
+                    products.forEach(p => {
+                        html += `
+                            <div class="table-row">
+                                <span><strong>${p.name}</strong></span>
+                                <span>${p.buyPrice.toFixed(2)}</span>
+                                <span>${p.sellPrice.toFixed(2)}</span>
+                                <span style="${p.qty <= p.min ? 'color:#e74c6f;font-weight:700;' : ''}">${p.qty}</span>
+                                <span>${(p.sellPrice * p.qty).toFixed(2)} 🇪🇬</span>
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            container.innerHTML = html;
+        }
+
+        // ================================================================
+        // 20. ACCOUNTING
+        // ================================================================
+        function showAccountingDetail(title) {
+            const container = document.getElementById('accountingDetailContent');
+            const detailTitle = document.querySelector('#page-accounting .page-content h4');
+            if (detailTitle) {
+                detailTitle.innerHTML = `<i class="fas fa-info-circle"></i> ${title}`;
+            }
+
+            const totalAssets = products.reduce((s, p) => s + (p.sellPrice * p.qty), 0);
+            const totalLiabilities = expenses.reduce((s, e) => s + e.amount, 0);
+            const equity = totalAssets - totalLiabilities;
+
+            document.getElementById('accTotalAssets').textContent = totalAssets.toFixed(2);
+            document.getElementById('accTotalLiabilities').textContent = totalLiabilities.toFixed(2);
+            document.getElementById('accEquity').textContent = equity.toFixed(2);
+
+            let html = `<div style="margin-top:10px;">`;
+
+            if (title.includes('الميزانية') || title.includes('مراجعة')) {
+                html += `
+                    <div style="background:#fff;border-radius:10px;padding:12px;border:2px solid #e8e8f0;margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                            <span style="font-weight:700;color:#2ecc71;">✅ إجمالي الأصول</span>
+                            <span>${totalAssets.toFixed(2)} 🇪🇬</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                            <span style="font-weight:700;color:#e74c6f;">❌ إجمالي الخصوم</span>
+                            <span>${totalLiabilities.toFixed(2)} 🇪🇬</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:16px;font-weight:800;color:#6c63ff;">
+                            <span>💰 حقوق الملكية</span>
+                            <span>${equity.toFixed(2)} 🇪🇬</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (title.includes('الدخل')) {
+                const totalRevenue = sales.reduce((s, i) => s + i.total, 0);
+                const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+                const netIncome = totalRevenue - totalExpenses;
+                html += `
+                    <div style="background:#fff;border-radius:10px;padding:12px;border:2px solid #e8e8f0;margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                            <span style="font-weight:700;color:#2ecc71;">📈 إجمالي الإيرادات</span>
+                            <span>${totalRevenue.toFixed(2)} 🇪🇬</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                            <span style="font-weight:700;color:#e74c6f;">📉 إجمالي المصروفات</span>
+                            <span>${totalExpenses.toFixed(2)} 🇪🇬</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:16px;font-weight:800;color:${netIncome >= 0 ? '#2ecc71' : '#e74c6f'};">
+                            <span>${netIncome >= 0 ? '✅' : '❌'} صافي الدخل</span>
+                            <span>${netIncome.toFixed(2)} 🇪🇬</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (title.includes('نقدية') || title.includes('التدفقات')) {
+                const cashIn = treasury.filter(t => t.type === 'deposit').reduce((s, t) => s + t.amount, 0);
+                const cashOut = treasury.filter(t => t.type === 'withdraw').reduce((s, t) => s + t.amount, 0);
+                const netCash = cashIn - cashOut;
+                html += `
+                    <div style="background:#fff;border-radius:10px;padding:12px;border:2px solid #e8e8f0;margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                            <span style="font-weight:700;color:#2ecc71;">📥 التدفقات الداخلة</span>
+                            <span>${cashIn.toFixed(2)} 🇪🇬</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                            <span style="font-weight:700;color:#e74c6f;">📤 التدفقات الخارجة</span>
+                            <span>${cashOut.toFixed(2)} 🇪🇬</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:16px;font-weight:800;color:${netCash >= 0 ? '#2ecc71' : '#e74c6f'};">
+                            <span>💰 صافي التدفق النقدي</span>
+                            <span>${netCash.toFixed(2)} 🇪🇬</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (title.includes('الأستاذ') || title.includes('مراجعة')) {
+                const allItems = [...sales, ...purchases, ...expenses];
+                if (allItems.length === 0) {
+                    html += `<p style="color:#888;text-align:center;padding:16px;font-size:13px;">لا توجد حركات في دفتر الأستاذ</p>`;
+                } else {
+                    html += `
+                        <div style="background:#fff;border-radius:10px;padding:8px;border:2px solid #e8e8f0;max-height:160px;overflow-y:auto;">
+                            <div class="invoice-header"><span>التاريخ</span><span>البيان</span><span>النوع</span><span>المبلغ</span><span></span><span></span><span></span></div>
+                    `;
+                    allItems.slice(-10).reverse().forEach(item => {
+                        const typeName = item.type || 'حركة';
+                        const amount = item.total || item.amount || 0;
+                        html += `
+                            <div class="invoice-row">
+                                <span>${item.date || '-'}</span>
+                                <span style="font-size:9px;">${item.note || item.productName || '-'}</span>
+                                <span>${typeName}</span>
+                                <span>${amount.toFixed(2)}</span>
+                                <span></span><span></span><span></span>
+                            </div>
+                        `;
+                    });
+                    html += `</div>`;
+                }
+            }
+
+            if (title.includes('القوائم المالية')) {
+                const totalSales = sales.reduce((s, i) => s + i.total, 0);
+                const totalPurchases = purchases.reduce((s, i) => s + i.total, 0);
+                const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+                const netProfit = totalSales - totalPurchases - totalExpenses;
+                html += `
+                    <div style="background:#fff;border-radius:10px;padding:12px;border:2px solid #e8e8f0;margin-bottom:8px;">
+                        <div style="font-weight:800;color:#6c63ff;text-align:center;font-size:16px;margin-bottom:6px;">📊 القوائم المالية</div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                            <span>💰 إجمالي المبيعات</span>
+                            <span style="color:#2ecc71;">${totalSales.toFixed(2)} 🇪🇬</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                            <span>🛒 إجمالي المشتريات</span>
+                            <span style="color:#e74c6f;">${totalPurchases.toFixed(2)} 🇪🇬</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #eee;">
+                            <span>📉 إجمالي المصروفات</span>
+                            <span style="color:#e74c6f;">${totalExpenses.toFixed(2)} 🇪🇬</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:18px;font-weight:900;color:${netProfit >= 0 ? '#2ecc71' : '#e74c6f'};border-top:2px solid #6c63ff;margin-top:4px;">
+                            <span>${netProfit >= 0 ? '✅' : '❌'} صافي الأرباح</span>
+                            <span>${netProfit.toFixed(2)} 🇪🇬</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += `</div>`;
+            document.getElementById('accountingDetailsTable').innerHTML = html;
+        }
+
+        function updateAccountingData() {
+            const totalAssets = products.reduce((s, p) => s + (p.sellPrice * p.qty), 0);
+            const totalLiabilities = expenses.reduce((s, e) => s + e.amount, 0);
+            const equity = totalAssets - totalLiabilities;
+            document.getElementById('accTotalAssets').textContent = totalAssets.toFixed(2);
+            document.getElementById('accTotalLiabilities').textContent = totalLiabilities.toFixed(2);
+            document.getElementById('accEquity').textContent = equity.toFixed(2);
+        }
+
+        // ================================================================
+        // 21. PRINT FUNCTIONS
+        // ================================================================
+        function printSaleInvoice() {
+            if (sales.length === 0) { showToast('لا توجد فواتير بيع', 'warning'); return; }
+            const invoice = sales[sales.length - 1];
+            printInvoiceHTML(invoice, 'sale');
+        }
+
+        function printPurchaseInvoice() {
+            if (purchases.length === 0) { showToast('لا توجد فواتير شراء', 'warning'); return; }
+            const invoice = purchases[purchases.length - 1];
+            printInvoiceHTML(invoice, 'purchase');
+        }
+
+        function printInvoiceHTML(invoice, type) {
+            const title = type === 'sale' ? 'فاتورة بيع' : 'فاتورة شراء';
+            const party = type === 'sale' ? invoice.customer : invoice.supplier;
+            const partyLabel = type === 'sale' ? 'العميل' : 'المورد';
+            const typeIcon = type === 'sale' ? '🟢' : '🔵';
+
+            let printContent = `
+                <html dir="rtl"><head><meta charset="UTF-8"><title>${title}</title>
+                <style>
+                    @media print { body { margin: 0; padding: 20px; } }
+                    body { font-family: 'Tajawal', sans-serif; padding: 30px; background: #fff; max-width: 400px; margin: auto; direction: rtl; }
+                    .header { text-align: center; border-bottom: 3px solid #6c63ff; padding-bottom: 15px; margin-bottom: 20px; }
+                    .header h1 { font-size: 28px; color: #6c63ff; margin: 0; }
+                    .header p { color: #888; font-size: 14px; margin: 5px 0 0; }
+                    .info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; padding: 12px; background: #f8f8fc; border-radius: 12px; }
+                    .info .label { font-weight: 700; color: #888; }
+                    .info .value { font-weight: 700; color: #1a1a2e; }
+                    .items { border-top: 2px solid #eee; padding-top: 15px; }
+                    .item-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 16px; }
+                    .item-row.header-row { font-weight: 800; color: #6c63ff; border-bottom: 2px solid #6c63ff; }
+                    .total { display: flex; justify-content: space-between; font-size: 22px; font-weight: 800; padding: 15px 0; border-top: 3px solid #6c63ff; margin-top: 10px; }
+                    .footer { text-align: center; color: #888; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+                    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+                    .badge-paid { background: #2ecc71; color: #fff; }
+                    .payment-method { font-size: 14px; font-weight: 700; }
+                    .currency { font-size: 14px; color: #6c63ff; }
+                </style>
+                </head><body>
+                <div class="header">
+                    <h1>${typeIcon} ${title}</h1>
+                    <p>رقم الفاتورة: #${invoice.id}</p>
+                    <p>التاريخ: ${invoice.date}</p>
+                </div>
+                <div class="info">
+                    <div><span class="label">${partyLabel}:</span> <span class="value">${party}</span></div>
+                    <div><span class="label">طريقة الدفع:</span> <span class="value payment-method">${invoice.payment || 'نقدي'}</span></div>
+                    <div><span class="label">الحالة:</span> <span class="badge badge-paid">✅ مدفوع</span></div>
+                    <div><span class="label">المنتج:</span> <span class="value">${invoice.productName}</span></div>
+                </div>
+                <div class="items">
+                    <div class="item-row header-row">
+                        <span>المنتج</span>
+                        <span>الكمية</span>
+                        <span>السعر</span>
+                        <span>الإجمالي</span>
+                    </div>
+                    <div class="item-row">
+                        <span>${invoice.productName}</span>
+                        <span>${invoice.qty}</span>
+                        <span>${invoice.price.toFixed(2)}</span>
+                        <span>${(invoice.qty * invoice.price).toFixed(2)}</span>
+                    </div>
+                </div>
+                <div class="total">
+                    <span>الإجمالي</span>
+                    <span>${invoice.total.toFixed(2)} <span class="currency">جنيه مصري 🇪🇬</span></span>
+                </div>
+                <div class="footer">
+                    <p>شكراً لتعاملكم معنا</p>
+                    <p style="font-size:14px;font-weight:700;color:#6c63ff;">الميزان - نظام محاسبة ونقاط بيع</p>
+                </div>
+                </body></html>
+            `;
+
+            const win = window.open('', '_blank');
+            win.document.write(printContent);
+            win.document.close();
+            setTimeout(() => { win.print(); }, 500);
+            showToast(`تم فتح طباعة ${title}`, 'success');
+        }
+
+        function printCurrentReport() {
+            const totalSales = sales.reduce((s, i) => s + i.total, 0);
+            const totalPurchases = purchases.reduce((s, i) => s + i.total, 0);
+            const totalReturns = returns.reduce((s, i) => s + i.total, 0);
+            const totalExpenses = expenses.reduce((s, i) => s + i.amount, 0);
+            const netSales = totalSales - totalReturns;
+            const profit = netSales - totalPurchases - totalExpenses;
+
+            const totalBondsCollect = bonds.filter(b => b.type === 'collect').reduce((s, b) => s + b.amount, 0);
+            const totalBondsPay = bonds.filter(b => b.type === 'pay').reduce((s, b) => s + b.amount, 0);
+            const netBonds = totalBondsCollect - totalBondsPay;
+
+            let printContent = `
+                <html dir="rtl"><head><meta charset="UTF-8"><title>تقرير شامل</title>
+                <style>
+                    @media print { body { margin: 0; padding: 20px; } }
+                    body { font-family: 'Tajawal', sans-serif; padding: 30px; background: #fff; max-width: 800px; margin: auto; direction: rtl; }
+                    .header { text-align: center; border-bottom: 3px solid #6c63ff; padding-bottom: 15px; margin-bottom: 20px; }
+                    .header h1 { font-size: 30px; color: #6c63ff; margin: 0; }
+                    .header p { color: #888; font-size: 14px; margin: 5px 0 0; }
+                    .summary { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+                    .summary-box { background: #f8f8fc; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #e8e8f0; }
+                    .summary-box .num { font-size: 24px; font-weight: 900; color: #6c63ff; }
+                    .summary-box .lbl { font-size: 12px; color: #888; margin-top: 4px; }
+                    .section { margin: 20px 0; padding: 15px; background: #f8f8fc; border-radius: 12px; }
+                    .section h3 { color: #6c63ff; margin: 0 0 10px; font-size: 20px; }
+                    .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 15px; }
+                    .total-row { display: flex; justify-content: space-between; font-size: 20px; font-weight: 800; padding: 12px 0; border-top: 3px solid #6c63ff; margin-top: 10px; }
+                    .footer { text-align: center; color: #888; font-size: 12px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+                    .profit-positive { color: #2ecc71; }
+                    .profit-negative { color: #e74c6f; }
+                    .table-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 6px; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+                    .table-grid.header { font-weight: 800; color: #6c63ff; border-bottom: 2px solid #6c63ff; }
+                    .currency { color: #6c63ff; font-weight: 700; }
+                </style>
+                </head><body>
+                <div class="header">
+                    <h1>📊 تقرير شامل</h1>
+                    <p>تاريخ التقرير: ${new Date().toLocaleDateString('ar')}</p>
+                    <p>وقت التقرير: ${new Date().toLocaleTimeString('ar')}</p>
+                </div>
+
+                <div class="summary">
+                    <div class="summary-box"><div class="num">${totalSales.toFixed(2)}</div><div class="lbl">💰 إجمالي المبيعات</div></div>
+                    <div class="summary-box"><div class="num">${totalPurchases.toFixed(2)}</div><div class="lbl">🛒 إجمالي المشتريات</div></div>
+                    <div class="summary-box"><div class="num">${totalReturns.toFixed(2)}</div><div class="lbl">🔴 إجمالي المرتجعات</div></div>
+                    <div class="summary-box"><div class="num">${netSales.toFixed(2)}</div><div class="lbl">📈 صافي المبيعات</div></div>
+                </div>
+
+                <div class="section">
+                    <h3>📈 صافي الأرباح</h3>
+                    <div class="row"><span>صافي المبيعات</span><span>${netSales.toFixed(2)} <span class="currency">🇪🇬</span></span></div>
+                    <div class="row"><span>إجمالي المشتريات</span><span style="color:#e74c6f;">${totalPurchases.toFixed(2)} <span class="currency">🇪🇬</span></span></div>
+                    <div class="row"><span>إجمالي المصروفات</span><span style="color:#e74c6f;">${totalExpenses.toFixed(2)} <span class="currency">🇪🇬</span></span></div>
+                    <div class="total-row">
+                        <span>صافي الأرباح</span>
+                        <span class="${profit >= 0 ? 'profit-positive' : 'profit-negative'}">
+                            ${profit >= 0 ? '✅' : '❌'} ${profit.toFixed(2)} <span class="currency">🇪🇬</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🔄 السندات</h3>
+                    <div class="row"><span>📥 إجمالي التحصيل من العملاء</span><span style="color:#2ecc71;font-weight:700;">${totalBondsCollect.toFixed(2)} <span class="currency">🇪🇬</span></span></div>
+                    <div class="row"><span>📤 إجمالي السداد للموردين</span><span style="color:#e74c6f;font-weight:700;">${totalBondsPay.toFixed(2)} <span class="currency">🇪🇬</span></span></div>
+                    <div class="total-row"><span>صافي السندات</span><span>${netBonds.toFixed(2)} <span class="currency">🇪🇬</span></span></div>
+                </div>
+
+                <div class="section">
+                    <h3>📦 المخزون</h3>
+                    <div class="row"><span>عدد المنتجات</span><span>${products.length}</span></div>
+                    <div class="row"><span>القيمة الإجمالية للمخزون</span><span>${products.reduce((s,i)=>s+(i.sellPrice*i.qty),0).toFixed(2)} <span class="currency">🇪🇬</span></span></div>
+                    <div class="row"><span>المنتجات المنخفضة</span><span style="color:#e74c6f;">${products.filter(p=>p.qty<=p.min).length}</span></div>
+                </div>
+
+                <div class="footer">
+                    <p>تقرير من نظام محاسبة ونقاط بيع - الميزان</p>
+                    <p style="font-size:14px;font-weight:700;color:#6c63ff;">جميع الحقوق محفوظة © الميزان</p>
+                </div>
+                </body></html>
+            `;
+
+            const win = window.open('', '_blank');
+            win.document.write(printContent);
+            win.document.close();
+            setTimeout(() => { win.print(); }, 500);
+            showToast('تم فتح طباعة التقرير', 'success');
+        }
+
+        // ================================================================
+        // 22. PURCHASES PAGE
+        // ================================================================
+        let purchasesFilter = 'all';
+
+        function renderPurchasesPage() {
+            const container = document.getElementById('purchasesList');
+            const search = document.getElementById('purchasesSearch').value.trim().toLowerCase();
+
+            let filtered = purchases;
+            if (purchasesFilter !== 'all') {
+                filtered = filtered.filter(p => p.payment === purchasesFilter);
+            }
+            if (search) {
+                filtered = filtered.filter(p =>
+                    p.supplier.toLowerCase().includes(search) ||
+                    p.productName.toLowerCase().includes(search)
+                );
+            }
+
+            const total = filtered.reduce((s, p) => s + p.total, 0);
+            document.getElementById('purchasesCount').textContent = filtered.length;
+            document.getElementById('purchasesTotal').textContent = total.toFixed(2);
+            document.getElementById('purchasesAvg').textContent = filtered.length > 0 ? (total / filtered.length).toFixed(
+            2) : '0';
+
+            if (filtered.length === 0) {
+                container.innerHTML =
+                    `<div class="empty-state"><i class="fas fa-receipt"></i><span>لا توجد مشتريات</span></div>`;
+                return;
+            }
+
+            let html =
+                `<div class="invoice-header"><span>المورد</span><span>المنتج</span><span>الكمية</span><span>الإجمالي</span><span>الدفع</span><span>التاريخ</span><span></span></div>`;
+            filtered.slice().reverse().forEach(p => {
+                const payColor = p.payment === 'نقدي' ? '#2ecc71' : p.payment === 'آجل' ? '#f39c12' : '#6c63ff';
+                html += `
+                    <div class="invoice-row">
+                        <span>${p.supplier}</span>
+                        <span>${p.productName}</span>
+                        <span>${p.qty}</span>
+                        <span>${p.total.toFixed(2)}</span>
+                        <span style="color:${payColor};font-weight:700;font-size:10px;">${p.payment || 'نقدي'}</span>
+                        <span>${p.date}</span>
+                        <span></span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function filterAllPurchases(filter) {
+            if (filter) purchasesFilter = filter;
+            document.querySelectorAll('#page-purchases .filter-chip').forEach(chip => {
+                chip.classList.toggle('active', chip.dataset.filter === purchasesFilter);
+            });
+            renderPurchasesPage();
+        }
+
+        // ================================================================
+        // 23. PAYMENT METHODS UI
+        // ================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.payment-methods').forEach(group => {
+                group.querySelectorAll('label').forEach(label => {
+                    label.addEventListener('click', function() {
+                        group.querySelectorAll('label').forEach(l => l.classList.remove(
+                            'selected'));
+                        this.classList.add('selected');
+                    });
+                });
+            });
+
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelectorAll('input[type="date"]').forEach(input => {
+                if (!input.value) input.value = today;
+            });
+
+            renderProducts();
+            renderPurchases();
+            renderSales();
+            renderReturns();
+            renderCustomers();
+            renderSuppliers();
+            renderExpenses();
+            renderTreasury();
+            updateTreasuryBalances();
+            renderBonds();
+            populateProductSelects();
+            populateCustomerSelects();
+            populateSupplierSelects();
+            filterAllInvoices('all');
+            renderReports('all');
+            updateAccountingData();
+            renderPurchasesPage();
+
+            const darkModeSetting = localStorage.getItem('darkMode') || 'auto';
+            document.getElementById('darkModeSetting').value = darkModeSetting;
+            applyDarkModeSetting();
+
+            const autoLock = parseInt(localStorage.getItem('autoLockMinutes') || '0');
+            document.getElementById('autoLockSetting').value = autoLock;
+
+            if (localStorage.getItem('app_unlocked') === 'true') {
+                document.getElementById('loginContainer').classList.add('hidden');
+                document.getElementById('appContent').style.display = 'block';
+                startAutoLockTimer();
+                setTimeout(() => {
+                    populateCustomerSelects();
+                    populateSupplierSelects();
+                    populateProductSelects();
+                    renderCustomers();
+                    renderSales();
+                    renderPurchases();
+                    if (navigator.onLine) {
+                        setTimeout(() => {
+                            pullFromCloud();
+                        }, 1500);
+                    }
+                }, 300);
+            }
+        });
+
+        console.log('✅ الميزان - نظام محاسبة ونقاط بيع');
+        console.log('🔒 كلمة المرور الافتراضية: 123456');
+        console.log('📤 تصدير/استيراد البيانات للمزامنة');
+        console.log('⚙️ الإعدادات لتغيير كلمة المرور');
+        console.log('🗑️ زر مسح جميع البيانات في الإعدادات');
+        console.log('📊 صفحة المشتريات مفعلة بالكامل');
+        console.log('☁️ Firebase متصل وجاهز للمزامنة');
+    </script>
+
+</body>
+</html>
