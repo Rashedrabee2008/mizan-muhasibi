@@ -23,153 +23,194 @@
             padding: 0;
             box-sizing: border-box;
         }
-/* ===== تحسين الخطوط ===== */
-* {
-    font-family: 'Tajawal', 'Segoe UI', sans-serif;
-}
 
-body, input, select, textarea, button, .grid-item span, .more-item span, .nav-item span {
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    color: #1a1a2e !important;
-}
+        /* ===== تحسين الخطوط ===== */
+        * {
+            font-family: 'Tajawal', 'Segoe UI', sans-serif;
+        }
 
-/* العناوين الرئيسية */
-h1, .app-info h1 {
-    font-size: 24px !important;
-    font-weight: 900 !important;
-    color: #1a1a2e !important;
-}
-h2, .page-content h2 {
-    font-size: 20px !important;
-    font-weight: 900 !important;
-    color: #1a1a2e !important;
-}
-h3, .section-title {
-    font-size: 16px !important;
-    font-weight: 900 !important;
-    color: #1a1a2e !important;
-}
-h4 {
-    font-size: 14px !important;
-    font-weight: 800 !important;
-    color: #1a1a2e !important;
-}
+        body,
+        input,
+        select,
+        textarea,
+        button,
+        .grid-item span,
+        .more-item span,
+        .nav-item span {
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            color: #1a1a2e !important;
+        }
 
-/* النصوص العادية */
-p, span, label, .desc, .sub-title, .widget-sub, .label {
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    color: #1a1a2e !important;
-}
+        /* العناوين الرئيسية */
+        h1,
+        .app-info h1 {
+            font-size: 24px !important;
+            font-weight: 900 !important;
+            color: #1a1a2e !important;
+        }
+        h2,
+        .page-content h2 {
+            font-size: 20px !important;
+            font-weight: 900 !important;
+            color: #1a1a2e !important;
+        }
+        h3,
+        .section-title {
+            font-size: 16px !important;
+            font-weight: 900 !important;
+            color: #1a1a2e !important;
+        }
+        h4 {
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            color: #1a1a2e !important;
+        }
 
-/* الجداول */
-.table-row, .invoice-row, .table-header, .invoice-header {
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    color: #1a1a2e !important;
-}
+        /* النصوص العادية */
+        p,
+        span,
+        label,
+        .desc,
+        .sub-title,
+        .widget-sub,
+        .label {
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            color: #1a1a2e !important;
+        }
 
-/* البطاقات والأرقام */
-.dashboard-widget .widget-value {
-    font-size: 26px !important;
-    font-weight: 900 !important;
-    color: #1a1a2e !important;
-}
-.stat-card .number {
-    font-size: 20px !important;
-    font-weight: 900 !important;
-    color: #1a1a2e !important;
-}
-.balance-card .amount {
-    font-size: 30px !important;
-    font-weight: 900 !important;
-}
+        /* الجداول */
+        .table-row,
+        .invoice-row,
+        .table-header,
+        .invoice-header {
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            color: #1a1a2e !important;
+        }
 
-/* الأزرار */
-.btn {
-    font-size: 8px !important;
-    font-weight: 600 !important;
-    padding: 8px 12px !important;
-}
-.btn-sm {
-    font-size: 10px !important;
-    font-weight: 600 !important;
-}
+        /* البطاقات والأرقام */
+        .dashboard-widget .widget-value {
+            font-size: 26px !important;
+            font-weight: 900 !important;
+            color: #1a1a2e !important;
+        }
+        .stat-card .number {
+            font-size: 20px !important;
+            font-weight: 900 !important;
+            color: #1a1a2e !important;
+        }
+        .balance-card .amount {
+            font-size: 30px !important;
+            font-weight: 900 !important;
+        }
 
-/* حقول الإدخال */
-.form-group input,
-.form-group select,
-.form-group textarea {
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    color: #1a1a2e !important;
-    padding: 12px 14px !important;
-    background: #f8f8fc !important;
-    border: 2px solid #d0d0e8 !important;
-    border-radius: 12px !important;
-}
-.form-group label {
-    font-size: 13px !important;
-    font-weight: 800 !important;
-    color: #1a1a2e !important;
-    margin-bottom: 6px !important;
-    display: block !important;
-}
+        /* الأزرار */
+        .btn {
+            font-size: 13px !important;
+            font-weight: 800 !important;
+            padding: 10px 18px !important;
+        }
+        .btn-sm {
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            padding: 8px 14px !important;
+            border-radius: 10px !important;
+            min-width: 60px !important;
+        }
+        .btn-sm i {
+            font-size: 16px !important;
+            margin-left: 4px !important;
+        }
+        .btn-sm.btn-warning {
+            background: #f39c12 !important;
+            color: #fff !important;
+        }
+        .btn-sm.btn-danger {
+            background: #e74c6f !important;
+            color: #fff !important;
+        }
+        .table-row .actions,
+        .invoice-row .actions {
+            display: flex !important;
+            gap: 8px !important;
+            justify-content: center !important;
+        }
 
-/* شاشة الدخول */
-#loginScreen .login-box h1 {
-    font-size: 32px !important;
-    font-weight: 900 !important;
-}
-#loginScreen .login-box .sub {
-    font-size: 14px !important;
-    font-weight: 700 !important;
-}
-#loginScreen .login-box .form-group input {
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    padding: 12px !important;
-}
-#loginScreen .login-box .btn-primary {
-    font-size: 16px !important;
-    font-weight: 800 !important;
-    padding: 14px !important;
-}
+        /* حقول الإدخال */
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: #1a1a2e !important;
+            padding: 12px 14px !important;
+            background: #f8f8fc !important;
+            border: 2px solid #d0d0e8 !important;
+            border-radius: 12px !important;
+        }
+        .form-group label {
+            font-size: 13px !important;
+            font-weight: 800 !important;
+            color: #1a1a2e !important;
+            margin-bottom: 6px !important;
+            display: block !important;
+        }
 
-/* التبويبات السفلية */
-.nav-item {
-    font-size: 10px !important;
-    font-weight: 700 !important;
-}
-.nav-item i {
-    font-size: 20px !important;
-}
+        /* شاشة الدخول */
+        #loginScreen .login-box h1 {
+            font-size: 32px !important;
+            font-weight: 900 !important;
+        }
+        #loginScreen .login-box .sub {
+            font-size: 14px !important;
+            font-weight: 700 !important;
+        }
+        #loginScreen .login-box .form-group input {
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            padding: 12px !important;
+        }
+        #loginScreen .login-box .btn-primary {
+            font-size: 16px !important;
+            font-weight: 800 !important;
+            padding: 14px !important;
+        }
 
-/* أيقونات الشبكة */
-.grid-item i {
-    font-size: 24px !important;
-}
-.grid-item span {
-    font-size: 12px !important;
-    font-weight: 700 !important;
-}
-.more-item i {
-    font-size: 26px !important;
-}
-.more-item span {
-    font-size: 12px !important;
-    font-weight: 700 !important;
-}
+        /* التبويبات السفلية */
+        .nav-item {
+            font-size: 10px !important;
+            font-weight: 700 !important;
+        }
+        .nav-item i {
+            font-size: 20px !important;
+        }
+
+        /* أيقونات الشبكة */
+        .grid-item i {
+            font-size: 24px !important;
+        }
+        .grid-item span {
+            font-size: 12px !important;
+            font-weight: 700 !important;
+        }
+        .more-item i {
+            font-size: 26px !important;
+        }
+        .more-item span {
+            font-size: 12px !important;
+            font-weight: 700 !important;
+        }
 
         /* ===== أزرار تحكم واضحة ===== */
         .btn-primary {
             background: linear-gradient(135deg, #6c63ff, #5a52e0) !important;
             color: #fff !important;
             font-weight: 800 !important;
-            font-size: 17px !important;
-            padding: 14px 24px !important;
-            border-radius: 14px !important;
+            font-size: 13px !important;
+            padding: 12px 20px !important;
+            border-radius: 12px !important;
             box-shadow: 0 4px 18px rgba(108, 99, 255, 0.3) !important;
             transition: all 0.3s ease !important;
         }
@@ -182,9 +223,9 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
             background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
             color: #fff !important;
             font-weight: 800 !important;
-            font-size: 17px !important;
-            padding: 14px 24px !important;
-            border-radius: 14px !important;
+            font-size: 13px !important;
+            padding: 12px 20px !important;
+            border-radius: 12px !important;
             box-shadow: 0 4px 18px rgba(46, 204, 113, 0.3) !important;
         }
         .btn-success:hover {
@@ -196,9 +237,9 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
             background: linear-gradient(135deg, #e74c6f, #c0392b) !important;
             color: #fff !important;
             font-weight: 800 !important;
-            font-size: 17px !important;
-            padding: 14px 24px !important;
-            border-radius: 14px !important;
+            font-size: 13px !important;
+            padding: 12px 20px !important;
+            border-radius: 12px !important;
             box-shadow: 0 4px 18px rgba(231, 76, 111, 0.3) !important;
         }
         .btn-danger:hover {
@@ -210,9 +251,9 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
             background: linear-gradient(135deg, #f39c12, #d68910) !important;
             color: #fff !important;
             font-weight: 800 !important;
-            font-size: 17px !important;
-            padding: 14px 24px !important;
-            border-radius: 14px !important;
+            font-size: 13px !important;
+            padding: 12px 20px !important;
+            border-radius: 12px !important;
             box-shadow: 0 4px 18px rgba(243, 156, 18, 0.3) !important;
         }
         .btn-warning:hover {
@@ -224,9 +265,9 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
             background: linear-gradient(135deg, #3498db, #2980b9) !important;
             color: #fff !important;
             font-weight: 800 !important;
-            font-size: 17px !important;
-            padding: 14px 24px !important;
-            border-radius: 14px !important;
+            font-size: 13px !important;
+            padding: 12px 20px !important;
+            border-radius: 12px !important;
             box-shadow: 0 4px 18px rgba(52, 152, 219, 0.3) !important;
         }
         .btn-info:hover {
@@ -2100,7 +2141,7 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
             <div class="app-info">
                 <h1 onclick="navigateTo('home')">الميزان</h1>
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                    <span id="trialStatusBadge" class="trial-badge active">📅 تجريبي (7 أيام)</span>
+                    <span id="trialStatusBadge" class="trial-badge active">⏳ تجريبي (7 أيام)</span>
                     <button class="toggle-btn" onclick="toggleDarkMode()"><i class="fas fa-moon"></i></button>
                     <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
                 </div>
@@ -2143,6 +2184,28 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
             </div>
 
             <div id="lowStockAlerts"></div>
+
+            <!-- ===== أزرار الدفع السريعة ===== -->
+            <section style="margin: 10px 0 20px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div style="background:linear-gradient(135deg,#6c63ff,#5a52e0);border-radius:16px;padding:16px;text-align:center;color:#fff;">
+                        <i class="fas fa-phone" style="font-size:32px;color:#fff;display:block;margin-bottom:8px;"></i>
+                        <span style="font-size:18px;font-weight:800;color:#fff;">📱 فودافون كاش</span>
+                        <div style="font-size:24px;font-weight:900;color:#fff;margin:8px 0;">01011993799</div>
+                        <button class="btn btn-success" onclick="copyPhoneNumber()" style="width:100%;font-size:16px;padding:12px;background:#fff;color:#6c63ff;">
+                            <i class="fas fa-copy"></i> نسخ الرقم
+                        </button>
+                    </div>
+                    <div style="background:linear-gradient(135deg,#25D366,#1da851);border-radius:16px;padding:16px;text-align:center;color:#fff;">
+                        <i class="fas fa-mobile-alt" style="font-size:32px;color:#fff;display:block;margin-bottom:8px;"></i>
+                        <span style="font-size:18px;font-weight:800;color:#fff;">📲 إنستاباي</span>
+                        <div style="font-size:16px;font-weight:700;color:#fff;margin:8px 0;">اضغط للدفع مباشرة</div>
+                        <a href="https://ipn.eg/S/rashedrabia/instapay/5GGJzk" target="_blank" class="btn btn-success" style="width:100%;font-size:16px;padding:12px;background:#fff;color:#25D366;text-decoration:none;display:block;border-radius:12px;">
+                            <i class="fas fa-external-link-alt"></i> ادفع عبر إنستاباي
+                        </a>
+                    </div>
+                </div>
+            </section>
 
             <section class="main-card" onclick="navigateTo('sales')">
                 <div class="card-content">
@@ -2759,6 +2822,20 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
                     </div>
                 </div>
 
+                <!-- دفع -->
+                <div class="settings-card" style="border-color:#25D366;background:#f0fff4;">
+                    <div style="display:flex;align-items:center;gap:14px;">
+                        <i class="fas fa-credit-card icon-big" style="color:#25D366;"></i>
+                        <div style="flex:1;">
+                            <div class="title">💳 الاشتراك المدفوع</div>
+                            <div class="desc">قم بشراء اشتراكك للاستمرار في استخدام التطبيق بعد انتهاء الفترة التجريبية.</div>
+                        </div>
+                        <button class="btn btn-success" onclick="showPaymentOptions()" style="font-size:14px;padding:12px 20px;">
+                            <i class="fas fa-credit-card"></i> اشتراك
+                        </button>
+                    </div>
+                </div>
+
                 <div class="settings-card">
                     <div style="display:flex;align-items:center;gap:14px;">
                         <i class="fas fa-trash-alt icon-big" style="color:#e74c6f;"></i>
@@ -3156,9 +3233,11 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
             const isPaid = trialData.isPaid === true;
             const trialEnd = trialData.trialEnd || 0;
             const remaining = trialEnd - now;
-            const daysLeft = Math.ceil(remaining / (24 * 60 * 60 * 1000));
+
+            const daysLeft = Math.floor(remaining / (24 * 60 * 60 * 1000));
             const hoursLeft = Math.floor((remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
             const minutesLeft = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+            const secondsLeft = Math.floor((remaining % (60 * 1000)) / 1000);
 
             const badge = document.getElementById('trialStatusBadge');
             if (!badge) return;
@@ -3182,12 +3261,15 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
                 return;
             }
 
-            let counterText = `📅 تجريبي (${daysLeft} يوم`;
+            let counterText = `⏳ تجريبي (${daysLeft} يوم`;
             if (daysLeft === 0 && hoursLeft > 0) {
                 counterText += ` ${hoursLeft} ساعة`;
             }
             if (daysLeft === 0 && hoursLeft === 0 && minutesLeft > 0) {
                 counterText += ` ${minutesLeft} دقيقة`;
+            }
+            if (daysLeft === 0 && hoursLeft === 0 && minutesLeft === 0 && secondsLeft > 0) {
+                counterText += ` ${secondsLeft} ثانية`;
             }
             counterText += `)`;
 
@@ -3197,6 +3279,9 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
             const overlay = document.getElementById('paymentOverlay');
             if (overlay) overlay.classList.remove('show');
         }
+
+        // تحديث العداد كل ثانية
+        setInterval(() => { updateTrialCounter(); }, 1000);
 
         function checkAndBlockIfExpired() {
             if (!trialData) return false;
@@ -3234,8 +3319,6 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
             document.getElementById('appContainer').style.display = 'block';
             showToast('✅ تم تفعيل اشتراكك بنجاح، شكراً لك!', 'success');
         };
-
-        setInterval(() => { updateTrialCounter(); }, 60000);
 
         // ================================================================
         // 6. تحميل البيانات
@@ -3644,7 +3727,10 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
                         <span>${c.phone || '-'}</span>
                         <span>${c.email || '-'}</span>
                         <span>${c.address || '-'}</span>
-                        <td><button class="btn btn-danger btn-sm" onclick="deleteCustomer('${c.id}')"><i class="fas fa-trash"></i></button></td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editCustomer(${c.id})"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${c.id})"><i class="fas fa-trash"></i></button>
+                        </td>
                     </div>
                 `;
             });
@@ -3671,11 +3757,11 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
 
         window.deleteCustomer = function(id) {
             if (!checkAndBlockIfExpired()) return;
-            if (!confirm('حذف العميل؟')) return;
+            if (!confirm('⚠️ هل أنت متأكد من حذف هذا العميل؟')) return;
             appData.customers = appData.customers.filter(c => c.id !== id);
             saveToLocalStorage('customers', appData.customers);
             refreshAllData();
-            showToast('تم الحذف', 'info');
+            showToast('✅ تم حذف العميل بنجاح', 'success');
         };
 
         window.editCustomer = function(id) {
@@ -3743,7 +3829,10 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
                         <span>${s.phone || '-'}</span>
                         <span>${s.email || '-'}</span>
                         <span>${s.address || '-'}</span>
-                        <td><button class="btn btn-danger btn-sm" onclick="deleteSupplier('${s.id}')"><i class="fas fa-trash"></i></button></td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button>
+                        </td>
                     </div>
                 `;
             });
@@ -5801,7 +5890,67 @@ p, span, label, .desc, .sub-title, .widget-sub, .label {
         };
 
         // ================================================================
-        // 31. تهيئة التطبيق بعد الدخول
+        // 31. دوال الدفع
+        // ================================================================
+        window.copyPhoneNumber = function() {
+            const phone = '01011993799';
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(phone).then(() => {
+                    showToast('✅ تم نسخ الرقم: ' + phone, 'success');
+                }).catch(() => {
+                    const input = document.createElement('input');
+                    input.value = phone;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    showToast('✅ تم نسخ الرقم: ' + phone, 'success');
+                });
+            } else {
+                const input = document.createElement('input');
+                input.value = phone;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showToast('✅ تم نسخ الرقم: ' + phone, 'success');
+            }
+        };
+
+        window.showPaymentOptions = function() {
+            const html = `
+                    <div style="text-align:center;">
+                        <i class="fas fa-credit-card" style="font-size:48px;color:#6c63ff;display:block;margin-bottom:16px;"></i>
+                        <h3 style="font-size:20px;font-weight:800;color:#1a1a2e;">💳 اختيار طريقة الدفع</h3>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;">
+                            <div style="background:#f8f8fc;border-radius:12px;padding:16px;border:2px solid #eee;">
+                                <i class="fas fa-phone" style="font-size:32px;color:#6c63ff;display:block;margin-bottom:8px;"></i>
+                                <div style="font-weight:700;font-size:16px;">📱 فودافون كاش</div>
+                                <div style="font-size:20px;font-weight:900;color:#6c63ff;margin:8px 0;">01011993799</div>
+                                <button class="btn btn-primary" onclick="copyPhoneNumber(); closeModal();" style="width:100%;font-size:14px;padding:10px;">
+                                    <i class="fas fa-copy"></i> نسخ الرقم
+                                </button>
+                            </div>
+                            <div style="background:#f8f8fc;border-radius:12px;padding:16px;border:2px solid #25D366;">
+                                <i class="fas fa-mobile-alt" style="font-size:32px;color:#25D366;display:block;margin-bottom:8px;"></i>
+                                <div style="font-weight:700;font-size:16px;">📲 إنستاباي</div>
+                                <div style="font-size:14px;font-weight:700;color:#888;margin:8px 0;">ادفع مباشرة</div>
+                                <a href="https://ipn.eg/S/rashedrabia/instapay/5GGJzk" target="_blank" class="btn btn-success" style="width:100%;font-size:14px;padding:10px;text-decoration:none;display:block;background:#25D366;color:#fff;border:none;border-radius:10px;">
+                                    <i class="fas fa-external-link-alt"></i> ادفع الآن
+                                </a>
+                            </div>
+                        </div>
+                        <p style="font-size:13px;color:#888;">بعد الدفع، اضغط على "لقد قمت بالدفع" في نافذة الدفع.</p>
+                        <button class="btn btn-secondary" onclick="closeModal()" style="width:100%;margin-top:12px;background:#eee;color:#333;border:none;padding:12px;border-radius:10px;font-weight:700;">
+                            إغلاق
+                        </button>
+                    </div>
+                `;
+            openModal('💳 طرق الدفع', html);
+        };
+
+        // ================================================================
+        // 32. تهيئة التطبيق بعد الدخول
         // ================================================================
         function initializeAppAfterLogin() {
             if (localStorage.getItem('darkMode') === 'true') {
