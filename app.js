@@ -1,5 +1,5 @@
 // ================================================================
-// app.js - التطبيق الرئيسي (دوال التحكم والتنقل)
+// app.js - التطبيق الرئيسي (نسخة كاملة ومطورة)
 // ================================================================
 
 // ================================================================
@@ -12,16 +12,82 @@ let versionClickCount = 0;
 let currentUser = JSON.parse(localStorage.getItem('mizan_current_user')) || { username: 'مدير', role: 'admin' };
 
 // ================================================================
+// تهيئة جميع المتغيرات
+// ================================================================
+function initAppData() {
+    // التأكد من أن جميع المتغيرات مصفوفات
+    const arrayKeys = ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns', 'expenses', 
+                       'treasury', 'bonds', 'warehouses', 'warehouseProducts', 'permissions', 'backups', 
+                       'accounts', 'auditLog', 'alerts', 'cashierHistory', 'inventoryAdjustments'];
+    
+    arrayKeys.forEach(key => {
+        if (typeof window[key] === 'undefined' || !Array.isArray(window[key])) {
+            try {
+                const data = localStorage.getItem('mizan_' + key);
+                window[key] = data ? JSON.parse(data) : [];
+            } catch(e) {
+                window[key] = [];
+            }
+        }
+    });
+    
+    if (!window.companyData || typeof window.companyData !== 'object') {
+        try {
+            const data = localStorage.getItem('mizan_companyData');
+            window.companyData = data ? JSON.parse(data) : {};
+        } catch(e) {
+            window.companyData = {};
+        }
+    }
+    
+    if (!window.users || !Array.isArray(window.users)) {
+        try {
+            const data = localStorage.getItem('mizan_users');
+            window.users = data ? JSON.parse(data) : [
+                { id: 1, username: 'مدير', role: 'admin' },
+                { id: 2, username: 'مشرف', role: 'manager' },
+                { id: 3, username: 'كاشير', role: 'cashier' },
+                { id: 4, username: 'مشاهد', role: 'viewer' }
+            ];
+        } catch(e) {
+            window.users = [
+                { id: 1, username: 'مدير', role: 'admin' },
+                { id: 2, username: 'مشرف', role: 'manager' },
+                { id: 3, username: 'كاشير', role: 'cashier' },
+                { id: 4, username: 'مشاهد', role: 'viewer' }
+            ];
+        }
+    }
+    
+    if (!window.currentUser || typeof window.currentUser !== 'object') {
+        try {
+            const data = localStorage.getItem('mizan_current_user');
+            window.currentUser = data ? JSON.parse(data) : { username: 'مدير', role: 'admin' };
+        } catch(e) {
+            window.currentUser = { username: 'مدير', role: 'admin' };
+        }
+    }
+    
+    console.log('✅ تم تهيئة جميع المتغيرات بنجاح');
+    console.log('📊 عدد المنتجات:', window.products?.length || 0);
+    console.log('👤 عدد العملاء:', window.customers?.length || 0);
+    console.log('📦 عدد الفواتير:', window.sales?.length || 0);
+}
+
+// استدعاء التهيئة
+initAppData();
+
+// ================================================================
 // HELPERS
 // ================================================================
 function safeSetText(id, value) { 
     const el = document.getElementById(id); 
-    if (el) el.textContent = value; 
+    if (el) el.textContent = value !== undefined && value !== null ? value : '0'; 
 }
 
 function safeSetValue(id, value) { 
     const el = document.getElementById(id); 
-    if (el) el.value = value; 
+    if (el) el.value = value !== undefined && value !== null ? value : ''; 
 }
 
 function showToast(msg, type = 'info') {
@@ -102,10 +168,527 @@ function fallbackCopy(text) {
 }
 
 // ================================================================
+// STORAGE
+// ================================================================
+function getData(key, def = []) {
+    try {
+        const d = localStorage.getItem('mizan_' + key);
+        if (d) {
+            const parsed = JSON.parse(d);
+            const arrayKeys = ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns', 'expenses', 
+                              'treasury', 'bonds', 'warehouses', 'warehouseProducts', 'permissions', 'backups', 
+                              'accounts', 'auditLog', 'alerts', 'cashierHistory', 'inventoryAdjustments'];
+            if (arrayKeys.includes(key) && !Array.isArray(parsed)) {
+                return def;
+            }
+            return parsed;
+        }
+        return def;
+    } catch (e) {
+        console.warn('⚠️ خطأ في قراءة ' + key + ':', e);
+        return def;
+    }
+}
+
+function setData(key, data) {
+    try {
+        localStorage.setItem('mizan_' + key, JSON.stringify(data));
+    } catch (e) {
+        console.warn('⚠️ خطأ في حفظ ' + key + ':', e);
+    }
+}
+
+// ================================================================
+// SAVE ALL
+// ================================================================
+function saveAll() {
+    try {
+        setData('products', window.products);
+        setData('customers', window.customers);
+        setData('suppliers', window.suppliers);
+        setData('purchases', window.purchases);
+        setData('sales', window.sales);
+        setData('returns', window.returns);
+        setData('expenses', window.expenses);
+        setData('treasury', window.treasury);
+        setData('bonds', window.bonds);
+        setData('warehouses', window.warehouses);
+        setData('warehouseProducts', window.warehouseProducts);
+        setData('permissions', window.permissions);
+        setData('companyData', window.companyData);
+        setData('backups', window.backups);
+        setData('accounts', window.accounts);
+        setData('auditLog', window.auditLog);
+        setData('alerts', window.alerts);
+        setData('cashierHistory', window.cashierHistory);
+        setData('inventoryAdjustments', window.inventoryAdjustments);
+        setData('users', window.users);
+        
+        localStorage.setItem('mizan_auto_restore', JSON.stringify({
+            products: window.products, 
+            customers: window.customers, 
+            suppliers: window.suppliers, 
+            purchases: window.purchases, 
+            sales: window.sales, 
+            returns: window.returns,
+            expenses: window.expenses, 
+            treasury: window.treasury, 
+            bonds: window.bonds, 
+            warehouses: window.warehouses,
+            warehouseProducts: window.warehouseProducts,
+            permissions: window.permissions, 
+            companyData: window.companyData, 
+            backups: window.backups, 
+            accounts: window.accounts, 
+            auditLog: window.auditLog, 
+            alerts: window.alerts, 
+            cashierHistory: window.cashierHistory,
+            inventoryAdjustments: window.inventoryAdjustments, 
+            users: window.users,
+            savedAt: Date.now()
+        }));
+    } catch (e) {
+        console.warn('⚠️ خطأ في الحفظ:', e);
+    }
+}
+
+// ================================================================
+// ================================================================
+// ================================================================
+// AUDIT LOG - سجل النشاطات التفصيلي (الجزء المطور)
+// ================================================================
+// ================================================================
+// ================================================================
+
+// ================================================================
+// ADD AUDIT LOG (نسخة مطورة مع تفاصيل كاملة)
+// ================================================================
+function addAuditLog(action, type, details, extraData = null) {
+    const dt = getCurrentDateTime();
+    const entry = {
+        id: Date.now(),
+        action: action,           // add, edit, delete, sale, purchase, return
+        type: type,               // product, customer, invoice, user, etc.
+        details: details,
+        user: window.currentUser?.username || 'admin',
+        userRole: window.currentUser?.role || 'admin',
+        date: dt.date,
+        time: dt.time,
+        timestamp: new Date().toISOString(),
+        extra: extraData || {}
+    };
+    
+    // إضافة تفاصيل إضافية حسب نوع العملية
+    if (action === 'sale' && extraData?.invoice) {
+        entry.extra = {
+            customer: extraData.invoice.customer || 'غير محدد',
+            total: extraData.invoice.total || 0,
+            itemsCount: extraData.invoice.items?.length || 0,
+            items: extraData.invoice.items || [],
+            payment: extraData.invoice.payment || 'نقدي',
+            invoiceType: extraData.invoice.invoiceType || 'simple'
+        };
+    }
+    
+    if (action === 'purchase' && extraData?.invoice) {
+        entry.extra = {
+            supplier: extraData.invoice.supplier || 'غير محدد',
+            total: extraData.invoice.total || 0,
+            itemsCount: extraData.invoice.items?.length || 0,
+            items: extraData.invoice.items || [],
+            payment: extraData.invoice.payment || 'نقدي',
+            invoiceType: extraData.invoice.invoiceType || 'simple'
+        };
+    }
+    
+    if (action === 'edit' && extraData) {
+        entry.extra = {
+            oldData: extraData.oldData || {},
+            newData: extraData.newData || {},
+            changes: extraData.changes || {}
+        };
+    }
+    
+    if (action === 'delete' && extraData) {
+        entry.extra = {
+            deletedData: extraData.deletedData || {}
+        };
+    }
+    
+    // إضافة السجل
+    if (!window.auditLog) window.auditLog = [];
+    window.auditLog.unshift(entry);
+    
+    // الاحتفاظ بآخر 1000 سجل فقط
+    if (window.auditLog.length > 1000) {
+        window.auditLog = window.auditLog.slice(0, 1000);
+    }
+    
+    setData('auditLog', window.auditLog);
+    renderAudit();
+    
+    // تسجيل في console للتتبع
+    console.log(`📝 [${dt.time}] ${entry.user} - ${action} ${type}: ${details}`);
+    
+    return entry;
+}
+
+// ================================================================
+// RENDER AUDIT (نسخة مطورة مع تفاصيل كاملة)
+// ================================================================
+function renderAudit() { 
+    filterAudit('all'); 
+}
+
+let auditFilter = 'all';
+
+function filterAudit(filter) {
+    auditFilter = filter;
+    const container = document.getElementById('auditList');
+    if (!container) return;
+
+    const canView = canViewAudit();
+    if (!canView) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>ليس لديك صلاحية لعرض سجل النشاطات</span></div>`;
+        return;
+    }
+
+    if (!window.auditLog || !Array.isArray(window.auditLog) || window.auditLog.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-history"></i><span>لا توجد نشاطات</span></div>`;
+        return;
+    }
+
+    let filtered = window.auditLog;
+    if (filter !== 'all') {
+        filtered = window.auditLog.filter(a => a.action === filter);
+    }
+
+    // تحديث أزرار الفلتر
+    document.querySelectorAll('.filter-chips .filter-chip').forEach(chip => {
+        const chipText = chip.textContent.trim();
+        const isActive = (filter === 'all' && chipText === 'الكل') ||
+                         (filter === 'add' && chipText === '➕ إضافة') ||
+                         (filter === 'edit' && chipText === '✏️ تعديل') ||
+                         (filter === 'delete' && chipText === '🗑️ حذف') ||
+                         (filter === 'sale' && chipText === '💰 بيع') ||
+                         (filter === 'purchase' && chipText === '🛒 شراء') ||
+                         (filter === 'return' && chipText === '🔄 مرتجع');
+        chip.classList.toggle('active', isActive);
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-history"></i><span>لا توجد نشاطات مطابقة</span></div>`;
+        return;
+    }
+
+    const actionNames = { 
+        add: '➕ إضافة', 
+        edit: '✏️ تعديل', 
+        delete: '🗑️ حذف', 
+        sale: '💰 بيع', 
+        purchase: '🛒 شراء', 
+        return: '🔄 مرتجع' 
+    };
+    const colors = { 
+        add: '#2D8F5E', 
+        edit: '#E6A830', 
+        delete: '#E06060', 
+        sale: '#4A8AB5', 
+        purchase: '#C9A94E', 
+        return: '#E6A830' 
+    };
+
+    let html = `<div style="margin-bottom:8px;color:#A89070;font-size:12px;">عرض ${filtered.length} من ${window.auditLog.length} نشاط</div>`;
+
+    filtered.slice(0, 100).forEach(a => {
+        // بناء تفاصيل النشاط
+        let detailsHtml = `<span>${a.details || ''}</span>`;
+        
+        // إضافة تفاصيل إضافية حسب النوع
+        if (a.action === 'sale' && a.extra) {
+            const extra = a.extra;
+            detailsHtml += `
+                <div style="font-size:10px;color:#A89070;margin-top:2px;">
+                    👤 ${extra.customer || 'غير محدد'} | 
+                    💰 ${(extra.total || 0).toFixed(2)} | 
+                    📦 ${extra.itemsCount || 0} صنف | 
+                    💳 ${extra.payment || 'نقدي'}
+                    ${extra.invoiceType === 'tax' ? ' 🧾 ضريبي' : ''}
+                </div>
+            `;
+            // عرض تفاصيل الأصناف
+            if (extra.items && extra.items.length > 0) {
+                detailsHtml += `<div style="font-size:9px;color:#5D5D5D;margin-top:2px;">`;
+                extra.items.forEach((item, i) => {
+                    detailsHtml += `${i+1}- ${item.productName} (${item.qty} × ${item.price.toFixed(2)}) = ${item.total.toFixed(2)} | `;
+                });
+                detailsHtml += `</div>`;
+            }
+        }
+        
+        if (a.action === 'purchase' && a.extra) {
+            const extra = a.extra;
+            detailsHtml += `
+                <div style="font-size:10px;color:#A89070;margin-top:2px;">
+                    🏢 ${extra.supplier || 'غير محدد'} | 
+                    💰 ${(extra.total || 0).toFixed(2)} | 
+                    📦 ${extra.itemsCount || 0} صنف | 
+                    💳 ${extra.payment || 'نقدي'}
+                    ${extra.invoiceType === 'tax' ? ' 🧾 ضريبي' : ''}
+                </div>
+            `;
+            if (extra.items && extra.items.length > 0) {
+                detailsHtml += `<div style="font-size:9px;color:#5D5D5D;margin-top:2px;">`;
+                extra.items.forEach((item, i) => {
+                    detailsHtml += `${i+1}- ${item.productName} (${item.qty} × ${item.price.toFixed(2)}) = ${item.total.toFixed(2)} | `;
+                });
+                detailsHtml += `</div>`;
+            }
+        }
+        
+        if (a.action === 'edit' && a.extra) {
+            const extra = a.extra;
+            if (extra.changes && Object.keys(extra.changes).length > 0) {
+                detailsHtml += `<div style="font-size:10px;color:#E6A830;margin-top:2px;">`;
+                Object.entries(extra.changes).forEach(([key, change]) => {
+                    detailsHtml += `🔄 ${key}: ${change.old} → ${change.new} | `;
+                });
+                detailsHtml += `</div>`;
+            }
+        }
+        
+        if (a.action === 'delete' && a.extra) {
+            const extra = a.extra;
+            if (extra.deletedData && Object.keys(extra.deletedData).length > 0) {
+                detailsHtml += `<div style="font-size:10px;color:#E06060;margin-top:2px;">`;
+                Object.entries(extra.deletedData).forEach(([key, value]) => {
+                    if (typeof value !== 'object') {
+                        detailsHtml += `🗑️ ${key}: ${value} | `;
+                    }
+                });
+                detailsHtml += `</div>`;
+            }
+        }
+
+        html += `
+            <div class="table-row" style="font-size:12px;color:#F5E6C8;border-bottom:1px solid #2D2D2D;padding:8px 0;">
+                <div style="display:grid;grid-template-columns:1.2fr 1fr 2fr 1fr;gap:6px;width:100%;">
+                    <span style="font-size:10px;color:#A89070;">${a.date} ${a.time}</span>
+                    <span style="color:${colors[a.action] || '#C9A94E'};font-weight:700;font-size:11px;">${actionNames[a.action] || a.action}</span>
+                    <div style="font-size:11px;">${detailsHtml}</div>
+                    <span style="font-size:10px;color:#5D5D5D;">👤 ${a.user}</span>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+// ================================================================
+// CLEAR AUDIT
+// ================================================================
+function clearAudit() {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    if (!confirm('⚠️ مسح سجل النشاطات؟')) return;
+
+    window.auditLog = [];
+    setData('auditLog', window.auditLog);
+    renderAudit();
+    showToast('🗑️ تم مسح السجل', 'info');
+}
+
+// ================================================================
+// ================================================================
+// ================================================================
+// PROFIT ANALYSIS - تحليل الأرباح (الجزء المطور)
+// ================================================================
+// ================================================================
+// ================================================================
+
+// ================================================================
+// GENERATE PROFIT ANALYSIS
+// ================================================================
+function generateProfitAnalysis() {
+    const container = document.getElementById('profitAnalysisResult');
+    if (!container) return;
+
+    // التأكد من وجود البيانات
+    if (!window.products || !window.products.length) {
+        container.innerHTML = `
+            <div class="alert-item info">
+                <div class="icon"><i class="fas fa-info-circle"></i></div>
+                <div class="content">
+                    <div class="title">لا توجد منتجات</div>
+                    <div class="desc">أضف منتجات أولاً لتحليل الأرباح</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // حساب الأرباح لكل منتج
+    const productProfits = window.products.map(p => {
+        // حساب الكمية المباعة
+        let totalSold = 0;
+        let totalRevenue = 0;
+        let totalCost = 0;
+        let totalQuantity = 0;
+        
+        // من فواتير البيع
+        if (window.sales && window.sales.length > 0) {
+            window.sales.forEach(sale => {
+                if (sale.items && Array.isArray(sale.items)) {
+                    const item = sale.items.find(i => i.productId === p.id);
+                    if (item) {
+                        totalSold += item.qty || 0;
+                        totalRevenue += item.total || 0;
+                        totalQuantity += item.qty || 0;
+                    }
+                }
+            });
+        }
+        
+        // من المرتجعات (تقليل الكمية المباعة)
+        if (window.returns && window.returns.length > 0) {
+            window.returns.forEach(ret => {
+                if (ret.items && Array.isArray(ret.items)) {
+                    const item = ret.items.find(i => i.productId === p.id);
+                    if (item) {
+                        totalSold -= item.qty || 0;
+                        totalRevenue -= item.total || 0;
+                        totalQuantity -= item.qty || 0;
+                    }
+                }
+            });
+        }
+        
+        totalCost = totalSold * (p.buyPrice || 0);
+        const profit = totalRevenue - totalCost;
+        const margin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+        const avgPrice = totalSold > 0 ? totalRevenue / totalSold : 0;
+        
+        // الكمية الحالية في المخزون
+        const currentQty = window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0);
+        const inventoryValue = currentQty * (p.buyPrice || 0);
+        
+        return { 
+            ...p, 
+            totalSold, 
+            totalRevenue, 
+            totalCost, 
+            profit, 
+            margin,
+            avgPrice,
+            currentQty,
+            inventoryValue,
+            totalQuantity
+        };
+    });
+
+    // تصفية المنتجات التي لها مبيعات
+    const activeProducts = productProfits.filter(p => p.totalSold > 0 || p.totalRevenue > 0);
+    const totalProducts = activeProducts.length;
+    const avgMargin = totalProducts > 0 ? activeProducts.reduce((s, p) => s + p.margin, 0) / totalProducts : 0;
+    const topProduct = activeProducts.length > 0 ? activeProducts.reduce((a, b) => a.profit > b.profit ? a : b) : null;
+    const totalRevenueAll = activeProducts.reduce((s, p) => s + p.totalRevenue, 0);
+    const totalCostAll = activeProducts.reduce((s, p) => s + p.totalCost, 0);
+    const totalProfitAll = totalRevenueAll - totalCostAll;
+
+    // تحديث الإحصائيات
+    safeSetText('profitTotalProducts', totalProducts);
+    safeSetText('profitAvgMargin', avgMargin.toFixed(1) + '%');
+    safeSetText('profitTopProduct', topProduct ? topProduct.name + ' (' + topProduct.profit.toFixed(2) + ')' : 'لا يوجد');
+
+    if (activeProducts.length === 0) {
+        container.innerHTML = `
+            <div class="alert-item info">
+                <div class="icon"><i class="fas fa-info-circle"></i></div>
+                <div class="content">
+                    <div class="title">لا توجد مبيعات</div>
+                    <div class="desc">قم بإجراء مبيعات أولاً لتحليل الأرباح</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // ترتيب المنتجات حسب الربح
+    const sortedProducts = [...activeProducts].sort((a, b) => b.profit - a.profit);
+
+    let html = `
+        <div class="accounting-detail-content">
+            <h4 style="color:#C9A94E;font-size:15px;margin-bottom:6px;">📊 تحليل ربحية المنتجات</h4>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px;padding:8px;background:#0D0D0D;border-radius:6px;border:1px solid #2D2D2D;">
+                <div style="text-align:center;">
+                    <div style="font-size:11px;color:#A89070;">إجمالي الإيرادات</div>
+                    <div style="font-size:16px;font-weight:700;color:#2D8F5E;">${totalRevenueAll.toFixed(2)}</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:11px;color:#A89070;">إجمالي التكاليف</div>
+                    <div style="font-size:16px;font-weight:700;color:#E06060;">${totalCostAll.toFixed(2)}</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:11px;color:#A89070;">صافي الربح</div>
+                    <div style="font-size:16px;font-weight:700;color:${totalProfitAll >= 0 ? '#2D8F5E' : '#E06060'};">${totalProfitAll.toFixed(2)}</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:11px;color:#A89070;">متوسط الهامش</div>
+                    <div style="font-size:16px;font-weight:700;color:#C9A94E;">${avgMargin.toFixed(1)}%</div>
+                </div>
+            </div>
+            
+            <div style="max-height:400px;overflow-y:auto;font-size:12px;">
+                <div style="display:grid;grid-template-columns:1.5fr 0.8fr 1fr 1fr 1fr 0.8fr;gap:4px;padding:4px 0;font-weight:800;border-bottom:2px solid #C9A94E;color:#F5E6C8;">
+                    <span>المنتج</span>
+                    <span>الكمية</span>
+                    <span>الإيرادات</span>
+                    <span>التكلفة</span>
+                    <span>الربح</span>
+                    <span>الهامش</span>
+                </div>
+                ${sortedProducts.map(p => `
+                    <div style="display:grid;grid-template-columns:1.5fr 0.8fr 1fr 1fr 1fr 0.8fr;gap:4px;padding:4px 0;border-bottom:1px solid #2D2D2D;color:#F5E6C8;">
+                        <span><strong>${p.name}</strong></span>
+                        <span>${p.totalSold}</span>
+                        <span style="color:#2D8F5E;">${p.totalRevenue.toFixed(2)}</span>
+                        <span style="color:#E06060;">${p.totalCost.toFixed(2)}</span>
+                        <span style="color:${p.profit >= 0 ? '#2D8F5E' : '#E06060'};font-weight:700;">${p.profit.toFixed(2)}</span>
+                        <span style="color:${p.margin >= 20 ? '#2D8F5E' : p.margin >= 10 ? '#E6A830' : '#E06060'};font-weight:700;">${p.margin.toFixed(1)}%</span>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:12px;border:1px solid #2D2D2D;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;color:#F5E6C8;">
+                    <div><span style="font-weight:600;color:#A89070;">🏆 أعلى ربح:</span> <span style="color:#C9A94E;font-weight:700;">${topProduct ? topProduct.name + ' (' + topProduct.profit.toFixed(2) + ')' : '-'}</span></div>
+                    <div><span style="font-weight:600;color:#A89070;">📊 إجمالي الربح:</span> <span style="color:#C9A94E;font-weight:700;">${totalProfitAll.toFixed(2)}</span></div>
+                    <div><span style="font-weight:600;color:#A89070;">📦 المنتجات المباعة:</span> <span style="color:#C9A94E;font-weight:700;">${totalProducts}</span></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    addAuditLog('add', 'report', 'عرض تحليل الأرباح');
+    
+    // تحديث الإحصائيات في أعلى الصفحة
+    safeSetText('profitTotalProducts', totalProducts);
+    safeSetText('profitAvgMargin', avgMargin.toFixed(1) + '%');
+    safeSetText('profitTopProduct', topProduct ? topProduct.name + ' (' + topProduct.profit.toFixed(2) + ')' : 'لا يوجد');
+}
+
+// ================================================================
+// ================================================================
+// ================================================================
 // PERMISSIONS
 // ================================================================
+// ================================================================
+// ================================================================
+
 function hasPermission(action) {
-    const role = currentUser.role;
+    const role = window.currentUser?.role || 'viewer';
     if (role === 'admin') return true;
     if (role === 'manager') return ['add', 'edit', 'view'].includes(action);
     if (role === 'cashier') return ['add', 'view'].includes(action);
@@ -114,23 +697,23 @@ function hasPermission(action) {
 }
 
 function isAdmin() { 
-    return currentUser.role === 'admin'; 
+    return window.currentUser?.role === 'admin'; 
 }
 
 function canDelete() { 
-    return currentUser.role === 'admin'; 
+    return window.currentUser?.role === 'admin'; 
 }
 
 function canEdit() { 
-    return currentUser.role === 'admin' || currentUser.role === 'manager'; 
+    return window.currentUser?.role === 'admin' || window.currentUser?.role === 'manager'; 
 }
 
 function canAdd() { 
-    return currentUser.role !== 'viewer'; 
+    return window.currentUser?.role !== 'viewer'; 
 }
 
 function canViewAudit() { 
-    return currentUser.role === 'admin'; 
+    return window.currentUser?.role === 'admin'; 
 }
 
 // ================================================================
@@ -141,29 +724,13 @@ function updateUIByPermissions() {
     if (clearAuditBtn) {
         clearAuditBtn.style.display = canViewAudit() ? 'block' : 'none';
     }
-    document.querySelectorAll('.btn-danger').forEach(btn => {
-        if (!canDelete() && !btn.closest('.actions')?.classList?.contains('no-permission')) {
-            btn.style.display = 'none';
-        }
-    });
-    document.querySelectorAll('.btn-warning').forEach(btn => {
-        if (!canEdit() && !btn.closest('.actions')?.classList?.contains('no-permission')) {
-            btn.style.display = 'none';
-        }
-    });
-    document.querySelectorAll('.btn-primary, .btn-success').forEach(btn => {
-        if (btn.textContent.includes('إضافة') || btn.textContent.includes('حفظ') || btn.textContent.includes('تسجيل')) {
-            if (!canAdd() && !btn.closest('.actions')?.classList?.contains('no-permission')) {
-                btn.style.display = 'none';
-            }
-        }
-    });
+    
     const display = document.getElementById('currentUserDisplay');
     const roleDisplay = document.getElementById('currentRoleDisplay');
-    if (display) display.textContent = currentUser.username;
+    if (display) display.textContent = window.currentUser?.username || 'admin';
     if (roleDisplay) {
         const roles = { admin: 'مدير', manager: 'مشرف', cashier: 'كاشير', viewer: 'مشاهد' };
-        roleDisplay.textContent = roles[currentUser.role] || currentUser.role;
+        roleDisplay.textContent = roles[window.currentUser?.role] || window.currentUser?.role || 'مدير';
     }
 }
 
@@ -192,7 +759,6 @@ updateClock();
 function checkLogin() {
     const input = document.getElementById('loginPassword');
     const error = document.getElementById('loginError');
-    if (typeof activateDemoLicense === 'function') activateDemoLicense();
 
     if (input.value === DEFAULT_PASSWORD || input.value === currentPassword) {
         const loginContainer = document.getElementById('loginContainer');
@@ -206,6 +772,7 @@ function checkLogin() {
         showToast('🔓 مرحباً بك في الميزان!', 'success');
 
         setTimeout(() => {
+            initAppData();
             if (typeof seedData === 'function') seedData();
             if (typeof populateAllSelects === 'function') populateAllSelects();
             if (typeof refreshAllPages === 'function') refreshAllPages();
@@ -275,7 +842,6 @@ function navigateTo(pageId) {
 }
 
 function refreshPage(pageId) {
-    // استدعاء دوال التحديث من الموديولات المختلفة
     if (pageId === 'dashboard' && typeof updateDashboard === 'function') updateDashboard();
     if (pageId === 'inventory' && typeof renderProducts === 'function') renderProducts();
     if (pageId === 'warehouses' && typeof renderWarehouses === 'function') renderWarehouses();
@@ -288,6 +854,8 @@ function refreshPage(pageId) {
     if (pageId === 'invoices' && typeof renderAllInvoices === 'function') renderAllInvoices();
     if (pageId === 'accounting' && typeof updateAccounting === 'function') updateAccounting();
     if (pageId === 'cashier' && typeof renderCashier === 'function') renderCashier();
+    if (pageId === 'audit' && typeof renderAudit === 'function') renderAudit();
+    if (pageId === 'profit_analysis' && typeof generateProfitAnalysis === 'function') generateProfitAnalysis();
     if (pageId === 'settings') { 
         if (typeof updateSettingsUI === 'function') updateSettingsUI(); 
         if (typeof updateLicenseUI === 'function') updateLicenseUI(); 
@@ -295,9 +863,7 @@ function refreshPage(pageId) {
     if (pageId === 'company' && typeof loadCompanyData === 'function') loadCompanyData();
     if (pageId === 'backup' && typeof renderBackups === 'function') renderBackups();
     if (pageId === 'accounts' && typeof renderAccounts === 'function') renderAccounts();
-    if (pageId === 'audit' && typeof renderAudit === 'function') renderAudit();
     if (pageId === 'alerts' && typeof updateAlertsUI === 'function') updateAlertsUI();
-    if (pageId === 'profit_analysis' && typeof generateProfitAnalysis === 'function') generateProfitAnalysis();
     if (pageId === 'license_generator') { 
         if (typeof renderGeneratedKeys === 'function') renderGeneratedKeys(); 
         if (typeof updateLicensePrice === 'function') updateLicensePrice(); 
@@ -349,7 +915,6 @@ function closeMorePanel() {
 // REFRESH ALL PAGES
 // ================================================================
 function refreshAllPages() {
-    // استدعاء جميع دوال التحديث
     if (typeof renderProducts === 'function') renderProducts();
     if (typeof renderSales === 'function') renderSales();
     if (typeof renderAllPurchases === 'function') renderAllPurchases();
@@ -377,6 +942,7 @@ function refreshAllPages() {
     if (typeof loadCompanyData === 'function') loadCompanyData();
     if (typeof populateAllSelects === 'function') populateAllSelects();
     if (typeof updateLicensePrice === 'function') updateLicensePrice();
+    if (typeof generateProfitAnalysis === 'function') generateProfitAnalysis();
     updateUIByPermissions();
     if (typeof populateAdjustmentProducts === 'function') populateAdjustmentProducts();
     updateClock();
@@ -449,6 +1015,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // تهيئة البيانات
+    initAppData();
     if (typeof seedData === 'function') seedData();
     if (typeof refreshAllPages === 'function') refreshAllPages();
 
@@ -471,11 +1038,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('✅ الميزان v3.0.0 - نظام محاسبة متكامل');
     console.log('🔒 كلمة المرور: 123456');
-    console.log('📱 تم تقسيم الكود إلى موديولات منفصلة');
+    console.log('📝 سجل النشاطات مفعل مع تفاصيل كاملة');
+    console.log('📊 تحليل الأرباح مفعل');
+    console.log('👤 المستخدم الحالي:', window.currentUser?.username || 'admin');
 });
 
 // ================================================================
-// WHATSAPP FUNCTIONS (الخاصة بالعملاء والموردين)
+// WHATSAPP FUNCTIONS
 // ================================================================
 function updateCustomerWhatsApp() {
     const select = document.getElementById('salesCustomerSelect');
@@ -486,7 +1055,7 @@ function updateCustomerWhatsApp() {
     
     const selectedName = select.value;
     if (selectedName) {
-        const customer = window.customers ? window.customers.find(c => c.name === selectedName) : null;
+        const customer = window.customers?.find(c => c.name === selectedName);
         if (customer && customer.whatsapp) {
             whatsappInput.value = customer.whatsapp;
             group.style.display = 'block';
@@ -497,7 +1066,7 @@ function updateCustomerWhatsApp() {
             group.style.display = 'none';
         }
     } else if (input.value) {
-        const customer = window.customers ? window.customers.find(c => c.name === input.value) : null;
+        const customer = window.customers?.find(c => c.name === input.value);
         if (customer && customer.whatsapp) {
             whatsappInput.value = customer.whatsapp;
             group.style.display = 'block';
@@ -520,7 +1089,7 @@ function updateCustomerWhatsAppManual() {
     
     const name = input.value.trim();
     if (name) {
-        const customer = window.customers ? window.customers.find(c => c.name === name) : null;
+        const customer = window.customers?.find(c => c.name === name);
         if (customer && customer.whatsapp) {
             whatsappInput.value = customer.whatsapp;
             group.style.display = 'block';
@@ -544,7 +1113,7 @@ function updateSupplierWhatsApp() {
     
     const selectedName = select.value;
     if (selectedName) {
-        const supplier = window.suppliers ? window.suppliers.find(s => s.name === selectedName) : null;
+        const supplier = window.suppliers?.find(s => s.name === selectedName);
         if (supplier && supplier.whatsapp) {
             whatsappInput.value = supplier.whatsapp;
             group.style.display = 'block';
@@ -555,7 +1124,7 @@ function updateSupplierWhatsApp() {
             group.style.display = 'none';
         }
     } else if (input.value) {
-        const supplier = window.suppliers ? window.suppliers.find(s => s.name === input.value) : null;
+        const supplier = window.suppliers?.find(s => s.name === input.value);
         if (supplier && supplier.whatsapp) {
             whatsappInput.value = supplier.whatsapp;
             group.style.display = 'block';
@@ -578,7 +1147,7 @@ function updateSupplierWhatsAppManual() {
     
     const name = input.value.trim();
     if (name) {
-        const supplier = window.suppliers ? window.suppliers.find(s => s.name === name) : null;
+        const supplier = window.suppliers?.find(s => s.name === name);
         if (supplier && supplier.whatsapp) {
             whatsappInput.value = supplier.whatsapp;
             group.style.display = 'block';
@@ -603,7 +1172,6 @@ function sendWhatsApp() {
         document.getElementById('salesCustomerSelect')?.value;
     if (!customer) { showToast('⚠️ حدد عميلاً أولاً', 'error'); return; }
     
-    // التحقق من وجود salesItems
     if (typeof window.salesItems === 'undefined' || window.salesItems.length === 0) { 
         showToast('⚠️ أضف أصنافاً أولاً', 'error'); 
         return; 
@@ -611,7 +1179,7 @@ function sendWhatsApp() {
 
     let whatsappNumber = document.getElementById('customerWhatsApp')?.value?.trim();
     if (!whatsappNumber) {
-        const customerObj = window.customers ? window.customers.find(c => c.name === customer) : null;
+        const customerObj = window.customers?.find(c => c.name === customer);
         if (customerObj && customerObj.whatsapp) {
             whatsappNumber = customerObj.whatsapp;
         } else if (customerObj && customerObj.phone) {
