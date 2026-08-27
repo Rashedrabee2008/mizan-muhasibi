@@ -1,5 +1,9 @@
 // ================================================================
-// app.js - التطبيق الرئيسي (نسخة كاملة ومطورة)
+// ================================================================
+// ================================================================
+// app.js - الملف الرئيسي الكامل والمتكامل
+// ================================================================
+// ================================================================
 // ================================================================
 
 // ================================================================
@@ -12,10 +16,22 @@ let versionClickCount = 0;
 let currentUser = JSON.parse(localStorage.getItem('mizan_current_user')) || { username: 'مدير', role: 'admin' };
 
 // ================================================================
+// قاموس أسماء التقارير
+// ================================================================
+const REPORT_NAMES = {
+    'sales': 'المبيعات',
+    'purchases': 'المشتريات',
+    'profit': 'الأرباح',
+    'inventory': 'المخزون',
+    'customers_report': 'العملاء',
+    'warehouse': 'المخازن',
+    'expenses': 'المصروفات'
+};
+
+// ================================================================
 // تهيئة جميع المتغيرات
 // ================================================================
 function initAppData() {
-    // التأكد من أن جميع المتغيرات مصفوفات
     const arrayKeys = ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns', 'expenses', 
                        'treasury', 'bonds', 'warehouses', 'warehouseProducts', 'permissions', 'backups', 
                        'accounts', 'auditLog', 'alerts', 'cashierHistory', 'inventoryAdjustments'];
@@ -69,9 +85,6 @@ function initAppData() {
     }
     
     console.log('✅ تم تهيئة جميع المتغيرات بنجاح');
-    console.log('📊 عدد المنتجات:', window.products?.length || 0);
-    console.log('👤 عدد العملاء:', window.customers?.length || 0);
-    console.log('📦 عدد الفواتير:', window.sales?.length || 0);
 }
 
 // استدعاء التهيئة
@@ -253,23 +266,30 @@ function saveAll() {
 }
 
 // ================================================================
-// ================================================================
-// ================================================================
-// AUDIT LOG - سجل النشاطات التفصيلي (الجزء المطور)
-// ================================================================
-// ================================================================
-// ================================================================
-
-// ================================================================
-// ADD AUDIT LOG (نسخة مطورة مع تفاصيل كاملة)
+// AUDIT LOG - سجل النشاطات
 // ================================================================
 function addAuditLog(action, type, details, extraData = null) {
     const dt = getCurrentDateTime();
+    
+    // ترجمة التقارير
+    let finalDetails = details;
+    if (type === 'report' || (type === 'add' && details && details.includes('تقرير'))) {
+        for (const [key, value] of Object.entries(REPORT_NAMES)) {
+            if (details && details.includes(key)) {
+                finalDetails = details.replace(key, value);
+                break;
+            }
+        }
+        if (finalDetails && !finalDetails.includes('تقرير') && !finalDetails.includes('كشف')) {
+            finalDetails = 'تقرير ' + finalDetails;
+        }
+    }
+    
     const entry = {
         id: Date.now(),
-        action: action,           // add, edit, delete, sale, purchase, return
-        type: type,               // product, customer, invoice, user, etc.
-        details: details,
+        action: action,
+        type: type,
+        details: finalDetails || details || '',
         user: window.currentUser?.username || 'admin',
         userRole: window.currentUser?.role || 'admin',
         date: dt.date,
@@ -278,7 +298,6 @@ function addAuditLog(action, type, details, extraData = null) {
         extra: extraData || {}
     };
     
-    // إضافة تفاصيل إضافية حسب نوع العملية
     if (action === 'sale' && extraData?.invoice) {
         entry.extra = {
             customer: extraData.invoice.customer || 'غير محدد',
@@ -315,11 +334,9 @@ function addAuditLog(action, type, details, extraData = null) {
         };
     }
     
-    // إضافة السجل
     if (!window.auditLog) window.auditLog = [];
     window.auditLog.unshift(entry);
     
-    // الاحتفاظ بآخر 1000 سجل فقط
     if (window.auditLog.length > 1000) {
         window.auditLog = window.auditLog.slice(0, 1000);
     }
@@ -327,14 +344,11 @@ function addAuditLog(action, type, details, extraData = null) {
     setData('auditLog', window.auditLog);
     renderAudit();
     
-    // تسجيل في console للتتبع
-    console.log(`📝 [${dt.time}] ${entry.user} - ${action} ${type}: ${details}`);
-    
     return entry;
 }
 
 // ================================================================
-// RENDER AUDIT (نسخة مطورة مع تفاصيل كاملة)
+// RENDER AUDIT
 // ================================================================
 function renderAudit() { 
     filterAudit('all'); 
@@ -363,7 +377,6 @@ function filterAudit(filter) {
         filtered = window.auditLog.filter(a => a.action === filter);
     }
 
-    // تحديث أزرار الفلتر
     document.querySelectorAll('.filter-chips .filter-chip').forEach(chip => {
         const chipText = chip.textContent.trim();
         const isActive = (filter === 'all' && chipText === 'الكل') ||
@@ -401,10 +414,8 @@ function filterAudit(filter) {
     let html = `<div style="margin-bottom:8px;color:#A89070;font-size:12px;">عرض ${filtered.length} من ${window.auditLog.length} نشاط</div>`;
 
     filtered.slice(0, 100).forEach(a => {
-        // بناء تفاصيل النشاط
         let detailsHtml = `<span>${a.details || ''}</span>`;
         
-        // إضافة تفاصيل إضافية حسب النوع
         if (a.action === 'sale' && a.extra) {
             const extra = a.extra;
             detailsHtml += `
@@ -416,7 +427,6 @@ function filterAudit(filter) {
                     ${extra.invoiceType === 'tax' ? ' 🧾 ضريبي' : ''}
                 </div>
             `;
-            // عرض تفاصيل الأصناف
             if (extra.items && extra.items.length > 0) {
                 detailsHtml += `<div style="font-size:9px;color:#5D5D5D;margin-top:2px;">`;
                 extra.items.forEach((item, i) => {
@@ -499,12 +509,286 @@ function clearAudit() {
 }
 
 // ================================================================
+// GENERATE REPORT (مطور)
 // ================================================================
-// ================================================================
-// PROFIT ANALYSIS - تحليل الأرباح (الجزء المطور)
-// ================================================================
-// ================================================================
-// ================================================================
+function generateReport(type) {
+    const container = document.getElementById('reportResult');
+    if (!container) return;
+
+    let html = '';
+
+    const totalSales = window.sales ? window.sales.reduce((s, i) => {
+        if (i.items) return s + i.items.reduce((sum, item) => sum + (item.total || 0), 0);
+        return s + (i.total || 0);
+    }, 0) : 0;
+
+    const totalPurchases = window.purchases ? window.purchases.reduce((s, i) => {
+        if (i.items) return s + i.items.reduce((sum, item) => sum + (item.total || 0), 0);
+        return s + (i.total || 0);
+    }, 0) : 0;
+
+    const totalExpenses = window.expenses ? window.expenses.reduce((s, e) => s + e.amount, 0) : 0;
+    const profit = totalSales - totalPurchases - totalExpenses;
+
+    const reportName = REPORT_NAMES[type] || type;
+
+    switch (type) {
+        case 'sales':
+            const salesByWarehouse = {};
+            if (window.sales) {
+                window.sales.forEach(s => {
+                    const wId = s.warehouseId || 0;
+                    const w = window.warehouses ? window.warehouses.find(wh => wh.id === wId) : null;
+                    const wName = w ? w.name : 'غير محدد';
+                    const total = s.totalWithTax || s.total || 0;
+                    salesByWarehouse[wName] = (salesByWarehouse[wName] || 0) + total;
+                });
+            }
+
+            let salesDetails = '';
+            if (window.sales) {
+                window.sales.slice().reverse().forEach(s => {
+                    const total = s.totalWithTax || s.total || 0;
+                    salesDetails += `
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:3px 0;border-bottom:1px solid #2D2D2D;font-size:11px;">
+                            <span>${s.date}</span>
+                            <span>${s.customer}</span>
+                            <span style="color:#2D8F5E;font-weight:700;">${total.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            html = `
+                <div class="accounting-detail-content">
+                    <h4 style="color:#C9A94E;font-size:15px;margin-bottom:6px;">📊 تقرير المبيعات</h4>
+                    <div class="detail-row" style="font-size:13px;"><span class="detail-label">إجمالي المبيعات</span><span class="detail-value" style="color:#2D8F5E;">${totalSales.toFixed(2)} 🇪🇬</span></div>
+                    <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:12px;border:1px solid #2D2D2D;">
+                        <div style="font-weight:700;color:#C9A94E;font-size:12px;margin-bottom:4px;">🏢 حسب المخزن:</div>
+                        ${Object.entries(salesByWarehouse).map(([name, total]) => 
+                            `<div style="padding:2px 0;color:#F5E6C8;">• ${name}: ${total.toFixed(2)} 🇪🇬</div>`
+                        ).join('') || '<div style="color:#5D5D5D;">لا توجد بيانات</div>'}
+                    </div>
+                    <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:11px;border:1px solid #2D2D2D;max-height:200px;overflow-y:auto;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:4px 0;font-weight:800;color:#C9A94E;border-bottom:2px solid #C9A94E;">
+                            <span>التاريخ</span><span>العميل</span><span>المبلغ</span>
+                        </div>
+                        ${salesDetails || '<div style="padding:8px;color:#5D5D5D;">لا توجد فواتير</div>'}
+                    </div>
+                </div>
+            `;
+            break;
+
+        case 'purchases':
+            const purchasesByWarehouse = {};
+            if (window.purchases) {
+                window.purchases.forEach(p => {
+                    const wId = p.warehouseId || 0;
+                    const w = window.warehouses ? window.warehouses.find(wh => wh.id === wId) : null;
+                    const wName = w ? w.name : 'غير محدد';
+                    const total = p.totalWithTax || p.total || 0;
+                    purchasesByWarehouse[wName] = (purchasesByWarehouse[wName] || 0) + total;
+                });
+            }
+
+            let purchasesDetails = '';
+            if (window.purchases) {
+                window.purchases.slice().reverse().forEach(p => {
+                    const total = p.totalWithTax || p.total || 0;
+                    purchasesDetails += `
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:3px 0;border-bottom:1px solid #2D2D2D;font-size:11px;">
+                            <span>${p.date}</span>
+                            <span>${p.supplier}</span>
+                            <span style="color:#E06060;font-weight:700;">${total.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            html = `
+                <div class="accounting-detail-content">
+                    <h4 style="color:#C9A94E;font-size:15px;margin-bottom:6px;">📊 تقرير المشتريات</h4>
+                    <div class="detail-row" style="font-size:13px;"><span class="detail-label">إجمالي المشتريات</span><span class="detail-value" style="color:#E06060;">${totalPurchases.toFixed(2)} 🇪🇬</span></div>
+                    <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:12px;border:1px solid #2D2D2D;">
+                        <div style="font-weight:700;color:#C9A94E;font-size:12px;margin-bottom:4px;">🏢 حسب المخزن:</div>
+                        ${Object.entries(purchasesByWarehouse).map(([name, total]) => 
+                            `<div style="padding:2px 0;color:#F5E6C8;">• ${name}: ${total.toFixed(2)} 🇪🇬</div>`
+                        ).join('') || '<div style="color:#5D5D5D;">لا توجد بيانات</div>'}
+                    </div>
+                    <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:11px;border:1px solid #2D2D2D;max-height:200px;overflow-y:auto;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:4px 0;font-weight:800;color:#C9A94E;border-bottom:2px solid #C9A94E;">
+                            <span>التاريخ</span><span>المورد</span><span>المبلغ</span>
+                        </div>
+                        ${purchasesDetails || '<div style="padding:8px;color:#5D5D5D;">لا توجد فواتير</div>'}
+                    </div>
+                </div>
+            `;
+            break;
+
+        case 'profit':
+            html = `
+                <div class="accounting-detail-content">
+                    <h4 style="color:#C9A94E;font-size:15px;margin-bottom:6px;">💰 تقرير الأرباح</h4>
+                    <div class="detail-row" style="font-size:13px;"><span class="detail-label">الإيرادات</span><span class="detail-value" style="color:#2D8F5E;">${totalSales.toFixed(2)} 🇪🇬</span></div>
+                    <div class="detail-row" style="font-size:13px;"><span class="detail-label">التكاليف</span><span class="detail-value" style="color:#E06060;">${(totalPurchases+totalExpenses).toFixed(2)} 🇪🇬</span></div>
+                    <div class="detail-row" style="font-size:13px;"><span class="detail-label">صافي الربح</span><span class="detail-value" style="color:#C9A94E;font-size:17px;">${profit.toFixed(2)} 🇪🇬</span></div>
+                    <div class="detail-row" style="font-size:13px;"><span class="detail-label">هامش الربح</span><span class="detail-value">${totalSales > 0 ? ((profit / totalSales) * 100).toFixed(1) : 0}%</span></div>
+                </div>
+            `;
+            break;
+
+        case 'inventory':
+            const inventoryData = window.products ? window.products.map(p => {
+                const qty = window.warehouseProducts ? window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0) : 0;
+                return { name: p.name, qty: qty, buyPrice: p.buyPrice, sellPrice: p.sellPrice, value: qty * p.sellPrice };
+            }).sort((a, b) => b.value - a.value) : [];
+
+            html = `
+                <div class="accounting-detail-content">
+                    <h4 style="color:#C9A94E;font-size:15px;margin-bottom:6px;">📦 تقرير المخزون</h4>
+                    <div style="max-height:300px;overflow-y:auto;font-size:12px;">
+                        <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:4px;padding:4px 0;font-weight:800;border-bottom:2px solid #C9A94E;color:#F5E6C8;">
+                            <span>المنتج</span><span>الكمية</span><span>سعر الشراء</span><span>سعر البيع</span><span>القيمة</span>
+                        </div>
+                        ${inventoryData.map(p => `
+                            <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:4px;padding:3px 0;border-bottom:1px solid #2D2D2D;color:#F5E6C8;">
+                                <span>${p.name}</span>
+                                <span>${p.qty}</span>
+                                <span>${p.buyPrice.toFixed(2)}</span>
+                                <span>${p.sellPrice.toFixed(2)}</span>
+                                <span style="color:#C9A94E;font-weight:700;">${p.value.toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:12px;border:1px solid #2D2D2D;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                            <div><span style="font-weight:600;color:#A89070;">إجمالي القيمة:</span> <span style="color:#C9A94E;font-weight:700;">${inventoryData.reduce((s,p) => s + p.value, 0).toFixed(2)} 🇪🇬</span></div>
+                            <div><span style="font-weight:600;color:#A89070;">عدد المنتجات:</span> <span style="color:#C9A94E;font-weight:700;">${inventoryData.length}</span></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+
+        case 'customers_report':
+            const customerData = window.customers ? window.customers.map(c => {
+                const total = window.sales ? window.sales.filter(s => s.customer === c.name).reduce((sum, s) => {
+                    if (s.items) return sum + s.items.reduce((ss, item) => ss + (item.total || 0), 0);
+                    return sum + (s.total || 0);
+                }, 0) : 0;
+                return { name: c.name, total: total };
+            }).sort((a, b) => b.total - a.total) : [];
+
+            html = `
+                <div class="accounting-detail-content">
+                    <h4 style="color:#C9A94E;font-size:15px;margin-bottom:6px;">👤 تقرير العملاء</h4>
+                    <div style="max-height:300px;overflow-y:auto;font-size:12px;">
+                        <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:4px;padding:4px 0;font-weight:800;border-bottom:2px solid #C9A94E;color:#F5E6C8;">
+                            <span>العميل</span><span>إجمالي المشتريات</span>
+                        </div>
+                        ${customerData.map(c => `
+                            <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:4px;padding:3px 0;border-bottom:1px solid #2D2D2D;color:#F5E6C8;">
+                                <span>${c.name}</span>
+                                <span style="color:#2D8F5E;font-weight:700;">${c.total.toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:12px;border:1px solid #2D2D2D;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                            <div><span style="font-weight:600;color:#A89070;">عدد العملاء:</span> <span style="color:#C9A94E;font-weight:700;">${window.customers ? window.customers.length : 0}</span></div>
+                            <div><span style="font-weight:600;color:#A89070;">إجمالي المشتريات:</span> <span style="color:#C9A94E;font-weight:700;">${customerData.reduce((s,c) => s + c.total, 0).toFixed(2)}</span></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+
+        case 'warehouse':
+            const warehouseData = window.warehouses ? window.warehouses.map(w => {
+                const count = window.warehouseProducts ? window.warehouseProducts.filter(wp => wp.warehouseId === w.id).reduce((s, wp) => s + wp.qty, 0) : 0;
+                const value = window.warehouseProducts ? window.warehouseProducts.filter(wp => wp.warehouseId === w.id).reduce((s, wp) => {
+                    const p = window.products ? window.products.find(pr => pr.id === wp.productId) : null;
+                    return s + (p ? p.sellPrice * wp.qty : 0);
+                }, 0) : 0;
+                return { name: w.name, type: w.type, count: count, value: value };
+            }) : [];
+
+            html = `
+                <div class="accounting-detail-content">
+                    <h4 style="color:#C9A94E;font-size:15px;margin-bottom:6px;">🏢 تقرير المخازن</h4>
+                    <div style="max-height:300px;overflow-y:auto;font-size:12px;">
+                        <div style="display:grid;grid-template-columns:1.2fr 0.8fr 1fr 1fr;gap:4px;padding:4px 0;font-weight:800;border-bottom:2px solid #C9A94E;color:#F5E6C8;">
+                            <span>اسم المخزن</span><span>النوع</span><span>عدد المنتجات</span><span>القيمة</span>
+                        </div>
+                        ${warehouseData.map(w => `
+                            <div style="display:grid;grid-template-columns:1.2fr 0.8fr 1fr 1fr;gap:4px;padding:3px 0;border-bottom:1px solid #2D2D2D;color:#F5E6C8;">
+                                <span><strong>${w.name}</strong></span>
+                                <span style="color:${w.type === 'رئيسي' ? '#2D8F5E' : w.type === 'محل' ? '#E6A830' : '#4A8AB5'};font-weight:700;">${w.type}</span>
+                                <span>${w.count}</span>
+                                <span style="color:#C9A94E;font-weight:700;">${w.value.toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:12px;border:1px solid #2D2D2D;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                            <div><span style="font-weight:600;color:#A89070;">عدد المخازن:</span> <span style="color:#C9A94E;font-weight:700;">${window.warehouses ? window.warehouses.length : 0}</span></div>
+                            <div><span style="font-weight:600;color:#A89070;">إجمالي القيمة:</span> <span style="color:#C9A94E;font-weight:700;">${warehouseData.reduce((s,w) => s + w.value, 0).toFixed(2)}</span></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            break;
+
+        case 'expenses':
+            const expensesByMethod = {};
+            if (window.expenses) {
+                window.expenses.forEach(e => {
+                    const method = e.method || 'نقدي';
+                    expensesByMethod[method] = (expensesByMethod[method] || 0) + e.amount;
+                });
+            }
+
+            let expensesDetails = '';
+            if (window.expenses) {
+                window.expenses.slice().reverse().forEach(e => {
+                    expensesDetails += `
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:3px 0;border-bottom:1px solid #2D2D2D;font-size:11px;">
+                            <span>${e.date}</span>
+                            <span>${e.note}</span>
+                            <span>${e.method || 'نقدي'}</span>
+                            <span style="color:#E06060;font-weight:700;">${e.amount.toFixed(2)}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            html = `
+                <div class="accounting-detail-content">
+                    <h4 style="color:#C9A94E;font-size:15px;margin-bottom:6px;">💸 تقرير المصروفات</h4>
+                    <div class="detail-row" style="font-size:13px;"><span class="detail-label">إجمالي المصروفات</span><span class="detail-value" style="color:#E06060;">${totalExpenses.toFixed(2)} 🇪🇬</span></div>
+                    <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:12px;border:1px solid #2D2D2D;">
+                        <div style="font-weight:700;color:#C9A94E;font-size:12px;margin-bottom:4px;">💳 حسب طريقة الدفع:</div>
+                        ${Object.entries(expensesByMethod).map(([method, total]) => 
+                            `<div style="padding:2px 0;color:#F5E6C8;">• ${method}: ${total.toFixed(2)} 🇪🇬</div>`
+                        ).join('') || '<div style="color:#5D5D5D;">لا توجد بيانات</div>'}
+                    </div>
+                    <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:11px;border:1px solid #2D2D2D;max-height:200px;overflow-y:auto;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px;padding:4px 0;font-weight:800;color:#C9A94E;border-bottom:2px solid #C9A94E;">
+                            <span>التاريخ</span><span>البيان</span><span>الطريقة</span><span>المبلغ</span>
+                        </div>
+                        ${expensesDetails || '<div style="padding:8px;color:#5D5D5D;">لا توجد مصروفات</div>'}
+                    </div>
+                </div>
+            `;
+            break;
+
+        default:
+            html = `<div class="alert-item info"><div class="icon"><i class="fas fa-info-circle"></i></div><div class="content"><div class="title">اختر تقريراً</div><div class="desc">اضغط على أحد التقارير أعلاه</div></div></div>`;
+    }
+
+    container.innerHTML = html;
+    addAuditLog('add', 'report', `عرض تقرير ${reportName}`);
+}
 
 // ================================================================
 // GENERATE PROFIT ANALYSIS
@@ -513,7 +797,6 @@ function generateProfitAnalysis() {
     const container = document.getElementById('profitAnalysisResult');
     if (!container) return;
 
-    // التأكد من وجود البيانات
     if (!window.products || !window.products.length) {
         container.innerHTML = `
             <div class="alert-item info">
@@ -527,15 +810,12 @@ function generateProfitAnalysis() {
         return;
     }
 
-    // حساب الأرباح لكل منتج
     const productProfits = window.products.map(p => {
-        // حساب الكمية المباعة
         let totalSold = 0;
         let totalRevenue = 0;
         let totalCost = 0;
         let totalQuantity = 0;
         
-        // من فواتير البيع
         if (window.sales && window.sales.length > 0) {
             window.sales.forEach(sale => {
                 if (sale.items && Array.isArray(sale.items)) {
@@ -549,7 +829,6 @@ function generateProfitAnalysis() {
             });
         }
         
-        // من المرتجعات (تقليل الكمية المباعة)
         if (window.returns && window.returns.length > 0) {
             window.returns.forEach(ret => {
                 if (ret.items && Array.isArray(ret.items)) {
@@ -568,8 +847,7 @@ function generateProfitAnalysis() {
         const margin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
         const avgPrice = totalSold > 0 ? totalRevenue / totalSold : 0;
         
-        // الكمية الحالية في المخزون
-        const currentQty = window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0);
+        const currentQty = window.warehouseProducts ? window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0) : 0;
         const inventoryValue = currentQty * (p.buyPrice || 0);
         
         return { 
@@ -586,7 +864,6 @@ function generateProfitAnalysis() {
         };
     });
 
-    // تصفية المنتجات التي لها مبيعات
     const activeProducts = productProfits.filter(p => p.totalSold > 0 || p.totalRevenue > 0);
     const totalProducts = activeProducts.length;
     const avgMargin = totalProducts > 0 ? activeProducts.reduce((s, p) => s + p.margin, 0) / totalProducts : 0;
@@ -595,7 +872,6 @@ function generateProfitAnalysis() {
     const totalCostAll = activeProducts.reduce((s, p) => s + p.totalCost, 0);
     const totalProfitAll = totalRevenueAll - totalCostAll;
 
-    // تحديث الإحصائيات
     safeSetText('profitTotalProducts', totalProducts);
     safeSetText('profitAvgMargin', avgMargin.toFixed(1) + '%');
     safeSetText('profitTopProduct', topProduct ? topProduct.name + ' (' + topProduct.profit.toFixed(2) + ')' : 'لا يوجد');
@@ -613,7 +889,6 @@ function generateProfitAnalysis() {
         return;
     }
 
-    // ترتيب المنتجات حسب الربح
     const sortedProducts = [...activeProducts].sort((a, b) => b.profit - a.profit);
 
     let html = `
@@ -673,20 +948,14 @@ function generateProfitAnalysis() {
     container.innerHTML = html;
     addAuditLog('add', 'report', 'عرض تحليل الأرباح');
     
-    // تحديث الإحصائيات في أعلى الصفحة
     safeSetText('profitTotalProducts', totalProducts);
     safeSetText('profitAvgMargin', avgMargin.toFixed(1) + '%');
     safeSetText('profitTopProduct', topProduct ? topProduct.name + ' (' + topProduct.profit.toFixed(2) + ')' : 'لا يوجد');
 }
 
 // ================================================================
-// ================================================================
-// ================================================================
 // PERMISSIONS
 // ================================================================
-// ================================================================
-// ================================================================
-
 function hasPermission(action) {
     const role = window.currentUser?.role || 'viewer';
     if (role === 'admin') return true;
@@ -998,7 +1267,6 @@ window.addEventListener('beforeunload', function() {
 // DOM READY
 // ================================================================
 document.addEventListener('DOMContentLoaded', function() {
-    // إعداد طرق الدفع
     document.querySelectorAll('.payment-methods').forEach(group => {
         group.querySelectorAll('label').forEach(label => {
             label.addEventListener('click', function() {
@@ -1008,18 +1276,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // تعيين التاريخ الحالي
     const today = new Date().toISOString().split('T')[0];
     document.querySelectorAll('input[type="date"]').forEach(input => {
         if (input && !input.value) input.value = today;
     });
 
-    // تهيئة البيانات
     initAppData();
     if (typeof seedData === 'function') seedData();
     if (typeof refreshAllPages === 'function') refreshAllPages();
 
-    // التحقق من حالة القفل
     if (localStorage.getItem('app_unlocked') === 'true') {
         const loginContainer = document.getElementById('loginContainer');
         const appContent = document.getElementById('appContent');
