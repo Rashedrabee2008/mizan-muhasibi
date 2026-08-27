@@ -1,6 +1,6 @@
 // ================================================================
 // ================================================================
-// app.js - الملف الرئيسي (نسخة خفيفة وسريعة)
+// app.js - الملف الرئيسي (نسخة مضبوطة بالكامل)
 // ================================================================
 // ================================================================
 
@@ -12,7 +12,7 @@ let currentPassword = localStorage.getItem('app_password') || DEFAULT_PASSWORD;
 let currentUser = JSON.parse(localStorage.getItem('mizan_current_user')) || { username: 'مدير', role: 'admin' };
 
 // ================================================================
-// تهيئة جميع المتغيرات
+// تهيئة جميع المتغيرات (في النطاق العام)
 // ================================================================
 function initAppData() {
     const keys = ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns', 'expenses', 
@@ -74,8 +74,52 @@ function initAppData() {
 initAppData();
 
 // ================================================================
+// CHECK LOGIN - في النطاق العام (Global Scope)
+// ================================================================
+function checkLogin() {
+    const input = document.getElementById('loginPassword');
+    const error = document.getElementById('loginError');
+
+    if (input.value === DEFAULT_PASSWORD || input.value === currentPassword) {
+        const loginContainer = document.getElementById('loginContainer');
+        const appContent = document.getElementById('appContent');
+        if (loginContainer) loginContainer.classList.add('hidden');
+        if (appContent) appContent.style.display = 'block';
+        if (error) error.classList.remove('show');
+        input.value = '';
+        localStorage.setItem('app_unlocked', 'true');
+
+        showToast('🔓 مرحباً بك في الميزان!', 'success');
+
+        setTimeout(() => {
+            initAppData();
+            if (typeof seedData === 'function') seedData();
+            if (typeof populateAllSelects === 'function') populateAllSelects();
+            if (typeof refreshAllPages === 'function') refreshAllPages();
+            updateClock();
+        }, 300);
+    } else {
+        if (error) error.classList.add('show');
+        input.value = '';
+        input.focus();
+        setTimeout(() => {
+            if (error) error.classList.remove('show');
+        }, 3000);
+    }
+}
+
+// ================================================================
 // HELPERS
 // ================================================================
+function showToast(msg, type = 'info') {
+    const t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.className = 'toast ' + type + ' show';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
 function safeSetText(id, value) { 
     const el = document.getElementById(id); 
     if (el) el.textContent = value !== undefined && value !== null ? value : '0'; 
@@ -84,15 +128,6 @@ function safeSetText(id, value) {
 function safeSetValue(id, value) { 
     const el = document.getElementById(id); 
     if (el) el.value = value !== undefined && value !== null ? value : ''; 
-}
-
-function showToast(msg, type = 'info') {
-    const t = document.getElementById('toast');
-    if (!t) return;
-    t.textContent = msg;
-    t.className = 'toast ' + type + ' show';
-    clearTimeout(t._timer);
-    t._timer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
 function getSelectedPayment(prefix) {
@@ -219,40 +254,8 @@ setInterval(updateClock, 1000);
 updateClock();
 
 // ================================================================
-// LOGIN
+// LOCK / LOGOUT
 // ================================================================
-function checkLogin() {
-    const input = document.getElementById('loginPassword');
-    const error = document.getElementById('loginError');
-
-    if (input.value === DEFAULT_PASSWORD || input.value === currentPassword) {
-        const loginContainer = document.getElementById('loginContainer');
-        const appContent = document.getElementById('appContent');
-        if (loginContainer) loginContainer.classList.add('hidden');
-        if (appContent) appContent.style.display = 'block';
-        if (error) error.classList.remove('show');
-        input.value = '';
-        localStorage.setItem('app_unlocked', 'true');
-
-        showToast('🔓 مرحباً بك في الميزان!', 'success');
-
-        setTimeout(() => {
-            initAppData();
-            if (typeof seedData === 'function') seedData();
-            if (typeof populateAllSelects === 'function') populateAllSelects();
-            if (typeof refreshAllPages === 'function') refreshAllPages();
-            updateClock();
-        }, 300);
-    } else {
-        if (error) error.classList.add('show');
-        input.value = '';
-        input.focus();
-        setTimeout(() => {
-            if (error) error.classList.remove('show');
-        }, 3000);
-    }
-}
-
 function lockApp() {
     if (confirm('🔒 هل تريد قفل التطبيق؟')) {
         const appContent = document.getElementById('appContent');
@@ -341,7 +344,6 @@ function updateDashboard() {
         lowStockEl.style.color = lowStock.length > 0 ? '#E06060' : '#2D8F5E';
     }
 
-    // الرسم البياني
     const chart = document.getElementById('salesChart');
     if (chart) {
         const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
@@ -403,71 +405,6 @@ function refreshAllPages() {
     if (typeof populateAllSelects === 'function') populateAllSelects();
     updateClock();
 }
-
-// ================================================================
-// KEYBOARD SHORTCUTS
-// ================================================================
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeMorePanel();
-    if (e.key === 'Enter' && !document.getElementById('loginContainer').classList.contains('hidden')) {
-        checkLogin();
-    }
-    if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        saveAll();
-        showToast('💾 تم الحفظ', 'success');
-    }
-});
-
-// ================================================================
-// AUTO SAVE
-// ================================================================
-setInterval(() => {
-    if (document.getElementById('appContent').style.display !== 'none') {
-        saveAll();
-        updateClock();
-    }
-}, 30000);
-
-window.addEventListener('beforeunload', function() {
-    saveAll();
-});
-
-// ================================================================
-// DOM READY
-// ================================================================
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.payment-methods').forEach(group => {
-        group.querySelectorAll('label').forEach(label => {
-            label.addEventListener('click', function() {
-                group.querySelectorAll('label').forEach(l => l.classList.remove('selected'));
-                this.classList.add('selected');
-            });
-        });
-    });
-
-    const today = new Date().toISOString().split('T')[0];
-    document.querySelectorAll('input[type="date"]').forEach(input => {
-        if (input && !input.value) input.value = today;
-    });
-
-    initAppData();
-    if (typeof seedData === 'function') seedData();
-    if (typeof refreshAllPages === 'function') refreshAllPages();
-
-    if (localStorage.getItem('app_unlocked') === 'true') {
-        document.getElementById('loginContainer').classList.add('hidden');
-        document.getElementById('appContent').style.display = 'block';
-        setTimeout(() => {
-            if (typeof populateAllSelects === 'function') populateAllSelects();
-            if (typeof refreshAllPages === 'function') refreshAllPages();
-            updateClock();
-        }, 300);
-    }
-
-    console.log('✅ الميزان v3.0.0');
-    console.log('🔒 كلمة المرور: 123456');
-});
 
 // ================================================================
 // WHATSAPP FUNCTIONS
@@ -535,3 +472,238 @@ function sendWhatsApp() {
 function printInvoice(type) {
     showToast('🖨️ جاري الطباعة...', 'info');
 }
+
+// ================================================================
+// SEED DATA - بيانات افتراضية
+// ================================================================
+function seedData() {
+    if (!window.products || window.products.length === 0) {
+        window.products = [
+            { id: 1, name: 'منتج تجريبي 1', buyPrice: 50, sellPrice: 100, min: 5, barcode: '123456789' },
+            { id: 2, name: 'منتج تجريبي 2', buyPrice: 30, sellPrice: 75, min: 3, barcode: '987654321' }
+        ];
+        setData('products', window.products);
+    }
+    if (!window.warehouses || window.warehouses.length === 0) {
+        window.warehouses = [
+            { id: 1, name: 'المخزن الرئيسي', type: 'رئيسي', address: 'القاهرة' },
+            { id: 2, name: 'مخزن المحل', type: 'محل', address: 'المنصورة' }
+        ];
+        setData('warehouses', window.warehouses);
+    }
+    if (!window.customers || window.customers.length === 0) {
+        window.customers = [{ id: 1, name: 'أحمد محمد', phone: '01234567890', whatsapp: '01011993799', email: 'ahmed@test.com', address: 'القاهرة', active: true }];
+        setData('customers', window.customers);
+    }
+    if (!window.suppliers || window.suppliers.length === 0) {
+        window.suppliers = [{ id: 1, name: 'شركة الاتصالات', phone: '0234567890', whatsapp: '01158767633', email: 'info@telecom.com', address: 'القاهرة', active: true }];
+        setData('suppliers', window.suppliers);
+    }
+    if (!window.accounts || window.accounts.length === 0) {
+        window.accounts = [
+            { id: 1, name: 'أصول', type: 'assets', parentId: null },
+            { id: 2, name: 'خصوم', type: 'liabilities', parentId: null },
+            { id: 3, name: 'حقوق ملكية', type: 'equity', parentId: null },
+            { id: 4, name: 'إيرادات', type: 'revenue', parentId: null },
+            { id: 5, name: 'مصروفات', type: 'expenses', parentId: null }
+        ];
+        setData('accounts', window.accounts);
+    }
+    saveAll();
+}
+
+// ================================================================
+// POPULATE SELECTS
+// ================================================================
+function populateAllSelects() {
+    // المنتجات
+    ['salesItemProduct', 'purchaseItemProduct', 'returnItemProduct', 'permissionProduct'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            select.innerHTML = '<option value="">اختر منتج...</option>';
+            if (window.products) {
+                window.products.forEach(p => {
+                    select.innerHTML += `<option value="${p.id}">${p.name} ${p.barcode ? '🏷️'+p.barcode : ''}</option>`;
+                });
+            }
+        }
+    });
+
+    // المخازن
+    ['productWarehouse', 'salesWarehouse', 'purchaseWarehouse', 'returnWarehouse', 'treasuryWarehouse'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            select.innerHTML = '<option value="">اختر مخزن...</option>';
+            if (window.warehouses) {
+                window.warehouses.forEach(w => {
+                    select.innerHTML += `<option value="${w.id}">${w.name} (${w.type})</option>`;
+                });
+            }
+        }
+    });
+
+    // العملاء
+    ['salesCustomerSelect', 'returnCustomerSelect'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            select.innerHTML = '<option value="">اختر عميل...</option>';
+            if (window.customers) {
+                window.customers.forEach(c => {
+                    select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+                });
+            }
+        }
+    });
+
+    // الموردين
+    const supplierSelect = document.getElementById('purchaseSupplierSelect');
+    if (supplierSelect) {
+        supplierSelect.innerHTML = '<option value="">اختر مورد...</option>';
+        if (window.suppliers) {
+            window.suppliers.forEach(s => {
+                supplierSelect.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+            });
+        }
+    }
+
+    // الإذونات
+    ['permissionFrom', 'permissionTo'].forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            select.innerHTML = '<option value="">اختر مخزن...</option>';
+            if (window.warehouses) {
+                window.warehouses.forEach(w => {
+                    select.innerHTML += `<option value="${w.id}">${w.name} (${w.type})</option>`;
+                });
+            }
+        }
+    });
+
+    // كشف حساب العملاء
+    const statementSelect = document.getElementById('statementCustomerSelect');
+    if (statementSelect) {
+        statementSelect.innerHTML = '<option value="">اختر عميل...</option>';
+        if (window.customers) {
+            window.customers.forEach(c => {
+                statementSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
+        }
+    }
+
+    // كشف حساب الموردين
+    const supplierStatementSelect = document.getElementById('statementSupplierSelect');
+    if (supplierStatementSelect) {
+        supplierStatementSelect.innerHTML = '<option value="">اختر مورد...</option>';
+        if (window.suppliers) {
+            window.suppliers.forEach(s => {
+                supplierStatementSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+            });
+        }
+    }
+
+    // السندات
+    const bondSelect = document.getElementById('bondCustomer');
+    if (bondSelect) {
+        bondSelect.innerHTML = '<option value="">اختر...</option>';
+        if (window.customers) {
+            window.customers.forEach(c => {
+                bondSelect.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
+        }
+        if (window.suppliers) {
+            window.suppliers.forEach(s => {
+                bondSelect.innerHTML += `<option value="s_${s.id}">${s.name} (مورد)</option>`;
+            });
+        }
+    }
+
+    // المستخدمين
+    const userSelect = document.getElementById('switchUserSelect');
+    if (userSelect) {
+        userSelect.innerHTML = '<option value="">اختر مستخدم...</option>';
+        if (window.users) {
+            window.users.forEach(u => {
+                userSelect.innerHTML += `<option value="${u.id}">${u.username} (${u.role})</option>`;
+            });
+        }
+    }
+
+    // تحديث التواريخ
+    const today = getTodayDate();
+    document.querySelectorAll('input[type="date"]').forEach(input => {
+        if (input && !input.value) input.value = today;
+    });
+
+    updateCustomerWhatsApp();
+    updateSupplierWhatsApp();
+}
+
+// ================================================================
+// KEYBOARD SHORTCUTS
+// ================================================================
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeMorePanel();
+    if (e.key === 'Enter' && !document.getElementById('loginContainer').classList.contains('hidden')) {
+        checkLogin();
+    }
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveAll();
+        showToast('💾 تم الحفظ', 'success');
+    }
+});
+
+// ================================================================
+// AUTO SAVE
+// ================================================================
+setInterval(() => {
+    if (document.getElementById('appContent').style.display !== 'none') {
+        saveAll();
+        updateClock();
+    }
+}, 30000);
+
+window.addEventListener('beforeunload', function() {
+    saveAll();
+});
+
+// ================================================================
+// DOM READY - بدء التطبيق
+// ================================================================
+document.addEventListener('DOMContentLoaded', function() {
+    // إعداد طرق الدفع
+    document.querySelectorAll('.payment-methods').forEach(group => {
+        group.querySelectorAll('label').forEach(label => {
+            label.addEventListener('click', function() {
+                group.querySelectorAll('label').forEach(l => l.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+    });
+
+    // تعيين التاريخ
+    const today = getTodayDate();
+    document.querySelectorAll('input[type="date"]').forEach(input => {
+        if (input && !input.value) input.value = today;
+    });
+
+    // تهيئة البيانات
+    initAppData();
+    seedData();
+    populateAllSelects();
+    refreshAllPages();
+
+    // التحقق من حالة القفل
+    if (localStorage.getItem('app_unlocked') === 'true') {
+        document.getElementById('loginContainer').classList.add('hidden');
+        document.getElementById('appContent').style.display = 'block';
+        setTimeout(() => {
+            populateAllSelects();
+            refreshAllPages();
+            updateClock();
+        }, 300);
+    }
+
+    console.log('✅ الميزان v3.0.0 - جاهز للعمل');
+    console.log('🔒 كلمة المرور: 123456');
+});
