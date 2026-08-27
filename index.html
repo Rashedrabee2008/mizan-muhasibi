@@ -434,6 +434,172 @@
         .qr-result { margin-top: 10px; padding: 10px; background: #1C1C1C; border-radius: 8px; border: 1px solid #2D2D2D; text-align: center; min-height: 60px; display: flex; align-items: center; justify-content: center; }
         .qr-result.success { border-color: #2D8F5E; color: #2D8F5E; }
         .qr-result.error { border-color: #E06060; color: #E06060; }
+
+        /* ================================================================
+   DASHBOARD - شكل متطور
+   ================================================================ */
+
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.dashboard-card {
+    background: #1C1C1C;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-right: 4px solid #C9A94E;
+    transition: 0.3s;
+    border: 1px solid #2D2D2D;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(201, 169, 78, 0.15);
+}
+
+.dashboard-card .icon {
+    font-size: 28px;
+    color: #C9A94E;
+    margin-bottom: 4px;
+}
+
+.dashboard-card .number {
+    font-size: 22px;
+    font-weight: 900;
+    color: #F5E6C8;
+}
+
+.dashboard-card .label {
+    font-size: 12px;
+    color: #A89070;
+    font-weight: 600;
+}
+
+.dashboard-card .change {
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.dashboard-card .change.up {
+    color: #2D8F5E;
+}
+
+.dashboard-card .change.down {
+    color: #E06060;
+}
+
+/* ===== CHART ===== */
+.chart-container {
+    background: #1C1C1C;
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid #2D2D2D;
+}
+
+.chart-container h4 {
+    font-size: 15px;
+    color: #C9A94E;
+    margin-bottom: 10px;
+}
+
+.chart-bar {
+    display: flex;
+    align-items: flex-end;
+    height: 140px;
+    gap: 4px;
+    padding: 8px 0;
+}
+
+.chart-bar .bar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    min-height: 4px;
+    transition: 0.5s;
+    position: relative;
+}
+
+.chart-bar .bar-sales {
+    background: linear-gradient(180deg, #C9A94E, #8B7A3A);
+}
+
+.chart-bar .bar-purchases {
+    background: linear-gradient(180deg, #E06060, #8A3A3A);
+}
+
+.chart-bar .bar-profit {
+    background: linear-gradient(180deg, #2D8F5E, #1A5A3A);
+}
+
+.chart-bar .bar-label {
+    text-align: center;
+    font-size: 8px;
+    color: #5D5D5D;
+    margin-top: 2px;
+}
+
+.chart-bar .bar-value {
+    position: absolute;
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    font-weight: 700;
+    color: #C9A94E;
+}
+
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 8px;
+    font-size: 10px;
+    color: #A89070;
+}
+
+.chart-legend span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.chart-legend .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.chart-legend .dot-sales {
+    background: #C9A94E;
+}
+
+.chart-legend .dot-purchases {
+    background: #E06060;
+}
+
+.chart-legend .dot-profit {
+    background: #2D8F5E;
+}
+
+.chart-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 4px 0;
+    font-size: 9px;
+    color: #5D5D5D;
+    border-top: 1px solid #2D2D2D;
+    margin-top: 4px;
+}
     </style>
 </head>
 <body>
@@ -1594,6 +1760,7 @@
     <script src="modules/audit.js"></script>
     <script src="modules/alerts.js"></script>
     <script src="modules/qr.js"></script>
+    <script src="modules/Dashboard.js"></script>
     
     <!-- الموديولات المتبقية (sales, purchases, returns, invoices, permissions, reports, accounting, cashier) -->
     <script src="modules/remaining.js"></script>
