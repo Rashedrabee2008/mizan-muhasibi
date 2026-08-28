@@ -63,8 +63,9 @@ function saveAll() {
   }
 }
 
-// ===== بيانات أولية =====
+// ===== بيانات أولية (تم إصلاحها) =====
 function seedData() {
+  // المخازن
   if (warehouses.length === 0) {
     warehouses = [
       { id: 1, name: 'المخزن الرئيسي', type: 'رئيسي', address: 'القاهرة' },
@@ -72,12 +73,16 @@ function seedData() {
     ];
     localStorage.setItem('mizan_warehouses', JSON.stringify(warehouses));
   }
+  
+  // المنتجات
   if (products.length === 0) {
     products = [
       { id: 1, name: 'منتج تجريبي 1', buyPrice: 50, sellPrice: 100, min: 5, barcode: '123456789' },
       { id: 2, name: 'منتج تجريبي 2', buyPrice: 30, sellPrice: 75, min: 3, barcode: '987654321' }
     ];
     localStorage.setItem('mizan_products', JSON.stringify(products));
+    
+    // ربط المنتجات بالمخازن
     warehouseProducts = [
       { warehouseId: 1, productId: 1, qty: 50 },
       { warehouseId: 1, productId: 2, qty: 30 },
@@ -86,14 +91,36 @@ function seedData() {
     ];
     localStorage.setItem('mizan_warehouseProducts', JSON.stringify(warehouseProducts));
   }
+  
+  // العملاء
   if (customers.length === 0) {
-    customers = [{ id: 1, name: 'أحمد محمد', phone: '01234567890', whatsapp: '01011993799', email: 'ahmed@test.com', address: 'القاهرة', active: true }];
+    customers = [{ 
+      id: 1, 
+      name: 'أحمد محمد', 
+      phone: '01234567890', 
+      whatsapp: '01011993799', 
+      email: 'ahmed@test.com', 
+      address: 'القاهرة', 
+      active: true 
+    }];
     localStorage.setItem('mizan_customers', JSON.stringify(customers));
   }
+  
+  // الموردين
   if (suppliers.length === 0) {
-    suppliers = [{ id: 1, name: 'شركة الاتصالات', phone: '0234567890', whatsapp: '01158767633', email: 'info@telecom.com', address: 'القاهرة', active: true }];
+    suppliers = [{ 
+      id: 1, 
+      name: 'شركة الاتصالات', 
+      phone: '0234567890', 
+      whatsapp: '01158767633', 
+      email: 'info@telecom.com', 
+      address: 'القاهرة', 
+      active: true 
+    }];
     localStorage.setItem('mizan_suppliers', JSON.stringify(suppliers));
   }
+  
+  // الحسابات المحاسبية
   if (accounts.length === 0) {
     accounts = [
       { id: 1, name: 'أصول', type: 'assets', parentId: null },
@@ -104,9 +131,34 @@ function seedData() {
     ];
     localStorage.setItem('mizan_accounts', JSON.stringify(accounts));
   }
+  
+  // بيانات الشركة
   if (Object.keys(companyData).length === 0) {
-    companyData = { name: 'شركة الميزان', phone: '0234567890', mobile: '01000000000', address: 'القاهرة، مصر', taxNumber: '123-456-789', commercialRegister: '12345', email: 'info@mizan.com', vodafone: '01011993799', instapay: 'rashedrabia@instapay', bankAccount: '2021300000275818', cash: '01080591108', paymentEmail: 'payment@mizan.com', logo: null };
+    companyData = { 
+      name: 'شركة الميزان', 
+      phone: '0234567890', 
+      mobile: '01000000000', 
+      address: 'القاهرة، مصر', 
+      taxNumber: '123-456-789', 
+      commercialRegister: '12345', 
+      email: 'info@mizan.com', 
+      vodafone: '01011993799', 
+      instapay: 'rashedrabia@instapay', 
+      bankAccount: '2021300000275818', 
+      cash: '01080591108', 
+      paymentEmail: 'payment@mizan.com', 
+      logo: null 
+    };
     localStorage.setItem('mizan_companyData', JSON.stringify(companyData));
   }
+  
+  // حفظ جميع البيانات
   saveAll();
+  
+  console.log('✅ تم تهيئة البيانات الأولية');
 }
+
+// ===== جعل الدوال عامة =====
+window.loadAllData = loadAllData;
+window.saveAll = saveAll;
+window.seedData = seedData;
