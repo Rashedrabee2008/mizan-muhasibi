@@ -2154,29 +2154,55 @@
     <script src="../src/ui.js"></script>
     <script src="../src/app.js"></script>
     
-    <script>
-        // ===== التهيئة =====
-        document.addEventListener('DOMContentLoaded', function() {
+    <!-- نهاية body -->
+<script>
+    // ===== التهيئة =====
+    document.addEventListener('DOMContentLoaded', function() {
+        // تحميل البيانات
+        if (typeof loadAllData === 'function') {
             loadAllData();
+        }
+        
+        // تهيئة البيانات الأولية
+        if (typeof seedData === 'function') {
             seedData();
+        }
+        
+        // تحديث الواجهة
+        if (typeof refreshAllPages === 'function') {
             refreshAllPages();
+        }
+        
+        // تفعيل الساعة
+        if (typeof updateClock === 'function') {
+            updateClock();
+        }
 
-            if (localStorage.getItem('app_unlocked') === 'true') {
-                document.getElementById('loginContainer').classList.add('hidden');
-                document.getElementById('appContent').style.display = 'block';
-                setTimeout(() => {
-                    populateAllSelects();
-                    refreshAllPages();
-                    startAutoBackup();
-                    syncFromFirebase();
-                    updateUIByPermissions();
-                    updateClock();
-                }, 300);
-            }
+        // التحقق من حالة القفل
+        if (localStorage.getItem('app_unlocked') === 'true') {
+            const loginContainer = document.getElementById('loginContainer');
+            const appContent = document.getElementById('appContent');
+            if (loginContainer) loginContainer.classList.add('hidden');
+            if (appContent) appContent.style.display = 'block';
+            
+            setTimeout(function() {
+                if (typeof populateAllSelects === 'function') populateAllSelects();
+                if (typeof refreshAllPages === 'function') refreshAllPages();
+                if (typeof startAutoBackup === 'function') startAutoBackup();
+                if (typeof syncFromFirebase === 'function') syncFromFirebase();
+                if (typeof updateUIByPermissions === 'function') updateUIByPermissions();
+                if (typeof updateClock === 'function') updateClock();
+            }, 300);
+        }
 
-            console.log('✅ الميزان v3.0.0 - نظام محاسبة متكامل');
-            console.log('🔒 كلمة المرور: 123456');
+        console.log('✅ الميزان v3.0.0 - نظام محاسبة متكامل');
+        console.log('🔒 كلمة المرور: 123456');
+        console.log('📦 البيانات الأولية:', {
+            products: typeof products !== 'undefined' ? products.length : 0,
+            customers: typeof customers !== 'undefined' ? customers.length : 0,
+            warehouses: typeof warehouses !== 'undefined' ? warehouses.length : 0
         });
-    </script>
+    });
+</script>
 </body>
 </html>
