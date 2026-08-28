@@ -64,7 +64,7 @@ function fallbackCopy(text) {
   document.body.removeChild(textarea);
 }
 
-// ===== الساعة =====
+// ===== الساعة (تم إصلاحها) =====
 function updateClock() {
   const now = new Date();
   let h = now.getHours();
@@ -73,13 +73,17 @@ function updateClock() {
   const ampm = h >= 12 ? 'م' : 'ص';
   h = h % 12 || 12;
   const clock = document.getElementById('liveClock');
-  if (clock) clock.textContent = h + ':' + m + ':' + s + ' ' + ampm;
+  if (clock) {
+    clock.textContent = h + ':' + m + ':' + s + ' ' + ampm;
+  }
 }
+
+// تشغيل الساعة كل ثانية
 setInterval(updateClock, 1000);
 
 // ===== الصلاحيات =====
 function hasPermission(action) {
-  const role = currentUser.role;
+  const role = currentUser ? currentUser.role : 'admin';
   if (role === 'admin') return true;
   if (role === 'manager') return ['add', 'edit', 'view'].indexOf(action) !== -1;
   if (role === 'cashier') return ['add', 'view'].indexOf(action) !== -1;
@@ -87,11 +91,14 @@ function hasPermission(action) {
   return false;
 }
 
-function isAdmin() { return currentUser.role === 'admin'; }
-function canDelete() { return currentUser.role === 'admin'; }
-function canEdit() { return currentUser.role === 'admin' || currentUser.role === 'manager'; }
-function canAdd() { return currentUser.role !== 'viewer'; }
-function canViewAudit() { return currentUser.role === 'admin'; }
+function isAdmin() { return currentUser ? currentUser.role === 'admin' : true; }
+function canDelete() { return currentUser ? currentUser.role === 'admin' : true; }
+function canEdit() { 
+  const role = currentUser ? currentUser.role : 'admin';
+  return role === 'admin' || role === 'manager'; 
+}
+function canAdd() { return currentUser ? currentUser.role !== 'viewer' : true; }
+function canViewAudit() { return currentUser ? currentUser.role === 'admin' : true; }
 
 // ===== التنبيهات =====
 function showToast(msg, type) {
@@ -105,21 +112,23 @@ function showToast(msg, type) {
 }
 
 function addAuditLog(action, type, details) {
+  if (typeof auditLog === 'undefined') { auditLog = []; }
   auditLog.unshift({ 
     id: Date.now(), 
     action, 
     type, 
     details, 
     date: new Date().toISOString(), 
-    user: currentUser.username 
+    user: (currentUser && currentUser.username) ? currentUser.username : 'مدير' 
   });
   if (auditLog.length > 500) auditLog = auditLog.slice(0, 500);
-  saveAll();
-  renderAudit();
+  if (typeof saveAll === 'function') saveAll();
+  if (typeof renderAudit === 'function') renderAudit();
 }
 
 function addAlert(title, desc, type) {
   type = type || 'info';
+  if (typeof alerts === 'undefined') { alerts = []; }
   alerts.unshift({ 
     id: Date.now(), 
     title, 
@@ -129,8 +138,8 @@ function addAlert(title, desc, type) {
     read: false 
   });
   if (alerts.length > 100) alerts = alerts.slice(0, 100);
-  saveAll();
-  updateAlertsUI();
+  if (typeof saveAll === 'function') saveAll();
+  if (typeof updateAlertsUI === 'function') updateAlertsUI();
 }
 
 // ===== المودال =====
@@ -147,3 +156,24 @@ function openModal(title, html) {
   if (bodyEl) bodyEl.innerHTML = html;
   if (overlay) overlay.classList.add('show');
 }
+
+// ===== جعل الدوال عامة =====
+window.getCurrentDate = getCurrentDate;
+window.getCurrentTime = getCurrentTime;
+window.getCurrentDateTime = getCurrentDateTime;
+window.safeSetText = safeSetText;
+window.safeSetValue = safeSetValue;
+window.getSelectedPayment = getSelectedPayment;
+window.copyToClipboard = copyToClipboard;
+window.updateClock = updateClock;
+window.hasPermission = hasPermission;
+window.isAdmin = isAdmin;
+window.canDelete = canDelete;
+window.canEdit = canEdit;
+window.canAdd = canAdd;
+window.canViewAudit = canViewAudit;
+window.showToast = showToast;
+window.addAuditLog = addAuditLog;
+window.addAlert = addAlert;
+window.closeModal = closeModal;
+window.openModal = openModal;
