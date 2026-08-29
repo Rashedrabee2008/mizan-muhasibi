@@ -1,24 +1,12 @@
 {
   "name": "mizan-muhasibi",
   "version": "3.0.0",
-  "description": "نظام محاسبة ونقاط بيع متكامل - الميزان",
+  "description": "نظام محاسبة ونقاط بيع متكامل",
   "main": "index.html",
   "scripts": {
-    "start": "live-server --port=8080",
-    "build": "echo 'Build complete'",
-    "dev": "live-server --port=8080 --open=public/index.html"
+    "start": "live-server",
+    "build": "echo 'No build step required'"
   },
-  "keywords": [
-    "accounting",
-    "pos",
-    "inventory",
-    "sales",
-    "purchases",
-    "treasury",
-    "cashier"
-  ],
-  "author": "Rashed Rabee",
-  "license": "MIT",
   "dependencies": {
     "firebase": "^10.7.1"
   },
