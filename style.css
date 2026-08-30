@@ -2228,3 +2228,236 @@ body, p, span, div, input, select, button, textarea, label {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
 }
+/* ================================================================
+   PRINT STYLES - أنماط الطباعة المحسنة
+   ================================================================ */
+
+@media print {
+    /* إخفاء عناصر الواجهة غير الضرورية */
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        font-size: 12px !important;
+        font-family: 'Tajawal', 'Arial', sans-serif !important;
+    }
+
+    /* إخفاء كل العناصر غير المرغوب فيها */
+    .bottom-nav,
+    .top-header,
+    .top-header .header-actions .lock-btn,
+    .top-header .header-actions .badge,
+    .more-overlay,
+    .more-panel,
+    .search-box .btn,
+    .btn:not(.no-print),
+    .filter-chips,
+    .actions .btn,
+    .grid-container,
+    .grid-item,
+    .main-card,
+    .dashboard-stats,
+    .chart-container,
+    .stats-row,
+    .settings-section,
+    #page-dashboard,
+    #page-home,
+    #page-inventory,
+    #page-sales,
+    #page-purchase,
+    #page-returns,
+    #page-warehouses,
+    #page-permissions,
+    #page-customers,
+    #page-suppliers,
+    #page-expenses,
+    #page-treasury,
+    #page-bonds,
+    #page-invoices,
+    #page-reports,
+    #page-accounting,
+    #page-accounts,
+    #page-cashier,
+    #page-customer_statement,
+    #page-supplier_statement,
+    #page-barcode,
+    #page-profit_analysis,
+    #page-audit,
+    #page-alerts,
+    #page-company,
+    #page-backup,
+    #page-users,
+    #page-settings,
+    #page-license_generator,
+    .bottom-nav,
+    .more-overlay,
+    .more-panel,
+    .toast,
+    .modal-overlay {
+        display: none !important;
+    }
+
+    /* إظهار محتوى الطباعة فقط */
+    .invoice-print-boxed {
+        display: block !important;
+        border: 1px solid #000 !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 20px !important;
+        margin: 0 auto !important;
+        max-width: 320px !important;
+        font-size: 12px !important;
+        font-family: 'Tajawal', 'Arial', sans-serif !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        direction: rtl !important;
+        text-align: center !important;
+    }
+
+    /* تنسيق رأس الفاتورة */
+    .invoice-print-boxed .company-header {
+        border-bottom: 2px solid #000 !important;
+        padding-bottom: 10px !important;
+        margin-bottom: 10px !important;
+    }
+    .invoice-print-boxed .company-header h2 {
+        font-size: 20px !important;
+        color: #000 !important;
+        margin: 0 !important;
+        font-weight: 900 !important;
+    }
+    .invoice-print-boxed .company-header .sub-title {
+        font-size: 11px !important;
+        color: #555 !important;
+    }
+    .invoice-print-boxed .company-header .contact-info {
+        font-size: 10px !important;
+        color: #555 !important;
+        margin: 2px 0 !important;
+    }
+
+    /* تنسيق معلومات الفاتورة */
+    .invoice-print-boxed .invoice-info {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        font-size: 11px !important;
+        padding: 4px 0 !important;
+        border-bottom: 1px solid #ddd !important;
+        margin-bottom: 6px !important;
+    }
+    .invoice-print-boxed .invoice-info .info-item {
+        display: flex !important;
+        gap: 4px !important;
+        font-size: 11px !important;
+    }
+    .invoice-print-boxed .invoice-info .info-item .label {
+        font-weight: 700 !important;
+        color: #000 !important;
+    }
+    .invoice-print-boxed .invoice-info .info-item .value {
+        color: #000 !important;
+    }
+
+    /* تنسيق معلومات العميل */
+    .invoice-print-boxed .customer-info {
+        text-align: right !important;
+        font-size: 11px !important;
+        padding: 4px 0 !important;
+        border-bottom: 1px solid #ddd !important;
+        margin-bottom: 6px !important;
+    }
+    .invoice-print-boxed .customer-info .label {
+        font-weight: 700 !important;
+        color: #000 !important;
+    }
+
+    /* تنسيق جدول الأصناف */
+    .invoice-print-boxed .items-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        font-size: 10px !important;
+        margin: 6px 0 !important;
+        text-align: center !important;
+    }
+    .invoice-print-boxed .items-table th {
+        border: 1px solid #000 !important;
+        padding: 4px 2px !important;
+        font-weight: 800 !important;
+        text-align: center !important;
+        color: #000 !important;
+        background: #eee !important;
+        font-size: 10px !important;
+    }
+    .invoice-print-boxed .items-table td {
+        border: 1px solid #000 !important;
+        padding: 4px 2px !important;
+        text-align: center !important;
+        color: #000 !important;
+        font-size: 10px !important;
+    }
+
+    /* تنسيق الإجمالي */
+    .invoice-print-boxed .total-box {
+        border-top: 2px solid #000 !important;
+        padding: 6px 0 !important;
+        margin-top: 6px !important;
+        font-weight: 700 !important;
+        font-size: 13px !important;
+        text-align: center !important;
+    }
+    .invoice-print-boxed .total-box .total-amount {
+        color: #000 !important;
+        font-weight: 900 !important;
+    }
+
+    /* تنسيق التذييل */
+    .invoice-print-boxed .footer-box {
+        border-top: 2px solid #000 !important;
+        padding-top: 6px !important;
+        margin-top: 6px !important;
+        font-size: 10px !important;
+        color: #555 !important;
+        text-align: center !important;
+    }
+    .invoice-print-boxed .footer-box .thanks {
+        font-size: 13px !important;
+        color: #000 !important;
+        font-weight: 700 !important;
+    }
+    .invoice-print-boxed .footer-box .payment-methods {
+        font-size: 10px !important;
+        color: #333 !important;
+        margin: 4px 0 !important;
+        text-align: right !important;
+    }
+    .invoice-print-boxed .footer-box .payment-methods .pm-label {
+        font-weight: 700 !important;
+        color: #000 !important;
+    }
+    .invoice-print-boxed .footer-box .payment-methods .pm-value {
+        color: #333 !important;
+    }
+
+    /* منع كسر الصفحات داخل الفاتورة */
+    .invoice-print-boxed .items-table tr,
+    .invoice-print-boxed .items-table td,
+    .invoice-print-boxed .items-table th {
+        page-break-inside: avoid !important;
+    }
+    .invoice-print-boxed {
+        page-break-after: avoid !important;
+    }
+
+    /* إزالة أي خلفيات داكنة */
+    .invoice-print-boxed,
+    .invoice-print-boxed * {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
