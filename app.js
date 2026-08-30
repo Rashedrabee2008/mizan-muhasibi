@@ -2,9 +2,7 @@
 // app.js - التطبيق الرئيسي (الملف الكامل)
 // ================================================================
 
-// ================================================================
-// CONFIG
-// ================================================================
+// ===== CONFIG =====
 const DEFAULT_PASSWORD = '123456';
 const SECRET_KEY = 'Mizan_License_2025_Secret';
 const DEMO_LICENSE_KEY = 'UmFzaGVkfDIwMjctMDgtMjV8fDg5YWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTA=';
@@ -15,10 +13,7 @@ let backupInterval = null;
 let versionClickCount = 0;
 let currentUser = JSON.parse(localStorage.getItem('mizan_current_user')) || { username: 'مدير', role: 'admin' };
 
-// ================================================================
-// HELPER FUNCTIONS
-// ================================================================
-
+// ===== HELPER FUNCTIONS =====
 function safeSetText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
@@ -106,10 +101,7 @@ function fallbackCopy(text) {
     document.body.removeChild(textarea);
 }
 
-// ================================================================
-// PERMISSIONS
-// ================================================================
-
+// ===== PERMISSIONS =====
 function hasPermission(action) {
     const role = currentUser.role;
     if (role === 'admin') return true;
@@ -119,30 +111,13 @@ function hasPermission(action) {
     return false;
 }
 
-function isAdmin() {
-    return currentUser.role === 'admin';
-}
+function isAdmin() { return currentUser.role === 'admin'; }
+function canDelete() { return currentUser.role === 'admin'; }
+function canEdit() { return currentUser.role === 'admin' || currentUser.role === 'manager'; }
+function canAdd() { return currentUser.role !== 'viewer'; }
+function canViewAudit() { return currentUser.role === 'admin'; }
 
-function canDelete() {
-    return currentUser.role === 'admin';
-}
-
-function canEdit() {
-    return currentUser.role === 'admin' || currentUser.role === 'manager';
-}
-
-function canAdd() {
-    return currentUser.role !== 'viewer';
-}
-
-function canViewAudit() {
-    return currentUser.role === 'admin';
-}
-
-// ================================================================
-// UPDATE UI BY PERMISSIONS
-// ================================================================
-
+// ===== UPDATE UI BY PERMISSIONS =====
 function updateUIByPermissions() {
     const clearAuditBtn = document.getElementById('clearAuditBtn');
     if (clearAuditBtn) {
@@ -174,10 +149,7 @@ function updateUIByPermissions() {
     }
 }
 
-// ================================================================
-// CLOCK
-// ================================================================
-
+// ===== CLOCK =====
 function updateClock() {
     const now = new Date();
     let hours = now.getHours();
@@ -194,10 +166,7 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ================================================================
-// LOGIN / LOGOUT / LOCK
-// ================================================================
-
+// ===== LOGIN / LOGOUT / LOCK =====
 function checkLogin() {
     const input = document.getElementById('loginPassword');
     const error = document.getElementById('loginError');
@@ -265,10 +234,7 @@ function logoutApp() {
     }
 }
 
-// ================================================================
-// NAVIGATION
-// ================================================================
-
+// ===== NAVIGATION =====
 function navigateTo(pageId) {
     document.querySelectorAll('.page-container').forEach(el => el.classList.remove('active'));
     const target = document.getElementById('page-' + pageId);
@@ -358,10 +324,7 @@ function closeMorePanel() {
     if (panel) panel.classList.remove('open');
 }
 
-// ================================================================
-// REFRESH ALL PAGES
-// ================================================================
-
+// ===== REFRESH ALL PAGES =====
 function refreshAllPages() {
     if (typeof renderProducts === 'function') renderProducts();
     if (typeof renderSales === 'function') renderSales();
@@ -401,10 +364,7 @@ function refreshAllPages() {
     }, 200);
 }
 
-// ================================================================
-// START AUTO BACKUP
-// ================================================================
-
+// ===== START AUTO BACKUP =====
 function startAutoBackup() {
     if (backupInterval) clearInterval(backupInterval);
     backupInterval = setInterval(() => {
@@ -412,10 +372,7 @@ function startAutoBackup() {
     }, 6 * 60 * 60 * 1000);
 }
 
-// ================================================================
-// LICENSE FUNCTIONS
-// ================================================================
-
+// ===== LICENSE FUNCTIONS =====
 function decodeLicenseKey(licenseKey) {
     try {
         const decoded = atob(licenseKey);
@@ -615,10 +572,7 @@ function renderGeneratedKeys() {
     container.innerHTML = html;
 }
 
-// ================================================================
-// COUNT VERSION CLICKS - إظهار زر توليد المفاتيح بعد 5 ضغطات
-// ================================================================
-
+// ===== COUNT VERSION CLICKS =====
 function countVersionClicks() {
     if (!isAdmin()) {
         showToast('⚠️ فقط المدير يمكنه توليد المفاتيح', 'warning');
@@ -651,10 +605,27 @@ function countVersionClicks() {
     }
 }
 
-// ================================================================
-// KEYBOARD SHORTCUTS
-// ================================================================
+// ===== SYNC FUNCTIONS =====
+function syncNow() {
+    if (typeof syncToFirebase === 'function') {
+        syncToFirebase();
+        showToast('☁️ جاري المزامنة...', 'info');
+    }
+}
 
+function forceSync() {
+    if (typeof syncToFirebase === 'function') {
+        syncToFirebase();
+    }
+    setTimeout(() => {
+        if (typeof syncFromFirebase === 'function') {
+            syncFromFirebase();
+        }
+    }, 2000);
+    showToast('🔄 جاري المزامنة القسرية...', 'info');
+}
+
+// ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         if (typeof closeMorePanel === 'function') closeMorePanel();
@@ -669,10 +640,7 @@ document.addEventListener('keydown', e => {
     }
 });
 
-// ================================================================
-// AUTO SAVE
-// ================================================================
-
+// ===== AUTO SAVE =====
 setInterval(() => {
     if (document.getElementById('appContent').style.display !== 'none') {
         if (typeof saveAll === 'function') saveAll();
@@ -684,10 +652,7 @@ window.addEventListener('beforeunload', function() {
     if (typeof saveAll === 'function') saveAll();
 });
 
-// ================================================================
-// WHATSAPP FUNCTIONS
-// ================================================================
-
+// ===== WHATSAPP FUNCTIONS =====
 function updateCustomerWhatsApp() {
     const select = document.getElementById('salesCustomerSelect');
     const input = document.getElementById('salesCustomer');
@@ -921,11 +886,8 @@ function printInvoice(type) {
     }
 }
 
-// ================================================================
-// ADD AUDIT LOG
-// ================================================================
-
-function addAuditLog(action, type, details) {
+// ===== ADD AUDIT LOG =====
+function addAuditLog(action, type, details, data = null) {
     if (typeof window.auditLog === 'undefined') {
         window.auditLog = [];
     }
@@ -934,6 +896,7 @@ function addAuditLog(action, type, details) {
         action: action,
         type: type,
         details: details,
+        data: data,
         date: new Date().toISOString(),
         user: currentUser?.username || 'admin'
     });
@@ -944,12 +907,10 @@ function addAuditLog(action, type, details) {
         localStorage.setItem('mizan_auditLog', JSON.stringify(window.auditLog));
     }
     if (typeof renderAudit === 'function') renderAudit();
+    if (typeof renderActivityLog === 'function') renderActivityLog();
 }
 
-// ================================================================
-// SETTINGS FUNCTIONS
-// ================================================================
-
+// ===== SETTINGS FUNCTIONS =====
 function updateSettingsUI() {
     safeSetText('infoProducts', (window.products || []).length);
     safeSetText('infoCustomers', (window.customers || []).length);
@@ -1026,10 +987,7 @@ function clearAllData() {
     showToast('🗑️ تم مسح جميع البيانات', 'warning');
 }
 
-// ================================================================
-// POPULATE ALL SELECTS
-// ================================================================
-
+// ===== POPULATE ALL SELECTS =====
 function populateAllSelects() {
     populateWarehouseSelects();
     populateProductSelects();
@@ -1216,10 +1174,7 @@ function populateUsersSelect() {
     }
 }
 
-// ================================================================
-// DOM READY
-// ================================================================
-
+// ===== DOM READY =====
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.payment-methods').forEach(group => {
         group.querySelectorAll('label').forEach(label => {
@@ -1256,6 +1211,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('✅ الميزان v3.0.0 - نظام محاسبة متكامل');
     console.log('🔒 كلمة المرور: 123456');
-    console.log('📱 تم تقسيم الكود إلى موديولات منفصلة');
     console.log('🔑 اضغط 5 مرات على رقم الإصدار في الإعدادات لتفعيل زر توليد المفاتيح');
+    console.log('🔄 المزامنة الفورية نشطة - أي تغيير يظهر على جميع الأجهزة');
 });
