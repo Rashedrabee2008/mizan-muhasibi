@@ -1,17 +1,29 @@
 // ================================================================
-// dashboard.js - لوحة التحكم المتطورة (الملف الكامل)
+// dashboard.js - لوحة التحكم (الملف الكامل)
 // ================================================================
 
 // ================================================================
 // UPDATE DASHBOARD - تحديث لوحة التحكم بالكامل
 // ================================================================
 function updateDashboard() {
+    // التأكد من وجود البيانات
+    if (!window.products) window.products = [];
+    if (!window.customers) window.customers = [];
+    if (!window.suppliers) window.suppliers = [];
+    if (!window.sales) window.sales = [];
+    if (!window.purchases) window.purchases = [];
+    if (!window.returns) window.returns = [];
+    if (!window.treasury) window.treasury = [];
+    if (!window.warehouseProducts) window.warehouseProducts = [];
+    if (!window.warehouses) window.warehouses = [];
+    
     updateStats();
     renderSalesChart();
     updateAlertsUI();
     checkLowStockAlert();
     renderActivityLog();
     renderLowStockList();
+    updateDashboardDetails();
 }
 
 // ================================================================
@@ -109,7 +121,7 @@ function updateStats() {
                 if (wp.productId === p.id) qty += wp.qty;
             });
             totalQty += qty;
-            totalValue += p.sellPrice * qty;
+            totalValue += (p.sellPrice || 0) * qty;
         });
     }
     safeSetText('dashInventoryQty', totalQty);
@@ -235,7 +247,7 @@ function renderSalesChart() {
 }
 
 // ================================================================
-// RENDER ACTIVITY LOG - سجل النشاطات التفصيلي
+// RENDER ACTIVITY LOG - سجل النشاطات
 // ================================================================
 function renderActivityLog() {
     const container = document.getElementById('activityLog');
@@ -339,9 +351,7 @@ function renderActivityLog() {
                 'customer': { icon: 'fa-user', color: '#2D8F5E', label: 'عميل' },
                 'supplier': { icon: 'fa-truck', color: '#E06060', label: 'مورد' },
                 'expense': { icon: 'fa-money-bill-wave', color: '#E06060', label: 'مصروف' },
-                'bond': { icon: 'fa-file-signature', color: '#C9A94E', label: 'سند' },
-                'account': { icon: 'fa-sitemap', color: '#4A8AB5', label: 'حساب' },
-                'user': { icon: 'fa-user-cog', color: '#C9A94E', label: 'مستخدم' }
+                'bond': { icon: 'fa-file-signature', color: '#C9A94E', label: 'سند' }
             };
             const info = actionMap[a.action] || { icon: 'fa-circle', color: '#A89070', label: a.action };
             
@@ -555,18 +565,6 @@ function addAlert(title, desc, type = 'info') {
 }
 
 // ================================================================
-// REFRESH DASHBOARD
-// ================================================================
-function refreshDashboard() {
-    if (typeof updateDashboard === 'function') {
-        updateDashboard();
-    }
-    if (typeof updateDashboardDetails === 'function') {
-        updateDashboardDetails();
-    }
-}
-
-// ================================================================
 // UPDATE DASHBOARD DETAILS
 // ================================================================
 function updateDashboardDetails() {
@@ -615,9 +613,21 @@ function updateDashboardDetails() {
                 if (wp.productId === p.id) qty += wp.qty;
             });
             totalQty += qty;
-            totalValue += p.sellPrice * qty;
+            totalValue += (p.sellPrice || 0) * qty;
         });
     }
     safeSetText('dashInventoryQty', totalQty);
     safeSetText('dashInventoryValue', totalValue.toFixed(2));
+}
+
+// ================================================================
+// REFRESH DASHBOARD
+// ================================================================
+function refreshDashboard() {
+    if (typeof updateDashboard === 'function') {
+        updateDashboard();
+    }
+    if (typeof updateDashboardDetails === 'function') {
+        updateDashboardDetails();
+    }
 }
