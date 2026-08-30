@@ -273,4 +273,101 @@ function renderCashier() {
             const transactions = c?.transactions || [];
             const totalSales = c?.totalSales || 0;
             const totalExpenses = c?.totalExpenses || 0;
-            const statusColor = status === 'open' ? '#2D
+            const statusColor = status === 'open' ? '#2D8F5E' : '#E06060';
+            const statusText = status === 'open' ? `🟢 مفتوح - ${openTime}` : `🔴 مغلق - ${closeTime}`;
+            
+            return `
+                <div class="cashier-history-item">
+                    <div class="header">
+                        <span>📅 ${date}</span>
+                        <span style="color:${statusColor};">${statusText}</span>
+                    </div>
+                    <div class="details">
+                        <span>💰 فتح: ${openingBalance.toFixed(2)}</span>
+                        <span>💰 ختام: ${closingBalance.toFixed(2)}</span>
+                        <span>📊 حركات: ${transactions.length}</span>
+                    </div>
+                    <div class="details">
+                        <span>📈 مبيعات: ${totalSales.toFixed(2)}</span>
+                        <span>📉 مصروفات: ${totalExpenses.toFixed(2)}</span>
+                        <span style="color:${status === 'open' ? '#E6A830' : '#C9A94E'};">
+                            ${status === 'open' ? '⏳ مفتوح' : `🕐 ${closeTime || '-'}`}
+                        </span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+// ================================================================
+// CASHIER PRINT REPORT - طباعة تقرير الكاشف
+// ================================================================
+function cashierPrintReport() {
+    const today = getTodayDate();
+    const cashier = window.cashierHistory.find(c => c.date === today);
+    if (!cashier) {
+        showToast('⚠️ لا توجد بيانات لليوم', 'error');
+        return;
+    }
+
+    const isOpen = cashier.status === 'open';
+    const company = window.companyData || {};
+    const dt = getCurrentDateTime();
+
+    let html = `
+        <div class="invoice-print-boxed">
+            <div class="company-header">
+                <h2>${company.name || 'الميزان'}</h2>
+                <div class="sub-title">نظام محاسبة ونقاط بيع</div>
+                <div class="contact-info">📍 ${company.address || 'القاهرة، مصر'} | 📞 ${company.phone || '0234567890'} | 📱 ${company.mobile || '01000000000'}</div>
+            </div>
+            <div class="invoice-info">
+                <div class="info-item"><span class="label">📅 التاريخ:</span><span class="value">${cashier.date}</span></div>
+                <div class="info-item"><span class="label">🕐 الوقت:</span><span class="value">${dt.time}</span></div>
+            </div>
+            <div style="text-align:right;padding:6px 0;border-bottom:1px solid #3D3D3D;margin-bottom:6px;">
+                <div><strong>🕐 وقت الفتح:</strong> ${cashier.openTime || '-'}</div>
+                ${!isOpen ? `<div><strong>🕐 وقت الإغلاق:</strong> ${cashier.closeTime || '-'}</div>` : ''}
+                <div><strong>🔴 الحالة:</strong> ${isOpen ? '🟢 مفتوح' : '🔴 مغلق'}</div>
+                <div><strong>💰 الرصيد الافتتاحي:</strong> ${cashier.openingBalance.toFixed(2)} 🇪🇬</div>
+                <div><strong>💰 الرصيد الختامي:</strong> ${cashier.closingBalance.toFixed(2)} 🇪🇬</div>
+                <div><strong>📈 إجمالي المبيعات:</strong> ${cashier.totalSales.toFixed(2)} 🇪🇬</div>
+                <div><strong>📉 إجمالي المصروفات:</strong> ${cashier.totalExpenses.toFixed(2)} 🇪🇬</div>
+                <div><strong>📊 صافي اليوم:</strong> ${(cashier.totalSales - cashier.totalExpenses).toFixed(2)} 🇪🇬</div>
+            </div>
+            <div style="text-align:right;padding:6px 0;border-bottom:1px solid #3D3D3D;margin-bottom:6px;">
+                <div><strong>💵 نقدي:</strong> ${cashier.totalCash.toFixed(2)} 🇪🇬</div>
+                <div><strong>📱 محفظة:</strong> ${cashier.totalWallet.toFixed(2)} 🇪🇬</div>
+                <div><strong>🏦 بنك:</strong> ${cashier.totalBank.toFixed(2)} 🇪🇬</div>
+                <div><strong>📲 إنستاباي:</strong> ${cashier.totalInstapay.toFixed(2)} 🇪🇬</div>
+            </div>
+            <div style="text-align:right;font-size:11px;color:#A89070;padding:6px 0;">
+                <div><strong>📋 عدد الحركات:</strong> ${cashier.transactions.length}</div>
+                ${cashier.transactions.slice(-10).map(t => `
+                    <div style="font-size:9px;padding:2px 0;">• ${t.time} ${t.note || ''}: ${t.amount.toFixed(2)}</div>
+                `).join('')}
+            </div>
+            <div class="footer-box">
+                <div class="thanks">خالص مع الشكر</div>
+                <div class="payment-methods">
+                    ${company.vodafone ? `<div><span class="pm-label">📱 فودافون كاش:</span> <span class="pm-value">${company.vodafone}</span></div>` : ''}
+                    ${company.instapay ? `<div><span class="pm-label">📲 إنستاباي:</span> <span class="pm-value">${company.instapay}</span></div>` : ''}
+                    ${company.bankAccount ? `<div><span class="pm-label">🏦 بنك:</span> <span class="pm-value">${company.bankAccount}</span></div>` : ''}
+                    ${company.cash ? `<div><span class="pm-label">💰 كاش:</span> <span class="pm-value">${company.cash}</span></div>` : ''}
+                </div>
+                <div style="font-size:9px;color:#5D5D5D;">تم الطباعة في ${new Date().toLocaleString('ar')}</div>
+            </div>
+        </div>
+    `;
+
+    const win = window.open('', '_blank', 'width=400,height=650');
+    if (win) {
+        win.document.write(html);
+        win.document.close();
+        win.print();
+    } else {
+        showToast('⚠️ تم حظر النافذة', 'error');
+    }
+    addAuditLog('add', 'cashier', 'طباعة تقرير الكاشف');
+}
