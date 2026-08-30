@@ -6,7 +6,6 @@
 // SALES MODULE - إدارة المبيعات
 // ================================================================
 
-// ===== متغيرات المبيعات =====
 if (typeof window.salesItems === 'undefined') {
     window.salesItems = [];
 }
@@ -492,8 +491,156 @@ function deleteSaleInvoice(id) {
     showToast('🗑️ تم حذف الفاتورة', 'info');
 }
 
+
 // ================================================================
-// SEND WHATSAPP INVOICE - إرسال فاتورة عبر واتساب
+// WHATSAPP INVOICE FUNCTIONS - إرسال فواتير عبر واتساب
+// ================================================================
+
+// ================================================================
+// SEND WHATSAPP - إرسال فاتورة البيع الحالية عبر واتساب
+// ================================================================
+function sendWhatsApp() {
+    if (!canAdd()) {
+        showToast('⚠️ ليس لديك صلاحية', 'error');
+        return;
+    }
+
+    const customer = document.getElementById('salesCustomer')?.value?.trim() ||
+        document.getElementById('salesCustomerSelect')?.value;
+    if (!customer) {
+        showToast('⚠️ حدد عميلاً أولاً', 'error');
+        return;
+    }
+
+    if (typeof window.salesItems === 'undefined' || window.salesItems.length === 0) {
+        showToast('⚠️ أضف أصنافاً أولاً', 'error');
+        return;
+    }
+
+    let whatsappNumber = document.getElementById('customerWhatsApp')?.value?.trim();
+    if (!whatsappNumber) {
+        const customerObj = window.customers ? window.customers.find(c => c.name === customer) : null;
+        if (customerObj?.whatsapp) {
+            whatsappNumber = customerObj.whatsapp;
+        } else if (customerObj?.phone) {
+            whatsappNumber = customerObj.phone;
+        } else {
+            whatsappNumber = '01011993799';
+        }
+    }
+
+    whatsappNumber = whatsappNumber.replace(/[^0-9]/g, '');
+    if (!whatsappNumber.startsWith('20')) {
+        whatsappNumber = '20' + whatsappNumber;
+    }
+
+    const items = window.salesItems || [];
+    const total = items.reduce((s, item) => s + (item.total || 0), 0);
+    const payment = getSelectedPayment('sales');
+    const invoiceType = document.getElementById('salesInvoiceType')?.value || 'simple';
+    const company = window.companyData || {};
+    const isTax = invoiceType === 'tax';
+    const taxRate = 14;
+    const taxAmount = isTax ? (total * taxRate) / 100 : 0;
+    const totalWithTax = isTax ? total + taxAmount : total;
+    const dt = getCurrentDateTime();
+
+    const line = '═'.repeat(36);
+    let message = '';
+
+    // رأس الفاتورة
+    message += `╔${line}╗\n`;
+    message += `║     🏢 ${(company.name || 'الميزان').padEnd(24)}║\n`;
+    message += `║  نظام محاسبة ونقاط بيع  ${''.padEnd(12)}║\n`;
+    message += `╠${line}╣\n`;
+    message += `║ 📍 ${(company.address || 'القاهرة، مصر').padEnd(26)}║\n`;
+    message += `║ 📞 ${(company.phone || '0234567890').padEnd(26)}║\n`;
+    message += `║ 📱 ${(company.mobile || '01000000000').padEnd(26)}║\n`;
+    
+    if (isTax) {
+        message += `║ 🆔 الرقم الضريبي: ${(company.taxNumber || 'غير مسجل').padEnd(20)}║\n`;
+        message += `║ 📋 السجل التجاري: ${(company.commercialRegister || 'غير مسجل').padEnd(18)}║\n`;
+    }
+    
+    message += `╠${line}╣\n`;
+    message += `║ 📅 ${dt.date}  🕐 ${dt.time.padEnd(16)}║\n`;
+    message += `╠${line}╣\n`;
+    
+    // معلومات الفاتورة
+    message += `║ 🧾 فاتورة ${isTax ? 'ضريبية' : 'عادية'.padEnd(24)}║\n`;
+    message += `║ 👤 العميل: ${customer.padEnd(24)}║\n`;
+    message += `║ 💳 الدفع: ${payment.padEnd(26)}║\n`;
+    message += `╠${line}╣\n`;
+    
+    // جدول الأصناف
+    message += `║ # │ المنتج    │ العدد │ السعر │\n`;
+    message += `║───┼───────────┼───────┼───────╢\n`;
+    
+    if (items.length > 0) {
+        items.forEach((item, i) => {
+            const name = item.productName.length > 8 ? item.productName.substring(0, 8) + '..' : item.productName.padEnd(8);
+            const num = (i + 1).toString().padStart(1);
+            const qty = item.qty.toString().padStart(5);
+            const price = item.price.toFixed(0).padStart(5);
+            message += `║ ${num} │ ${name} │ ${qty} │ ${price} │\n`;
+            const totalItem = item.total.toFixed(2).padStart(7);
+            message += `║   │ الإجمالي  │      │ ${totalItem} │\n`;
+        });
+    } else {
+        message += `║   │ لا توجد أصناف               ║\n`;
+    }
+    
+    message += `╠${line}╣\n`;
+    message += `║ 💰 الإجمالي: ${total.toFixed(2).padStart(20)} 🇪🇬 ║\n`;
+    
+    if (isTax) {
+        message += `║ 📊 الضريبة (14%): ${taxAmount.toFixed(2).padStart(19)} ║\n`;
+        message += `║ 💰 الإجمالي مع الضريبة: ${totalWithTax.toFixed(2).padStart(14)} ║\n`;
+    }
+    
+    message += `╠${line}╣\n`;
+    message += `║        خالص مع الشكر           ║\n`;
+    message += `╠${line}╣\n`;
+    
+    // طرق الدفع
+    let hasPayment = false;
+    if (company.vodafone) {
+        message += `║ 📱 فودافون كاش: ${company.vodafone.padEnd(20)}║\n`;
+        hasPayment = true;
+    }
+    if (company.instapay) {
+        message += `║ 📲 إنستاباي: ${company.instapay.padEnd(22)}║\n`;
+        hasPayment = true;
+    }
+    if (company.bankAccount) {
+        message += `║ 🏦 بنك: ${company.bankAccount.padEnd(24)}║\n`;
+        hasPayment = true;
+    }
+    if (company.cash) {
+        message += `║ 💰 كاش: ${company.cash.padEnd(25)}║\n`;
+        hasPayment = true;
+    }
+    
+    if (hasPayment) {
+        message += `╠${line}╣\n`;
+    }
+    
+    message += `║ 📱 رابط الدفع: bit.ly/mizan-pay  ║\n`;
+    message += `╚${line}╝\n`;
+    message += `\n📱 تم إرسال الفاتورة عبر الميزان`;
+
+    const encoded = encodeURIComponent(message);
+    const url = `https://wa.me/${whatsappNumber}?text=${encoded}`;
+    window.open(url, '_blank');
+
+    if (typeof addAuditLog === 'function') {
+        addAuditLog('sale', 'whatsapp', `إرسال فاتورة واتساب للعميل: ${customer} - رقم: ${whatsappNumber}`);
+    }
+    showToast(`📱 تم فتح واتساب للعميل ${customer}`, 'success');
+}
+
+// ================================================================
+// SEND WHATSAPP INVOICE - إرسال فاتورة محفوظة عبر واتساب
 // ================================================================
 function sendWhatsAppInvoice(id) {
     const invoice = window.sales.find(s => s.id === id);
@@ -514,6 +661,7 @@ function sendWhatsAppInvoice(id) {
         whatsappNumber = '20' + whatsappNumber;
     }
 
+    const items = invoice.items || [];
     const total = invoice.totalWithTax || invoice.total || 0;
     const company = window.companyData || {};
     const isTax = invoice.invoiceType === 'tax';
@@ -522,60 +670,97 @@ function sendWhatsAppInvoice(id) {
     const totalWithTax = isTax ? total + taxAmount : total;
     const dt = getCurrentDateTime();
 
-    let message = `╔══════════════════════════════════╗\n` +
-        `║           🏢 ${company.name || 'الميزان'}        ║\n` +
-        `║    نظام محاسبة ونقاط بيع         ║\n` +
-        `╠══════════════════════════════════╣\n` +
-        `║ 📍 ${(company.address || 'القاهرة، مصر').padEnd(28)}║\n` +
-        `║ 📞 ${(company.phone || '0234567890').padEnd(28)}║\n` +
-        `║ 📱 ${(company.mobile || '01000000000').padEnd(28)}║\n` +
-        `╠══════════════════════════════════╣\n` +
-        `║ 📅 ${invoice.date}  🕐 ${dt.time}                 ║\n`;
+    const line = '═'.repeat(36);
+    let message = '';
 
+    // رأس الفاتورة
+    message += `╔${line}╗\n`;
+    message += `║     🏢 ${(company.name || 'الميزان').padEnd(24)}║\n`;
+    message += `║  نظام محاسبة ونقاط بيع  ${''.padEnd(12)}║\n`;
+    message += `╠${line}╣\n`;
+    message += `║ 📍 ${(company.address || 'القاهرة، مصر').padEnd(26)}║\n`;
+    message += `║ 📞 ${(company.phone || '0234567890').padEnd(26)}║\n`;
+    message += `║ 📱 ${(company.mobile || '01000000000').padEnd(26)}║\n`;
+    
     if (isTax) {
-        message += `║ 🆔 الرقم الضريبي: ${(company.taxNumber || 'غير مسجل').padEnd(22)}║\n` +
-            `║ 📋 السجل التجاري: ${(company.commercialRegister || 'غير مسجل').padEnd(20)}║\n`;
+        message += `║ 🆔 الرقم الضريبي: ${(company.taxNumber || 'غير مسجل').padEnd(20)}║\n`;
+        message += `║ 📋 السجل التجاري: ${(company.commercialRegister || 'غير مسجل').padEnd(18)}║\n`;
     }
-
-    message += `╠══════════════════════════════════╣\n` +
-        `║ 🧾 فاتورة ${isTax ? 'ضريبية' : 'عادية'.padEnd(24)}║\n` +
-        `║ 👤 العميل: ${invoice.customer.padEnd(26)}║\n` +
-        `║ 💳 الدفع: ${(invoice.payment || 'نقدي').padEnd(27)}║\n` +
-        `╠══════════════════════════════════╣\n` +
-        `║ # │ المنتج    │ العدد │ السعر │\n` +
-        `╠══════════════════════════════════╣\n`;
-
-    if (invoice.items) {
-        invoice.items.forEach((item, i) => {
-            const name = item.productName.length > 10 ? item.productName.substring(0, 10) + '..' : item.productName;
-            message += `║ ${(i+1).toString().padStart(1)} │ ${name.padEnd(10)} │ ${item.qty.toString().padStart(4)} │ ${item.price.toFixed(0).padStart(5)} │\n`;
-            message += `║   │ الإجمالي  │      │ ${item.total.toFixed(2).padStart(5)} │\n`;
+    
+    message += `╠${line}╣\n`;
+    message += `║ 📅 ${invoice.date}  🕐 ${dt.time.padEnd(16)}║\n`;
+    message += `╠${line}╣\n`;
+    
+    // معلومات الفاتورة
+    message += `║ 🧾 فاتورة ${isTax ? 'ضريبية' : 'عادية'.padEnd(24)}║\n`;
+    message += `║ 👤 العميل: ${invoice.customer.padEnd(24)}║\n`;
+    message += `║ 💳 الدفع: ${(invoice.payment || 'نقدي').padEnd(26)}║\n`;
+    message += `╠${line}╣\n`;
+    
+    // جدول الأصناف
+    message += `║ # │ المنتج    │ العدد │ السعر │\n`;
+    message += `║───┼───────────┼───────┼───────╢\n`;
+    
+    if (items.length > 0) {
+        items.forEach((item, i) => {
+            const name = item.productName.length > 8 ? item.productName.substring(0, 8) + '..' : item.productName.padEnd(8);
+            const num = (i + 1).toString().padStart(1);
+            const qty = item.qty.toString().padStart(5);
+            const price = item.price.toFixed(0).padStart(5);
+            message += `║ ${num} │ ${name} │ ${qty} │ ${price} │\n`;
+            const totalItem = item.total.toFixed(2).padStart(7);
+            message += `║   │ الإجمالي  │      │ ${totalItem} │\n`;
         });
+    } else {
+        message += `║   │ لا توجد أصناف               ║\n`;
     }
-
-    message += `╠══════════════════════════════════╣\n` +
-        `║ 💰 الإجمالي: ${total.toFixed(2).padStart(20)} 🇪🇬 ║\n`;
-
+    
+    message += `╠${line}╣\n`;
+    message += `║ 💰 الإجمالي: ${total.toFixed(2).padStart(20)} 🇪🇬 ║\n`;
+    
     if (isTax) {
-        message += `║ 📊 الضريبة (14%): ${taxAmount.toFixed(2).padStart(19)} ║\n` +
-            `║ 💰 الإجمالي مع الضريبة: ${totalWithTax.toFixed(2).padStart(14)} ║\n`;
+        message += `║ 📊 الضريبة (14%): ${taxAmount.toFixed(2).padStart(19)} ║\n`;
+        message += `║ 💰 الإجمالي مع الضريبة: ${totalWithTax.toFixed(2).padStart(14)} ║\n`;
     }
-
-    message += `╠══════════════════════════════════╣\n` +
-        `║ خالص مع الشكر                    ║\n`;
-
-    if (company.vodafone) message += `║ 📱 فودافون كاش: ${company.vodafone.padEnd(20)}║\n`;
-    if (company.instapay) message += `║ 📲 إنستاباي: ${company.instapay.padEnd(20)}║\n`;
-    if (company.bankAccount) message += `║ 🏦 بنك: ${company.bankAccount.padEnd(22)}║\n`;
-    if (company.cash) message += `║ 💰 كاش: ${company.cash.padEnd(23)}║\n`;
-
-    message += `╚══════════════════════════════════╝`;
+    
+    message += `╠${line}╣\n`;
+    message += `║        خالص مع الشكر           ║\n`;
+    message += `╠${line}╣\n`;
+    
+    // طرق الدفع
+    let hasPayment = false;
+    if (company.vodafone) {
+        message += `║ 📱 فودافون كاش: ${company.vodafone.padEnd(20)}║\n`;
+        hasPayment = true;
+    }
+    if (company.instapay) {
+        message += `║ 📲 إنستاباي: ${company.instapay.padEnd(22)}║\n`;
+        hasPayment = true;
+    }
+    if (company.bankAccount) {
+        message += `║ 🏦 بنك: ${company.bankAccount.padEnd(24)}║\n`;
+        hasPayment = true;
+    }
+    if (company.cash) {
+        message += `║ 💰 كاش: ${company.cash.padEnd(25)}║\n`;
+        hasPayment = true;
+    }
+    
+    if (hasPayment) {
+        message += `╠${line}╣\n`;
+    }
+    
+    message += `║ 📱 رابط الدفع: bit.ly/mizan-pay  ║\n`;
+    message += `╚${line}╝\n`;
+    message += `\n📱 تم إرسال الفاتورة عبر الميزان`;
 
     const encoded = encodeURIComponent(message);
     const url = `https://wa.me/${whatsappNumber}?text=${encoded}`;
     window.open(url, '_blank');
 
-    addAuditLog('sale', 'whatsapp', `إرسال فاتورة واتساب للعميل: ${invoice.customer} - رقم: ${whatsappNumber}`);
+    if (typeof addAuditLog === 'function') {
+        addAuditLog('sale', 'whatsapp', `إرسال فاتورة واتساب للعميل: ${invoice.customer} - رقم: ${whatsappNumber}`);
+    }
     showToast(`📱 تم فتح واتساب للعميل ${invoice.customer}`, 'success');
 }
 
@@ -584,7 +769,6 @@ function sendWhatsAppInvoice(id) {
 // PURCHASES MODULE - إدارة المشتريات
 // ================================================================
 
-// ===== متغيرات المشتريات =====
 if (typeof window.purchaseItems === 'undefined') {
     window.purchaseItems = [];
 }
@@ -986,7 +1170,6 @@ function deletePurchaseInvoice(id) {
 // RETURNS MODULE - إدارة المرتجعات
 // ================================================================
 
-// ===== متغيرات المرتجعات =====
 if (typeof window.returnItems === 'undefined') {
     window.returnItems = [];
 }
@@ -1435,7 +1618,6 @@ function deleteAllInvoice(id, type) {
 // PERMISSIONS MODULE - إدارة الإذونات
 // ================================================================
 
-// ===== متغيرات الإذونات =====
 if (typeof window.permissions === 'undefined') {
     window.permissions = [];
 }
@@ -2253,10 +2435,9 @@ function showCashFlow() {
 
 
 // ================================================================
-// CASHIER MODULE - إدارة الكاشف (مختصر)
+// CASHIER MODULE - إدارة الكاشف
 // ================================================================
 
-// ===== متغيرات الكاشف =====
 if (typeof window.cashierHistory === 'undefined') {
     window.cashierHistory = [];
 }
