@@ -1,5 +1,5 @@
 // ================================================================
-// app.js - التطبيق الرئيسي (الملف الكامل)
+// app.js - التطبيق الرئيسي (الملف الكامل مع التعديلات)
 // ================================================================
 
 // ===== CONFIG =====
@@ -170,7 +170,9 @@ updateClock();
 function checkLogin() {
     const input = document.getElementById('loginPassword');
     const error = document.getElementById('loginError');
-    if (typeof activateDemoLicense === 'function') activateDemoLicense();
+    if (typeof activateDemoLicense === 'function') {
+        activateDemoLicense();
+    }
 
     if (input.value === DEFAULT_PASSWORD || input.value === currentPassword) {
         const loginContainer = document.getElementById('loginContainer');
@@ -411,17 +413,17 @@ function isLicenseValid() {
 }
 
 function activateDemoLicense() {
-    if (!localStorage.getItem('mizan_demo_activated')) {
-        const decoded = decodeLicenseKey(DEMO_LICENSE_KEY);
-        if (decoded) {
-            saveLicense({
-                licenseKey: DEMO_LICENSE_KEY,
-                customerName: decoded.customerName,
-                expiryDate: decoded.expiryDate,
-                activatedAt: new Date().toISOString()
-            });
-            localStorage.setItem('mizan_demo_activated', 'true');
-        }
+    // تفعيل الترخيص التجريبي مباشرة بدون شرط
+    const decoded = decodeLicenseKey(DEMO_LICENSE_KEY);
+    if (decoded) {
+        saveLicense({
+            licenseKey: DEMO_LICENSE_KEY,
+            customerName: decoded.customerName,
+            expiryDate: decoded.expiryDate,
+            activatedAt: new Date().toISOString()
+        });
+        localStorage.setItem('mizan_demo_activated', 'true');
+        console.log('✅ تم تفعيل الترخيص التجريبي');
     }
 }
 
@@ -709,6 +711,141 @@ function updateSupplierWhatsAppManual() {
     updateSupplierWhatsApp();
 }
 
+// ================================================================
+// PRINT INVOICE - طباعة الفاتورة (نسخة محسنة)
+// ================================================================
+
+function printInvoice(type) {
+    const company = window.companyData || {};
+    const dt = getCurrentDateTime();
+    let html = '';
+
+    if (type === 'sales') {
+        const customer = document.getElementById('salesCustomer')?.value?.trim() ||
+            document.getElementById('salesCustomerSelect')?.value || 'عميل';
+        
+        let total = 0;
+        const items = window.salesItems || [];
+        items.forEach(item => {
+            total += (item.total || 0);
+        });
+        
+        const invoiceType = document.getElementById('salesInvoiceType')?.value || 'simple';
+        const isTax = invoiceType === 'tax';
+        const taxRate = 14;
+        const taxAmount = isTax ? (total * taxRate) / 100 : 0;
+        const totalWithTax = isTax ? total + taxAmount : total;
+
+        const dateObj = new Date();
+        const dateStr = dateObj.toLocaleDateString('ar-EG');
+        const timeStr = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        html = `
+            <div class="invoice-print-boxed">
+                <div class="company-header">
+                    <h2>${company.name || 'شركة الميزان'}</h2>
+                    <div class="sub-title">نظام محاسبة ونقاط بيع</div>
+                    <div class="contact-info">
+                        📍 ${company.address || 'القاهرة، مصر'} | 📞 ${company.phone || '0234567890'} | 📱 ${company.mobile || '01000000000'}
+                    </div>
+                </div>
+                
+                <div class="invoice-info">
+                    <div class="info-item"><span class="label">📅 التاريخ:</span><span class="value">${dateStr}</span></div>
+                    <div class="info-item"><span class="label">🕐 الوقت:</span><span class="value">${timeStr}</span></div>
+                </div>
+                
+                <div class="customer-info">
+                    <span class="label">👤 العميل:</span> ${customer}
+                </div>
+                
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>المنتج</th>
+                            <th>الكمية</th>
+                            <th>السعر</th>
+                            <th>الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${items.length > 0 ? items.map((item, i) => `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td>${item.productName || 'غير معروف'}</td>
+                                <td>${item.qty || 0}</td>
+                                <td>${(item.price || 0).toFixed(2)}</td>
+                                <td>${(item.total || 0).toFixed(2)}</td>
+                            </tr>
+                        `).join('') : `
+                            <tr>
+                                <td colspan="5" style="text-align:center;color:#999;">لا توجد أصناف</td>
+                            </tr>
+                        `}
+                    </tbody>
+                </table>
+                
+                <div class="total-box">
+                    <div>💵 الإجمالي: <span class="total-amount">${total.toFixed(2)} 🇪🇬</span></div>
+                    ${isTax ? `<div>📊 الضريبة (14%): <span class="total-amount">${taxAmount.toFixed(2)} 🇪🇬</span></div>` : ''}
+                    ${isTax ? `<div>💰 الإجمالي مع الضريبة: <span class="total-amount">${totalWithTax.toFixed(2)} 🇪🇬</span></div>` : ''}
+                </div>
+                
+                <div class="footer-box">
+                    <div class="thanks">خالص مع الشكر</div>
+                    <div style="margin-top:4px;font-size:9px;color:#555;">
+                        تم الطباعة في ${new Date().toLocaleString('ar-EG')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    const win = window.open('', '_blank', 'width=400,height=650,scrollbars=yes');
+    if (win) {
+        win.document.write(`
+            <!DOCTYPE html>
+            <html dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <title>طباعة فاتورة</title>
+                <style>
+                    body { margin: 0; padding: 10px; background: #fff; font-family: 'Tajawal', Arial, sans-serif; direction: rtl; }
+                    .invoice-print-boxed { max-width: 320px; margin: 0 auto; padding: 15px; border: 1px solid #000; background: #fff; color: #000; font-size: 12px; text-align: center; }
+                    .company-header { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 8px; }
+                    .company-header h2 { font-size: 18px; margin: 0; color: #000; }
+                    .company-header .sub-title { font-size: 11px; color: #555; }
+                    .company-header .contact-info { font-size: 10px; color: #555; }
+                    .invoice-info { display: flex; justify-content: space-between; font-size: 11px; padding: 4px 0; border-bottom: 1px solid #ddd; margin-bottom: 6px; }
+                    .invoice-info .label { font-weight: 700; color: #000; }
+                    .customer-info { text-align: right; font-size: 11px; padding: 4px 0; border-bottom: 1px solid #ddd; margin-bottom: 6px; }
+                    .customer-info .label { font-weight: 700; color: #000; }
+                    .items-table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 6px 0; }
+                    .items-table th { border: 1px solid #000; padding: 4px 2px; background: #eee; font-weight: 800; color: #000; }
+                    .items-table td { border: 1px solid #000; padding: 4px 2px; color: #000; }
+                    .total-box { border-top: 2px solid #000; padding: 6px 0; margin-top: 6px; font-weight: 700; font-size: 13px; }
+                    .total-box .total-amount { color: #000; font-weight: 900; }
+                    .footer-box { border-top: 2px solid #000; padding-top: 6px; margin-top: 6px; font-size: 10px; color: #555; }
+                    .footer-box .thanks { font-size: 13px; color: #000; font-weight: 700; }
+                    @media print { body { padding: 0; } .invoice-print-boxed { border: 1px solid #000; } }
+                </style>
+            </head>
+            <body>
+                ${html}
+                <script>
+                    window.onload = function() { window.print(); };
+                <\/script>
+            </body>
+            </html>
+        `);
+        win.document.close();
+    } else {
+        showToast('⚠️ تم حظر النافذة المنبثقة، يرجى السماح بالنوافذ المنبثقة', 'error');
+    }
+}
+
+// ===== WHATSAPP SEND =====
 function sendWhatsApp() {
     if (!canAdd()) {
         showToast('⚠️ ليس لديك صلاحية', 'error');
@@ -810,80 +947,6 @@ function sendWhatsApp() {
         addAuditLog('sale', 'whatsapp', `إرسال فاتورة واتساب للعميل: ${customer} - رقم: ${whatsappNumber}`);
     }
     showToast(`📱 تم فتح واتساب للعميل ${customer}`, 'success');
-}
-
-function printInvoice(type) {
-    const company = window.companyData || {};
-    const dt = getCurrentDateTime();
-    let html = '';
-
-    if (type === 'sales') {
-        const customer = document.getElementById('salesCustomer')?.value?.trim() ||
-            document.getElementById('salesCustomerSelect')?.value || 'عميل';
-        const total = window.salesItems ? window.salesItems.reduce((s, item) => s + (item.total || 0), 0) : 0;
-        const invoiceType = document.getElementById('salesInvoiceType')?.value || 'simple';
-        const isTax = invoiceType === 'tax';
-        const taxAmount = isTax ? (total * 14) / 100 : 0;
-        const totalWithTax = isTax ? total + taxAmount : total;
-        const items = window.salesItems || [];
-
-        html = `
-            <div class="invoice-print-boxed">
-                <div class="company-header">
-                    <h2>${company.name || 'الميزان'}</h2>
-                    <div class="sub-title">نظام محاسبة ونقاط بيع</div>
-                    <div class="contact-info">📍 ${company.address || 'القاهرة، مصر'} | 📞 ${company.phone || '0234567890'} | 📱 ${company.mobile || '01000000000'}</div>
-                </div>
-                <div class="invoice-info">
-                    <div class="info-item"><span class="label">📅 التاريخ:</span><span class="value">${dt.date}</span></div>
-                    <div class="info-item"><span class="label">🕐 الوقت:</span><span class="value">${dt.time}</span></div>
-                </div>
-                <div class="customer-info">
-                    <span class="label">👤 العميل:</span> ${customer}
-                </div>
-                <table class="items-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>المنتج</th>
-                            <th>الكمية</th>
-                            <th>السعر</th>
-                            <th>الإجمالي</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${items.map((item, i) => `
-                            <tr>
-                                <td>${i + 1}</td>
-                                <td>${item.productName}</td>
-                                <td>${item.qty}</td>
-                                <td>${item.price.toFixed(2)}</td>
-                                <td>${item.total.toFixed(2)}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-                <div class="total-box">
-                    <div>💵 الإجمالي: <span class="total-amount">${total.toFixed(2)} 🇪🇬</span></div>
-                    ${isTax ? `<div>📊 الضريبة (14%): <span class="total-amount">${taxAmount.toFixed(2)} 🇪🇬</span></div>` : ''}
-                    ${isTax ? `<div>💰 الإجمالي مع الضريبة: <span class="total-amount">${totalWithTax.toFixed(2)} 🇪🇬</span></div>` : ''}
-                </div>
-                <div class="footer-box">
-                    <div class="thanks">خالص مع الشكر</div>
-                    <div style="margin-top:4px;font-size:9px;color:#5D5D5D;">تم الطباعة في ${new Date().toLocaleString('ar')}</div>
-                </div>
-            </div>
-        `;
-    }
-
-    const win = window.open('', '_blank', 'width=400,height=650');
-    if (win) {
-        win.document.write(html);
-        win.document.close();
-        win.print();
-    } else {
-        showToast('⚠️ تم حظر النافذة المنبثقة', 'error');
-    }
 }
 
 // ===== ADD AUDIT LOG =====
@@ -1176,6 +1239,8 @@ function populateUsersSelect() {
 
 // ===== DOM READY =====
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 بدء تشغيل الميزان v3.0.0');
+
     document.querySelectorAll('.payment-methods').forEach(group => {
         group.querySelectorAll('label').forEach(label => {
             label.addEventListener('click', function() {
@@ -1190,8 +1255,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (input && !input.value) input.value = today;
     });
 
-    if (typeof seedData === 'function') seedData();
-    if (typeof refreshAllPages === 'function') refreshAllPages();
+    // تفعيل الترخيص التجريبي
+    if (typeof activateDemoLicense === 'function') {
+        activateDemoLicense();
+        console.log('✅ تم تفعيل الترخيص التجريبي');
+    }
+
+    if (typeof seedData === 'function') {
+        seedData();
+        console.log('✅ تم تهيئة البيانات');
+    }
+
+    if (typeof refreshAllPages === 'function') {
+        refreshAllPages();
+        console.log('✅ تم تحديث جميع الصفحات');
+    }
 
     if (localStorage.getItem('app_unlocked') === 'true') {
         const loginContainer = document.getElementById('loginContainer');
@@ -1209,8 +1287,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 300);
     }
 
-    console.log('✅ الميزان v3.0.0 - نظام محاسبة متكامل');
+    console.log('✅ الميزان جاهز للاستخدام');
     console.log('🔒 كلمة المرور: 123456');
-    console.log('🔑 اضغط 5 مرات على رقم الإصدار في الإعدادات لتفعيل زر توليد المفاتيح');
-    console.log('🔄 المزامنة الفورية نشطة - أي تغيير يظهر على جميع الأجهزة');
 });
