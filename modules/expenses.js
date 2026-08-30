@@ -1,21 +1,43 @@
 // ================================================================
-// expenses.js - إدارة المصروفات
+// expenses.js - إدارة المصروفات (الملف الكامل)
 // ================================================================
 
 // ================================================================
-// ADD EXPENSE
+// ADD EXPENSE - إضافة مصروف (نسخة محسنة)
 // ================================================================
 function addExpense() {
-    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    if (!canAdd()) { 
+        showToast('⚠️ ليس لديك صلاحية', 'error'); 
+        return; 
+    }
+    
     const note = document.getElementById('expenseNote')?.value?.trim();
     const amount = parseFloat(document.getElementById('expenseAmount')?.value);
-    const date = document.getElementById('expenseDate')?.value || new Date().toISOString().split('T')[0];
+    const date = document.getElementById('expenseDate')?.value || getTodayDate();
     const method = document.getElementById('expenseMethod')?.value || 'نقدي';
 
-    if (!note) { showToast('⚠️ أدخل بيان المصروف', 'error'); return; }
-    if (isNaN(amount) || amount <= 0) { showToast('⚠️ مبلغ صحيح', 'error'); return; }
+    if (!note) { 
+        showToast('⚠️ أدخل بيان المصروف', 'error'); 
+        return; 
+    }
+    if (isNaN(amount) || amount <= 0) { 
+        showToast('⚠️ مبلغ صحيح', 'error'); 
+        return; 
+    }
 
-    window.expenses.push({ id: Date.now(), note: note, amount: amount, date: date, method: method });
+    // إضافة المصروف
+    const expense = {
+        id: Date.now(),
+        note: note,
+        amount: amount,
+        date: date,
+        method: method,
+        time: getCurrentTime()
+    };
+    
+    window.expenses.push(expense);
+    
+    // إضافة حركة في الخزنة
     window.treasury.push({ 
         id: Date.now(), 
         type: 'withdraw', 
@@ -23,26 +45,67 @@ function addExpense() {
         note: `مصروف: ${note}`, 
         method: method,
         date: date, 
-        time: new Date().toLocaleTimeString('ar') 
+        time: getCurrentTime(),
+        expenseId: expense.id
     });
 
-    saveAll();
+    // إضافة حركة في الكاشف
     if (typeof addCashierTransaction === 'function') {
         addCashierTransaction('expense', amount, method, `مصروف: ${note}`);
     }
-    addAuditLog('add', 'expense', `إضافة مصروف: ${note} - ${amount}`);
+
+    // حفظ البيانات فوراً
+    saveAll();
+    
+    // تحديث واجهة المصروفات
     renderExpenses();
-    if (typeof renderCashier === 'function') renderCashier();
-    document.getElementById('expenseNote').value = '';
-    document.getElementById('expenseAmount').value = '';
-    showToast('✅ تم إضافة المصروف', 'success');
-    updateDashboard();
+    
+    // تحديث الكاشف
+    if (typeof renderCashier === 'function') {
+        renderCashier();
+    }
+    
+    // تحديث الخزنة
+    if (typeof renderTreasury === 'function') {
+        renderTreasury();
+    }
+    
+    // تحديث لوحة التحكم
+    if (typeof updateDashboard === 'function') {
+        updateDashboard();
+    }
+
+    // تسجيل النشاط
+    addAuditLog('add', 'expense', `إضافة مصروف: ${note} - ${amount.toFixed(2)} 🇪🇬 - طريقة الدفع: ${method}`, expense);
+    
+    // تنظيف الحقول
+    const noteEl = document.getElementById('expenseNote');
+    const amountEl = document.getElementById('expenseAmount');
+    if (noteEl) noteEl.value = '';
+    if (amountEl) amountEl.value = '';
+    
+    showToast(`✅ تم إضافة المصروف: ${note} - ${amount.toFixed(2)} 🇪🇬`, 'success');
+    
+    // ✅ التأكد من تحديث الكاشف بعد 100ms
+    setTimeout(() => {
+        if (typeof renderCashier === 'function') {
+            renderCashier();
+        }
+        if (typeof renderTreasury === 'function') {
+            renderTreasury();
+        }
+    }, 100);
 }
 
 // ================================================================
-// RENDER EXPENSES
+// RENDER EXPENSES - عرض المصروفات (نسخة محسنة)
 // ================================================================
 function renderExpenses() {
+    // التأكد من وجود window.expenses
+    if (!window.expenses || !Array.isArray(window.expenses)) {
+        window.expenses = [];
+    }
+    
     const total = window.expenses.reduce((s, e) => s + e.amount, 0);
     safeSetText('expensesTotal', total.toFixed(2));
     safeSetText('expensesCount', window.expenses.length);
@@ -58,7 +121,9 @@ function renderExpenses() {
     const canEditExpenses = canEdit();
     const canDeleteExpenses = canDelete();
 
-    let html = `<div class="table-header" style="grid-template-columns:1.5fr 1fr 1fr 1fr 0.6fr;"><span>البيان</span><span>المبلغ</span><span>التاريخ</span><span>طريقة الدفع</span><span></span></div>`;
+    let html = `<div class="table-header" style="grid-template-columns:1.5fr 1fr 1fr 1fr 0.6fr;">
+        <span>البيان</span><span>المبلغ</span><span>التاريخ</span><span>طريقة الدفع</span><span></span>
+    </div>`;
 
     window.expenses.slice().reverse().forEach(e => {
         html += `
@@ -79,12 +144,19 @@ function renderExpenses() {
 }
 
 // ================================================================
-// EDIT EXPENSE
+// EDIT EXPENSE - تعديل المصروف
 // ================================================================
 function editExpense(id) {
-    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    if (!canEdit()) { 
+        showToast('⚠️ ليس لديك صلاحية', 'error'); 
+        return; 
+    }
+    
     const e = window.expenses.find(exp => exp.id === id);
-    if (!e) return;
+    if (!e) {
+        showToast('⚠️ المصروف غير موجود', 'error');
+        return;
+    }
 
     const html = `
         <div class="form-group"><label>البيان</label><input type="text" id="editExpenseNote" value="${e.note}" /></div>
@@ -104,20 +176,39 @@ function editExpense(id) {
     openModal('✏️ تعديل المصروف', html);
 }
 
+// ================================================================
+// SAVE EXPENSE EDIT - حفظ تعديل المصروف
+// ================================================================
 function saveExpenseEdit(id) {
-    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    if (!canEdit()) { 
+        showToast('⚠️ ليس لديك صلاحية', 'error'); 
+        return; 
+    }
+    
     const e = window.expenses.find(exp => exp.id === id);
-    if (!e) return;
+    if (!e) {
+        showToast('⚠️ المصروف غير موجود', 'error');
+        return;
+    }
 
     const note = document.getElementById('editExpenseNote')?.value?.trim();
     const amount = parseFloat(document.getElementById('editExpenseAmount')?.value);
     const date = document.getElementById('editExpenseDate')?.value;
     const method = document.getElementById('editExpenseMethod')?.value;
 
-    if (!note) { showToast('⚠️ أدخل البيان', 'error'); return; }
-    if (isNaN(amount) || amount <= 0) { showToast('⚠️ مبلغ صحيح', 'error'); return; }
+    if (!note) { 
+        showToast('⚠️ أدخل البيان', 'error'); 
+        return; 
+    }
+    if (isNaN(amount) || amount <= 0) { 
+        showToast('⚠️ مبلغ صحيح', 'error'); 
+        return; 
+    }
 
-    const tIdx = window.treasury.findIndex(t => t.note && t.note.includes(`مصروف: ${e.note}`) && t.date === e.date);
+    // تحديث الخزنة
+    const tIdx = window.treasury.findIndex(t => 
+        t.note && t.note.includes(`مصروف: ${e.note}`) && t.date === e.date
+    );
     if (tIdx > -1) {
         window.treasury[tIdx].note = `مصروف: ${note}`;
         window.treasury[tIdx].amount = amount;
@@ -131,31 +222,45 @@ function saveExpenseEdit(id) {
     e.method = method;
 
     saveAll();
-    addAuditLog('edit', 'expense', `تعديل مصروف: ${note}`);
+    addAuditLog('edit', 'expense', `تعديل مصروف: ${note} - ${amount.toFixed(2)} 🇪🇬`);
     renderExpenses();
     if (typeof renderCashier === 'function') renderCashier();
+    if (typeof renderTreasury === 'function') renderTreasury();
     closeModal();
     showToast('✅ تم التعديل', 'success');
 }
 
 // ================================================================
-// DELETE EXPENSE
+// DELETE EXPENSE - حذف المصروف
 // ================================================================
 function deleteExpense(id) {
-    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    if (!confirm('⚠️ حذف المصروف؟')) return;
+    if (!canDelete()) { 
+        showToast('⚠️ ليس لديك صلاحية', 'error'); 
+        return; 
+    }
+    if (!confirm('⚠️ حذف المصروف نهائياً؟')) return;
 
     const expense = window.expenses.find(e => e.id === id);
-    if (expense) {
-        const tIdx = window.treasury.findIndex(t => t.note && t.note.includes(`مصروف: ${expense.note}`) && t.date === expense.date);
-        if (tIdx > -1) window.treasury.splice(tIdx, 1);
+    if (!expense) {
+        showToast('⚠️ المصروف غير موجود', 'error');
+        return;
+    }
+
+    // حذف من الخزنة
+    const tIdx = window.treasury.findIndex(t => 
+        t.note && t.note.includes(`مصروف: ${expense.note}`) && t.date === expense.date
+    );
+    if (tIdx > -1) {
+        window.treasury.splice(tIdx, 1);
     }
 
     window.expenses = window.expenses.filter(e => e.id !== id);
     saveAll();
-    if (expense) addAuditLog('delete', 'expense', `حذف مصروف: ${expense.note}`);
+    
+    addAuditLog('delete', 'expense', `🗑️ حذف مصروف: ${expense.note} - ${expense.amount.toFixed(2)} 🇪🇬`);
     renderExpenses();
     if (typeof renderCashier === 'function') renderCashier();
-    showToast('🗑️ تم الحذف', 'info');
+    if (typeof renderTreasury === 'function') renderTreasury();
+    showToast('🗑️ تم حذف المصروف', 'info');
     closeModal();
 }
