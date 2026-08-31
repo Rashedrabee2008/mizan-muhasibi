@@ -1,5 +1,5 @@
 // ================================================================
-// app.js - التطبيق الرئيسي (الملف الكامل مع كل التعديلات)
+// app.js - التطبيق الرئيسي (الملف الكامل مع الترخيص)
 // ================================================================
 
 // ================================================================
@@ -401,10 +401,13 @@ function startAutoBackup() {
 }
 
 // ================================================================
-// LICENSE FUNCTIONS
+// LICENSE FUNCTIONS - نظام الترخيص كامل
 // ================================================================
+
+// ===== DECODE LICENSE KEY - فك تشفير المفتاح =====
 function decodeLicenseKey(licenseKey) {
     try {
+        if (!licenseKey) return null;
         licenseKey = licenseKey.trim();
         const decoded = atob(licenseKey);
         const parts = decoded.split('|');
@@ -421,6 +424,7 @@ function decodeLicenseKey(licenseKey) {
     }
 }
 
+// ===== LOAD LICENSE - تحميل الترخيص =====
 function loadLicense() {
     try {
         const data = localStorage.getItem('mizan_license');
@@ -430,10 +434,12 @@ function loadLicense() {
     }
 }
 
+// ===== SAVE LICENSE - حفظ الترخيص =====
 function saveLicense(data) {
     localStorage.setItem('mizan_license', JSON.stringify(data));
 }
 
+// ===== IS LICENSE VALID - التحقق من صحة الترخيص =====
 function isLicenseValid() {
     const license = loadLicense();
     if (!license || !license.licenseKey) return false;
@@ -442,22 +448,29 @@ function isLicenseValid() {
     return new Date(decoded.expiryDate) >= new Date();
 }
 
+// ===== ACTIVATE DEMO LICENSE - تفعيل الترخيص التجريبي =====
 function activateDemoLicense() {
-    const DEMO_KEY = 'UmFzaGVkfDIwMjctMDgtMjV8fDg5YWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTA=';
-    const decoded = decodeLicenseKey(DEMO_KEY);
-    if (decoded) {
-        saveLicense({
-            licenseKey: DEMO_KEY,
-            customerName: decoded.customerName,
-            expiryDate: decoded.expiryDate,
-            activatedAt: new Date().toISOString()
-        });
-        localStorage.setItem('mizan_demo_activated', 'true');
-        console.log('✅ تم تفعيل الترخيص التجريبي');
-        updateLicenseUI();
+    try {
+        const decoded = decodeLicenseKey(DEMO_LICENSE_KEY);
+        if (decoded) {
+            saveLicense({
+                licenseKey: DEMO_LICENSE_KEY,
+                customerName: decoded.customerName,
+                expiryDate: decoded.expiryDate,
+                activatedAt: new Date().toISOString()
+            });
+            localStorage.setItem('mizan_demo_activated', 'true');
+            console.log('✅ تم تفعيل الترخيص التجريبي');
+            updateLicenseUI();
+            return true;
+        }
+    } catch (err) {
+        console.warn('⚠️ خطأ في تفعيل الترخيص:', err);
     }
+    return false;
 }
 
+// ===== UPDATE LICENSE UI - تحديث واجهة الترخيص =====
 function updateLicenseUI() {
     const valid = isLicenseValid();
     const license = loadLicense();
@@ -479,6 +492,7 @@ function updateLicenseUI() {
     }
 }
 
+// ===== ACTIVATE LICENSE - تفعيل مفتاح الترخيص =====
 function activateLicense() {
     if (!isAdmin()) {
         showToast('⚠️ المدير فقط يمكنه التفعيل', 'error');
@@ -501,14 +515,16 @@ function activateLicense() {
         activatedAt: new Date().toISOString()
     });
     updateLicenseUI();
-    showToast('✅ تم التفعيل', 'success');
+    showToast('✅ تم تفعيل الترخيص بنجاح', 'success');
 }
 
+// ===== CHECK LICENSE STATUS - التحقق من حالة الترخيص =====
 function checkLicenseStatus() {
     updateLicenseUI();
     showToast(isLicenseValid() ? '✅ الترخيص نشط' : '⛔ الترخيص منتهي', isLicenseValid() ? 'success' : 'error');
 }
 
+// ===== UPDATE LICENSE PRICE - تحديث سعر الترخيص =====
 function updateLicensePrice() {
     const days = parseInt(document.getElementById('licenseDays')?.value) || 365;
     const amount = LICENSE_PRICES[days] || 3000;
@@ -516,6 +532,7 @@ function updateLicensePrice() {
     if (amountEl) amountEl.value = amount;
 }
 
+// ===== GENERATE NEW LICENSE - توليد مفتاح ترخيص جديد =====
 function generateNewLicense() {
     if (!isAdmin()) {
         showToast('⚠️ المدير فقط يمكنه التوليد', 'error');
@@ -564,10 +581,11 @@ function generateNewLicense() {
     }
 
     renderGeneratedKeys();
-    showToast('✅ تم توليد مفتاح للعميل ' + customerName + ' - ' + amount + ' جنيه', 'success');
-    addAuditLog('add', 'license', 'توليد مفتاح للعميل: ' + customerName + ' - ' + amount + ' جنيه');
+    showToast(`✅ تم توليد مفتاح للعميل ${customerName} - ${amount} جنيه`, 'success');
+    addAuditLog('add', 'license', `توليد مفتاح للعميل: ${customerName} - ${amount} جنيه`);
 }
 
+// ===== COPY LICENSE KEY - نسخ المفتاح =====
 function copyLicenseKey() {
     const keyText = document.getElementById('genKey')?.textContent;
     if (!keyText) {
@@ -575,8 +593,10 @@ function copyLicenseKey() {
         return;
     }
     copyToClipboard(keyText);
+    showToast('📋 تم نسخ المفتاح', 'success');
 }
 
+// ===== RENDER GENERATED KEYS - عرض المفاتيح المُنشأة =====
 function renderGeneratedKeys() {
     const container = document.getElementById('generatedKeysList');
     if (!container) return;
@@ -606,7 +626,7 @@ function renderGeneratedKeys() {
 }
 
 // ================================================================
-// COUNT VERSION CLICKS
+// COUNT VERSION CLICKS - إظهار زر توليد المفاتيح بعد 5 ضغطات
 // ================================================================
 function countVersionClicks() {
     if (!isAdmin()) {
@@ -622,7 +642,7 @@ function countVersionClicks() {
         if (btn) {
             btn.style.display = 'block';
             btn.style.animation = 'pulse 1s infinite';
-            showToast('🔑 تم تفعيل زر توليد المفاتيح!', 'success');
+            showToast('🔑 تم تفعيل زر توليد المفاتيح! اضغط عليه للذهاب لصفحة التوليد', 'success');
 
             setTimeout(() => {
                 versionClickCount = 0;
@@ -632,7 +652,7 @@ function countVersionClicks() {
                 }
             }, 30000);
         } else {
-            showToast('⚠️ حدث خطأ: الزر غير موجود', 'error');
+            showToast('⚠️ حدث خطأ: الزر غير موجود في الصفحة', 'error');
         }
     } else {
         const remaining = 5 - versionClickCount;
@@ -1559,6 +1579,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (input && !input.value) input.value = today;
     });
 
+    // تفعيل الترخيص التجريبي
     if (typeof activateDemoLicense === 'function') {
         activateDemoLicense();
         console.log('✅ تم تفعيل الترخيص التجريبي');
