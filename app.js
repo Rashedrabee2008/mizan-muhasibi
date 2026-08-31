@@ -1,5 +1,5 @@
 // ================================================================
-// app.js - التطبيق الرئيسي (الملف الكامل)
+// app.js - التطبيق الرئيسي (الملف الكامل النهائي)
 // ================================================================
 
 // ================================================================
@@ -39,24 +39,28 @@ function showToast(msg, type = 'info') {
     t._timer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ===== تعيين نص لعنصر =====
+// ===== تعيين نص لعنصر - مع حماية من الأخطاء =====
 function safeSetText(id, value) {
     const el = document.getElementById(id);
     if (el) {
         el.textContent = value;
+        return true;
     } else {
-        // تجاهل الخطأ بدل ما يوقف التطبيق
-        console.warn('⚠️ عنصر غير موجود:', id);
+        // ✅ تجاهل الخطأ بدل ما يوقف التطبيق - فقط تنبيه في الكونسول
+        console.warn('⚠️ عنصر غير موجود، تم تخطيه:', id);
+        return false;
     }
 }
 
-// ===== تعيين قيمة لعنصر =====
+// ===== تعيين قيمة لعنصر - مع حماية من الأخطاء =====
 function safeSetValue(id, value) {
     const el = document.getElementById(id);
     if (el) {
         el.value = value;
+        return true;
     } else {
-        console.warn('⚠️ عنصر غير موجود:', id);
+        console.warn('⚠️ عنصر غير موجود، تم تخطيه:', id);
+        return false;
     }
 }
 
