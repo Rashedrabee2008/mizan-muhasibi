@@ -1,29 +1,23 @@
 // ================================================================
-// inventory_adjustment.js - تسوية المخزون (الملف الكامل)
+// inventory_adjustment.js - تسوية المخزون
 // ================================================================
 
 // ===== متغيرات =====
 let inventoryAdjustmentItems = [];
 
 // ================================================================
-// UPDATE DATE & TIME - تحديث التاريخ والوقت (مع حماية)
+// UPDATE DATE & TIME
 // ================================================================
 function updateAdjustmentDateTime() {
     const dt = getCurrentDateTime();
     const dateEl = document.getElementById('adjustmentDateDisplay');
     const timeEl = document.getElementById('adjustmentTimeDisplay');
 
-    // ✅ التحقق من وجود العناصر قبل التعديل
     if (dateEl) {
         dateEl.textContent = dt.date;
-    } else {
-        console.warn('⚠️ عنصر adjustmentDateDisplay غير موجود');
     }
-
     if (timeEl) {
         timeEl.textContent = dt.time;
-    } else {
-        console.warn('⚠️ عنصر adjustmentTimeDisplay غير موجود');
     }
 }
 
@@ -32,19 +26,14 @@ setInterval(updateAdjustmentDateTime, 1000);
 updateAdjustmentDateTime();
 
 // ================================================================
-// POPULATE ADJUSTMENT PRODUCTS - تعبئة قائمة المنتجات
+// POPULATE ADJUSTMENT PRODUCTS
 // ================================================================
 function populateAdjustmentProducts() {
     const select = document.getElementById('adjustmentProduct');
-    if (!select) {
-        console.warn('⚠️ عنصر adjustmentProduct غير موجود');
-        return;
-    }
+    if (!select) return;
 
     select.innerHTML = '<option value="">اختر منتج...</option>';
-    if (!window.products || window.products.length === 0) {
-        return;
-    }
+    if (!window.products || window.products.length === 0) return;
 
     const sorted = [...window.products].sort((a, b) => a.name.localeCompare(b.name));
     sorted.forEach(p => {
@@ -54,7 +43,7 @@ function populateAdjustmentProducts() {
 }
 
 // ================================================================
-// ADD ADJUSTMENT ITEM - إضافة صنف للتسوية
+// ADD ADJUSTMENT ITEM
 // ================================================================
 function addAdjustmentItem() {
     const productId = parseInt(document.getElementById('adjustmentProduct')?.value);
@@ -100,14 +89,11 @@ function addAdjustmentItem() {
 }
 
 // ================================================================
-// RENDER ADJUSTMENT ITEMS - عرض الأصناف
+// RENDER ADJUSTMENT ITEMS
 // ================================================================
 function renderAdjustmentItems() {
     const container = document.getElementById('adjustmentItemsList');
-    if (!container) {
-        console.warn('⚠️ عنصر adjustmentItemsList غير موجود');
-        return;
-    }
+    if (!container) return;
 
     if (inventoryAdjustmentItems.length === 0) {
         container.innerHTML = `<div class="empty-state" style="padding:16px 0;"><i class="fas fa-boxes"></i><span>لا توجد أصناف</span></div>`;
@@ -146,7 +132,7 @@ function renderAdjustmentItems() {
 }
 
 // ================================================================
-// REMOVE ADJUSTMENT ITEM - حذف صنف
+// REMOVE ADJUSTMENT ITEM
 // ================================================================
 function removeAdjustmentItem(index) {
     if (!confirm('⚠️ حذف الصنف؟')) return;
@@ -156,7 +142,7 @@ function removeAdjustmentItem(index) {
 }
 
 // ================================================================
-// CLEAR ADJUSTMENT ITEMS - مسح جميع الأصناف
+// CLEAR ADJUSTMENT ITEMS
 // ================================================================
 function clearAdjustmentItems() {
     if (!confirm('⚠️ مسح جميع الأصناف؟')) return;
@@ -167,7 +153,7 @@ function clearAdjustmentItems() {
 }
 
 // ================================================================
-// SAVE INVENTORY ADJUSTMENT - حفظ التسوية
+// SAVE INVENTORY ADJUSTMENT
 // ================================================================
 function saveInventoryAdjustment() {
     if (inventoryAdjustmentItems.length === 0) {
@@ -187,14 +173,17 @@ function saveInventoryAdjustment() {
         createdAt: new Date().toISOString()
     };
 
+    // تطبيق التعديلات على المخزون
     for (const item of inventoryAdjustmentItems) {
         if (item.diff === 0) continue;
-        const wp = window.warehouseProducts?.find(w => w.productId === item.productId);
-        if (wp) {
-            wp.qty = item.actualQty;
+        
+        const existing = window.warehouseProducts?.find(w => w.productId === item.productId);
+        if (existing) {
+            existing.qty = item.actualQty;
         } else {
             const mainWarehouse = window.warehouses?.find(w => w.type === 'رئيسي');
             if (mainWarehouse) {
+                if (!window.warehouseProducts) window.warehouseProducts = [];
                 window.warehouseProducts.push({
                     warehouseId: mainWarehouse.id,
                     productId: item.productId,
@@ -204,9 +193,10 @@ function saveInventoryAdjustment() {
         }
     }
 
-    const adjustments = JSON.parse(localStorage.getItem('mizan_inventoryAdjustments') || '[]');
-    adjustments.unshift(adjustment);
-    localStorage.setItem('mizan_inventoryAdjustments', JSON.stringify(adjustments));
+    // حفظ في السجل
+    if (!window.inventoryAdjustments) window.inventoryAdjustments = [];
+    window.inventoryAdjustments.unshift(adjustment);
+    setData('inventoryAdjustments', window.inventoryAdjustments);
 
     inventoryAdjustmentItems = [];
     renderAdjustmentItems();
@@ -220,17 +210,13 @@ function saveInventoryAdjustment() {
 }
 
 // ================================================================
-// RENDER ADJUSTMENT HISTORY - عرض سجل التسويات
+// RENDER ADJUSTMENT HISTORY
 // ================================================================
 function renderAdjustmentHistory() {
     const container = document.getElementById('adjustmentHistory');
-    if (!container) {
-        console.warn('⚠️ عنصر adjustmentHistory غير موجود');
-        return;
-    }
+    if (!container) return;
 
-    const adjustments = JSON.parse(localStorage.getItem('mizan_inventoryAdjustments') || '[]');
-    if (adjustments.length === 0) {
+    if (!window.inventoryAdjustments || window.inventoryAdjustments.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-history"></i><span>لا توجد تسويات سابقة</span></div>`;
         return;
     }
@@ -239,7 +225,7 @@ function renderAdjustmentHistory() {
         <span>التاريخ</span><span>الوقت</span><span>الأصناف</span><span>الفرق</span><span>الحالة</span><span></span>
     </div>`;
 
-    adjustments.slice(0, 20).forEach(adj => {
+    window.inventoryAdjustments.slice(0, 20).forEach(adj => {
         const totalDiff = adj.items?.reduce((s, i) => s + (i.diff || 0), 0) || 0;
         const statusColor = totalDiff === 0 ? '#A89070' : totalDiff > 0 ? '#2D8F5E' : '#E06060';
         const statusText = totalDiff === 0 ? 'متطابق' : totalDiff > 0 ? 'زائد' : 'ناقص';
@@ -251,8 +237,8 @@ function renderAdjustmentHistory() {
                 <span style="color:${statusColor};font-weight:700;">${totalDiff > 0 ? '+' : ''}${totalDiff}</span>
                 <span><span class="status-badge" style="background:${statusColor};color:#fff;">${statusText}</span></span>
                 <div class="actions">
-                    <button class="btn btn-info btn-sm" onclick="viewAdjustmentDetails('${adj.id}')"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteAdjustment('${adj.id}')"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-info btn-sm" onclick="viewAdjustmentDetails(${adj.id})"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteAdjustment(${adj.id})"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `;
@@ -262,11 +248,10 @@ function renderAdjustmentHistory() {
 }
 
 // ================================================================
-// VIEW ADJUSTMENT DETAILS - عرض تفاصيل التسوية
+// VIEW ADJUSTMENT DETAILS
 // ================================================================
 function viewAdjustmentDetails(id) {
-    const adjustments = JSON.parse(localStorage.getItem('mizan_inventoryAdjustments') || '[]');
-    const adj = adjustments.find(a => a.id == id);
+    const adj = window.inventoryAdjustments?.find(a => a.id == id);
     if (!adj) {
         showToast('⚠️ التسوية غير موجودة', 'error');
         return;
@@ -308,18 +293,18 @@ function viewAdjustmentDetails(id) {
 }
 
 // ================================================================
-// DELETE ADJUSTMENT - حذف التسوية
+// DELETE ADJUSTMENT
 // ================================================================
 function deleteAdjustment(id) {
     if (!confirm('⚠️ حذف التسوية؟ سيتم إلغاء التعديلات على المخزون')) return;
     
-    const adjustments = JSON.parse(localStorage.getItem('mizan_inventoryAdjustments') || '[]');
-    const adj = adjustments.find(a => a.id == id);
+    const adj = window.inventoryAdjustments?.find(a => a.id == id);
     if (!adj) {
         showToast('⚠️ التسوية غير موجودة', 'error');
         return;
     }
 
+    // إلغاء التعديلات
     for (const item of adj.items) {
         if (item.diff === 0) continue;
         const wp = window.warehouseProducts?.find(w => w.productId === item.productId);
@@ -328,8 +313,8 @@ function deleteAdjustment(id) {
         }
     }
 
-    const newAdjustments = adjustments.filter(a => a.id != id);
-    localStorage.setItem('mizan_inventoryAdjustments', JSON.stringify(newAdjustments));
+    window.inventoryAdjustments = window.inventoryAdjustments.filter(a => a.id != id);
+    setData('inventoryAdjustments', window.inventoryAdjustments);
     renderAdjustmentHistory();
     renderProducts();
     saveAll();
@@ -337,7 +322,7 @@ function deleteAdjustment(id) {
 }
 
 // ================================================================
-// PRINT INVENTORY ADJUSTMENT - طباعة التسوية
+// PRINT INVENTORY ADJUSTMENT
 // ================================================================
 function printInventoryAdjustment() {
     if (inventoryAdjustmentItems.length === 0) {
@@ -405,11 +390,10 @@ function printInventoryAdjustment() {
 }
 
 // ================================================================
-// PRINT ADJUSTMENT DETAILS - طباعة تفاصيل التسوية
+// PRINT ADJUSTMENT DETAILS
 // ================================================================
 function printAdjustmentDetails(id) {
-    const adjustments = JSON.parse(localStorage.getItem('mizan_inventoryAdjustments') || '[]');
-    const adj = adjustments.find(a => a.id == id);
+    const adj = window.inventoryAdjustments?.find(a => a.id == id);
     if (!adj) {
         showToast('⚠️ التسوية غير موجودة', 'error');
         return;
