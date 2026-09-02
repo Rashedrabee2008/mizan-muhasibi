@@ -1,9 +1,21 @@
 // ================================================================
-// dashboard.js - لوحة التحكم (الملف الكامل)
+// dashboard.js - لوحة التحكم
 // ================================================================
 
 // ================================================================
-// UPDATE DASHBOARD - تحديث لوحة التحكم بالكامل
+// REFRESH DASHBOARD
+// ================================================================
+function refreshDashboard() {
+    if (typeof updateDashboard === 'function') {
+        updateDashboard();
+    }
+    if (typeof updateDashboardDetails === 'function') {
+        updateDashboardDetails();
+    }
+}
+
+// ================================================================
+// UPDATE DASHBOARD
 // ================================================================
 function updateDashboard() {
     // التأكد من وجود البيانات
@@ -27,7 +39,7 @@ function updateDashboard() {
 }
 
 // ================================================================
-// UPDATE STATS - تحديث الإحصائيات
+// UPDATE STATS
 // ================================================================
 function updateStats() {
     // ===== إجمالي المبيعات =====
@@ -172,7 +184,7 @@ function updateStats() {
 }
 
 // ================================================================
-// RENDER SALES CHART - رسم بياني للمبيعات والمشتريات الشهرية
+// RENDER SALES CHART
 // ================================================================
 function renderSalesChart() {
     const chart = document.getElementById('salesChart');
@@ -247,7 +259,7 @@ function renderSalesChart() {
 }
 
 // ================================================================
-// RENDER ACTIVITY LOG - سجل النشاطات
+// RENDER ACTIVITY LOG
 // ================================================================
 function renderActivityLog() {
     const container = document.getElementById('activityLog');
@@ -412,7 +424,7 @@ function renderActivityLog() {
 }
 
 // ================================================================
-// RENDER LOW STOCK LIST - عرض المنتجات منخفضة المخزون
+// RENDER LOW STOCK LIST
 // ================================================================
 function renderLowStockList() {
     const container = document.getElementById('lowStockList');
@@ -488,83 +500,6 @@ function renderLowStockList() {
 }
 
 // ================================================================
-// CHECK LOW STOCK ALERT
-// ================================================================
-function checkLowStockAlert() {
-    if (!window.products || !window.warehouseProducts) return;
-    
-    window.products.forEach(p => {
-        const total = window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0);
-        if (total <= p.min) {
-            const exists = window.alerts ? window.alerts.some(a => a.title.includes(p.name) && !a.read) : false;
-            if (!exists) {
-                addAlert(`⚠️ مخزون منخفض: ${p.name}`, `الكمية: ${total} (الحد الأدنى: ${p.min})`, 'danger');
-            }
-        }
-    });
-}
-
-// ================================================================
-// UPDATE ALERTS UI
-// ================================================================
-function updateAlertsUI() {
-    if (!window.alerts) window.alerts = [];
-    
-    const unread = window.alerts.filter(a => !a.read).length;
-    safeSetText('alertCount', unread);
-    safeSetText('alertBadge', unread);
-
-    const container = document.getElementById('alertsList');
-    if (!container) return;
-
-    const recent = window.alerts.slice(0, 3);
-    if (recent.length === 0) {
-        container.innerHTML = `
-            <div class="alert-item info">
-                <div class="icon"><i class="fas fa-info-circle"></i></div>
-                <div class="content">
-                    <div class="title">لا توجد تنبيهات</div>
-                    <div class="desc">كل شيء على ما يرام</div>
-                </div>
-            </div>
-        `;
-    } else {
-        container.innerHTML = recent.map(a => `
-            <div class="alert-item ${a.type}">
-                <div class="icon"><i class="fas ${a.type === 'danger' ? 'fa-exclamation-triangle' : a.type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i></div>
-                <div class="content">
-                    <div class="title">${a.title}</div>
-                    <div class="desc">${a.desc}</div>
-                </div>
-                <div class="time">${new Date(a.date).toLocaleDateString('ar')}</div>
-            </div>
-        `).join('');
-    }
-}
-
-// ================================================================
-// ADD ALERT
-// ================================================================
-function addAlert(title, desc, type = 'info') {
-    if (!window.alerts) window.alerts = [];
-    window.alerts.unshift({
-        id: Date.now(),
-        title: title,
-        desc: desc,
-        type: type,
-        date: new Date().toISOString(),
-        read: false
-    });
-    if (window.alerts.length > 100) window.alerts = window.alerts.slice(0, 100);
-    if (typeof setData === 'function') {
-        setData('alerts', window.alerts);
-    } else {
-        localStorage.setItem('mizan_alerts', JSON.stringify(window.alerts));
-    }
-    updateAlertsUI();
-}
-
-// ================================================================
 // UPDATE DASHBOARD DETAILS
 // ================================================================
 function updateDashboardDetails() {
@@ -618,16 +553,4 @@ function updateDashboardDetails() {
     }
     safeSetText('dashInventoryQty', totalQty);
     safeSetText('dashInventoryValue', totalValue.toFixed(2));
-}
-
-// ================================================================
-// REFRESH DASHBOARD
-// ================================================================
-function refreshDashboard() {
-    if (typeof updateDashboard === 'function') {
-        updateDashboard();
-    }
-    if (typeof updateDashboardDetails === 'function') {
-        updateDashboardDetails();
-    }
 }
