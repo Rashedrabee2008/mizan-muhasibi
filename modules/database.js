@@ -17,15 +17,23 @@ const firebaseConfig = {
 };
 
 // تهيئة Firebase
+let firebaseInitialized = false;
 if (typeof firebase !== 'undefined') {
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    try {
+        if (!firebase.apps || firebase.apps.length === 0) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        firebaseInitialized = true;
+        console.log('✅ Firebase initialized');
+    } catch (e) {
+        console.warn('⚠️ Firebase init error:', e);
+    }
 } else {
     console.warn('⚠️ Firebase not loaded');
 }
 
 // ================================================================
-// LOCAL STORAGE
+// LOCAL STORAGE HELPERS
 // ================================================================
 function getData(key, def = []) {
     try {
@@ -60,90 +68,31 @@ function setData(key, data) {
 // ================================================================
 function initData() {
     // تعريف المتغيرات العامة إذا لم تكن موجودة
-    if (typeof products === 'undefined' || !Array.isArray(products)) {
-        window.products = [];
-        setData('products', window.products);
-    }
-    if (typeof customers === 'undefined' || !Array.isArray(customers)) {
-        window.customers = [];
-        setData('customers', window.customers);
-    }
-    if (typeof suppliers === 'undefined' || !Array.isArray(suppliers)) {
-        window.suppliers = [];
-        setData('suppliers', window.suppliers);
-    }
-    if (typeof purchases === 'undefined' || !Array.isArray(purchases)) {
-        window.purchases = [];
-        setData('purchases', window.purchases);
-    }
-    if (typeof sales === 'undefined' || !Array.isArray(sales)) {
-        window.sales = [];
-        setData('sales', window.sales);
-    }
-    if (typeof returns === 'undefined' || !Array.isArray(returns)) {
-        window.returns = [];
-        setData('returns', window.returns);
-    }
-    if (typeof expenses === 'undefined' || !Array.isArray(expenses)) {
-        window.expenses = [];
-        setData('expenses', window.expenses);
-    }
-    if (typeof treasury === 'undefined' || !Array.isArray(treasury)) {
-        window.treasury = [];
-        setData('treasury', window.treasury);
-    }
-    if (typeof bonds === 'undefined' || !Array.isArray(bonds)) {
-        window.bonds = [];
-        setData('bonds', window.bonds);
-    }
-    if (typeof warehouses === 'undefined' || !Array.isArray(warehouses)) {
-        window.warehouses = [];
-        setData('warehouses', window.warehouses);
-    }
-    if (typeof warehouseProducts === 'undefined' || !Array.isArray(warehouseProducts)) {
-        window.warehouseProducts = [];
-        setData('warehouseProducts', window.warehouseProducts);
-    }
-    if (typeof permissions === 'undefined' || !Array.isArray(permissions)) {
-        window.permissions = [];
-        setData('permissions', window.permissions);
-    }
-    if (typeof backups === 'undefined' || !Array.isArray(backups)) {
-        window.backups = [];
-        setData('backups', window.backups);
-    }
-    if (typeof accounts === 'undefined' || !Array.isArray(accounts)) {
-        window.accounts = [];
-        setData('accounts', window.accounts);
-    }
-    if (typeof auditLog === 'undefined' || !Array.isArray(auditLog)) {
-        window.auditLog = [];
-        setData('auditLog', window.auditLog);
-    }
-    if (typeof alerts === 'undefined' || !Array.isArray(alerts)) {
-        window.alerts = [];
-        setData('alerts', window.alerts);
-    }
-    if (typeof cashierHistory === 'undefined' || !Array.isArray(cashierHistory)) {
-        window.cashierHistory = [];
-        setData('cashierHistory', window.cashierHistory);
-    }
-    if (typeof inventoryAdjustments === 'undefined' || !Array.isArray(inventoryAdjustments)) {
-        window.inventoryAdjustments = [];
-        setData('inventoryAdjustments', window.inventoryAdjustments);
-    }
+    const dataKeys = [
+        'products', 'customers', 'suppliers', 'purchases', 'sales', 'returns', 
+        'expenses', 'treasury', 'bonds', 'warehouses', 'warehouseProducts', 
+        'permissions', 'backups', 'accounts', 'auditLog', 'alerts', 
+        'cashierHistory', 'inventoryAdjustments'
+    ];
+    
+    dataKeys.forEach(key => {
+        const varName = key;
+        if (typeof window[varName] === 'undefined' || !Array.isArray(window[varName])) {
+            window[varName] = getData(key, []);
+        }
+    });
+    
     if (!window.companyData || typeof window.companyData !== 'object') {
-        window.companyData = {};
-        setData('companyData', window.companyData);
+        window.companyData = getData('companyData', {});
     }
+    
     if (!window.users || !Array.isArray(window.users)) {
-        window.users = [
-            { id: 1, username: 'مدير', role: 'admin' },
-            { id: 2, username: 'مشرف', role: 'manager' },
-            { id: 3, username: 'كاشير', role: 'cashier' },
-            { id: 4, username: 'مشاهد', role: 'viewer' }
-        ];
-        setData('users', window.users);
+        window.users = getData('users', [
+            { id: 1, username: 'مدير', role: 'admin', password: '123456' },
+            { id: 2, username: 'مشرف', role: 'manager', password: '123456' },
+            { id: 3, username: 'كاشير', role: 'cashier', password: '123456' },
+            { id: 4, username: 'مشاهد', role: 'viewer', password: '123456' }
+        ]);
     }
 }
 
@@ -155,22 +104,8 @@ function seedData() {
     
     if (autoRestore()) {
         console.log('✅ استعادة البيانات التلقائية');
-        window.products = getData('products', []);
-        window.customers = getData('customers', []);
-        window.suppliers = getData('suppliers', []);
-        window.warehouses = getData('warehouses', []);
         return;
     }
-
-    window.products = getData('products', []);
-    window.customers = getData('customers', []);
-    window.suppliers = getData('suppliers', []);
-    window.warehouses = getData('warehouses', []);
-    window.warehouseProducts = getData('warehouseProducts', []);
-    window.accounts = getData('accounts', []);
-    window.companyData = getData('companyData', {});
-    window.cashierHistory = getData('cashierHistory', []);
-    window.inventoryAdjustments = getData('inventoryAdjustments', []);
 
     if (window.warehouses.length === 0) {
         window.warehouses = [
@@ -179,12 +114,14 @@ function seedData() {
         ];
         setData('warehouses', window.warehouses);
     }
+    
     if (window.products.length === 0) {
         window.products = [
             { id: 1, name: 'منتج تجريبي 1', buyPrice: 50, sellPrice: 100, min: 5, barcode: '123456789' },
             { id: 2, name: 'منتج تجريبي 2', buyPrice: 30, sellPrice: 75, min: 3, barcode: '987654321' }
         ];
         setData('products', window.products);
+        
         if (window.warehouseProducts.length === 0) {
             window.warehouseProducts = [
                 { warehouseId: 1, productId: 1, qty: 50 },
@@ -195,6 +132,7 @@ function seedData() {
             setData('warehouseProducts', window.warehouseProducts);
         }
     }
+    
     if (window.customers.length === 0) {
         window.customers = [{
             id: 1,
@@ -207,6 +145,7 @@ function seedData() {
         }];
         setData('customers', window.customers);
     }
+    
     if (window.suppliers.length === 0) {
         window.suppliers = [{
             id: 1,
@@ -219,6 +158,7 @@ function seedData() {
         }];
         setData('suppliers', window.suppliers);
     }
+    
     if (window.accounts.length === 0) {
         window.accounts = [
             { id: 1, name: 'أصول', type: 'assets', parentId: null },
@@ -229,6 +169,7 @@ function seedData() {
         ];
         setData('accounts', window.accounts);
     }
+    
     if (!window.companyData || typeof window.companyData !== 'object' || Object.keys(window.companyData).length === 0) {
         window.companyData = {
             name: 'شركة الميزان',
@@ -248,6 +189,11 @@ function seedData() {
         setData('companyData', window.companyData);
     }
     
+    if (!window.currentUser || typeof window.currentUser !== 'object') {
+        window.currentUser = { username: 'مدير', role: 'admin' };
+        localStorage.setItem('mizan_current_user', JSON.stringify(window.currentUser));
+    }
+    
     saveAll();
     console.log('✅ تم تهيئة البيانات بنجاح');
 }
@@ -256,55 +202,60 @@ function seedData() {
 // SAVE ALL
 // ================================================================
 function saveAll() {
+    const dataMap = {
+        'products': window.products,
+        'customers': window.customers,
+        'suppliers': window.suppliers,
+        'purchases': window.purchases,
+        'sales': window.sales,
+        'returns': window.returns,
+        'expenses': window.expenses,
+        'treasury': window.treasury,
+        'bonds': window.bonds,
+        'warehouses': window.warehouses,
+        'warehouseProducts': window.warehouseProducts,
+        'permissions': window.permissions,
+        'companyData': window.companyData,
+        'backups': window.backups,
+        'accounts': window.accounts,
+        'auditLog': window.auditLog,
+        'alerts': window.alerts,
+        'cashierHistory': window.cashierHistory,
+        'inventoryAdjustments': window.inventoryAdjustments,
+        'users': window.users
+    };
+    
+    let savedCount = 0;
+    let errors = [];
+    
+    for (const [key, data] of Object.entries(dataMap)) {
+        try {
+            if (data !== undefined) {
+                setData(key, data);
+                savedCount++;
+            }
+        } catch (e) {
+            errors.push({ key, error: e.message });
+            console.warn(`⚠️ خطأ في حفظ ${key}:`, e);
+        }
+    }
+    
     try {
-        setData('products', window.products);
-        setData('customers', window.customers);
-        setData('suppliers', window.suppliers);
-        setData('purchases', window.purchases);
-        setData('sales', window.sales);
-        setData('returns', window.returns);
-        setData('expenses', window.expenses);
-        setData('treasury', window.treasury);
-        setData('bonds', window.bonds);
-        setData('warehouses', window.warehouses);
-        setData('warehouseProducts', window.warehouseProducts);
-        setData('permissions', window.permissions);
-        setData('companyData', window.companyData);
-        setData('backups', window.backups);
-        setData('accounts', window.accounts);
-        setData('auditLog', window.auditLog);
-        setData('alerts', window.alerts);
-        setData('cashierHistory', window.cashierHistory);
-        setData('inventoryAdjustments', window.inventoryAdjustments);
-        setData('users', window.users);
-        
         localStorage.setItem('mizan_auto_restore', JSON.stringify({
-            products: window.products, 
-            customers: window.customers, 
-            suppliers: window.suppliers, 
-            purchases: window.purchases, 
-            sales: window.sales, 
-            returns: window.returns,
-            expenses: window.expenses, 
-            treasury: window.treasury, 
-            bonds: window.bonds, 
-            warehouses: window.warehouses,
-            warehouseProducts: window.warehouseProducts,
-            permissions: window.permissions, 
-            companyData: window.companyData, 
-            backups: window.backups, 
-            accounts: window.accounts, 
-            auditLog: window.auditLog, 
-            alerts: window.alerts, 
-            cashierHistory: window.cashierHistory,
-            inventoryAdjustments: window.inventoryAdjustments, 
-            users: window.users,
+            ...dataMap,
             savedAt: Date.now()
         }));
-        if (typeof checkLowStockAlert === 'function') checkLowStockAlert();
     } catch (e) {
-        console.warn('⚠️ خطأ في الحفظ:', e);
+        errors.push({ key: 'auto_restore', error: e.message });
     }
+    
+    if (errors.length > 0) {
+        console.warn('⚠️ بعض البيانات لم تُحفظ:', errors);
+    }
+    
+    if (typeof checkLowStockAlert === 'function') checkLowStockAlert();
+    
+    return { saved: savedCount, errors: errors };
 }
 
 // ================================================================
@@ -316,34 +267,21 @@ function autoRestore() {
         if (data) {
             const parsed = JSON.parse(data);
             if (parsed.savedAt && (Date.now() - parsed.savedAt) < 7 * 24 * 60 * 60 * 1000) {
-                if (window.products.length === 0 && window.warehouses.length === 0) {
-                    ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns',
+                const hasData = window.products && window.products.length > 0;
+                const hasWarehouses = window.warehouses && window.warehouses.length > 0;
+                
+                if (!hasData && !hasWarehouses) {
+                    const keys = ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns',
                         'expenses', 'treasury', 'bonds', 'warehouses', 'warehouseProducts',
                         'permissions', 'companyData', 'backups', 'accounts', 'auditLog', 'alerts',
                         'cashierHistory', 'inventoryAdjustments', 'users'
-                    ].forEach(k => {
-                        if (parsed[k]) {
+                    ];
+                    
+                    keys.forEach(k => {
+                        if (parsed[k] !== undefined) {
                             setData(k, parsed[k]);
-                            if (k === 'products') window.products = parsed[k];
-                            else if (k === 'customers') window.customers = parsed[k];
-                            else if (k === 'suppliers') window.suppliers = parsed[k];
-                            else if (k === 'purchases') window.purchases = parsed[k];
-                            else if (k === 'sales') window.sales = parsed[k];
-                            else if (k === 'returns') window.returns = parsed[k];
-                            else if (k === 'expenses') window.expenses = parsed[k];
-                            else if (k === 'treasury') window.treasury = parsed[k];
-                            else if (k === 'bonds') window.bonds = parsed[k];
-                            else if (k === 'warehouses') window.warehouses = parsed[k];
-                            else if (k === 'warehouseProducts') window.warehouseProducts = parsed[k];
-                            else if (k === 'permissions') window.permissions = parsed[k];
-                            else if (k === 'companyData') window.companyData = parsed[k] || {};
-                            else if (k === 'backups') window.backups = parsed[k];
-                            else if (k === 'accounts') window.accounts = parsed[k];
-                            else if (k === 'auditLog') window.auditLog = parsed[k];
-                            else if (k === 'alerts') window.alerts = parsed[k];
-                            else if (k === 'cashierHistory') window.cashierHistory = parsed[k] || [];
-                            else if (k === 'inventoryAdjustments') window.inventoryAdjustments = parsed[k] || [];
-                            else if (k === 'users') window.users = parsed[k];
+                            const varName = k;
+                            window[varName] = parsed[k];
                         }
                     });
                     return true;
@@ -396,29 +334,11 @@ function applySyncData(data) {
     ];
     keys.forEach(k => {
         if (data[k] !== undefined) {
-            if (k === 'products') window.products = data[k];
-            else if (k === 'customers') window.customers = data[k];
-            else if (k === 'suppliers') window.suppliers = data[k];
-            else if (k === 'purchases') window.purchases = data[k];
-            else if (k === 'sales') window.sales = data[k];
-            else if (k === 'returns') window.returns = data[k];
-            else if (k === 'expenses') window.expenses = data[k];
-            else if (k === 'treasury') window.treasury = data[k];
-            else if (k === 'bonds') window.bonds = data[k];
-            else if (k === 'warehouses') window.warehouses = data[k];
-            else if (k === 'warehouseProducts') window.warehouseProducts = data[k];
-            else if (k === 'permissions') window.permissions = data[k];
-            else if (k === 'companyData') window.companyData = data[k] || {};
-            else if (k === 'backups') window.backups = data[k];
-            else if (k === 'accounts') window.accounts = data[k];
-            else if (k === 'auditLog') window.auditLog = data[k];
-            else if (k === 'alerts') window.alerts = data[k];
-            else if (k === 'cashierHistory') window.cashierHistory = data[k] || [];
-            else if (k === 'inventoryAdjustments') window.inventoryAdjustments = data[k] || [];
+            window[k] = data[k];
             setData(k, data[k]);
         }
     });
-    if (data.users) { window.users = data.users; saveUsers(); }
+    if (data.users) { window.users = data.users; setData('users', data.users); }
     if (data.currentUser) {
         window.currentUser = data.currentUser;
         localStorage.setItem('mizan_current_user', JSON.stringify(window.currentUser));
@@ -433,8 +353,16 @@ function syncToFirebase() {
     badge.textContent = '⏳ جاري...';
     badge.className = 'badge syncing';
 
+    if (!firebaseInitialized) {
+        showToast('⚠️ Firebase غير متصل', 'warning');
+        badge.textContent = '⚠️ غير متصل';
+        badge.className = 'badge';
+        setTimeout(() => { badge.textContent = '☁️ مزامنة'; badge.className = 'badge'; }, 3000);
+        return;
+    }
+
     const data = getSyncData();
-    if (typeof firebase !== 'undefined' && firebase.database) {
+    try {
         firebase.database().ref(SYNC_KEY).set(data)
             .then(() => {
                 badge.textContent = '☁️ تم المزامنة';
@@ -456,9 +384,9 @@ function syncToFirebase() {
                     badge.className = 'badge';
                 }, 3000);
             });
-    } else {
-        showToast('⚠️ Firebase غير متصل', 'warning');
-        badge.textContent = '⚠️ غير متصل';
+    } catch (e) {
+        showToast('⚠️ Firebase غير متاح', 'warning');
+        badge.textContent = '⚠️ غير متاح';
         badge.className = 'badge';
         setTimeout(() => {
             badge.textContent = '☁️ مزامنة';
@@ -473,7 +401,15 @@ function syncFromFirebase() {
     badge.textContent = '⏳ جلب...';
     badge.className = 'badge syncing';
 
-    if (typeof firebase !== 'undefined' && firebase.database) {
+    if (!firebaseInitialized) {
+        showToast('⚠️ Firebase غير متصل', 'warning');
+        badge.textContent = '⚠️ غير متصل';
+        badge.className = 'badge';
+        setTimeout(() => { badge.textContent = '☁️ مزامنة'; badge.className = 'badge'; }, 3000);
+        return;
+    }
+
+    try {
         firebase.database().ref(SYNC_KEY).get()
             .then((snapshot) => {
                 if (snapshot.exists()) {
@@ -517,9 +453,9 @@ function syncFromFirebase() {
                     badge.className = 'badge';
                 }, 3000);
             });
-    } else {
-        showToast('⚠️ Firebase غير متصل', 'warning');
-        badge.textContent = '⚠️ غير متصل';
+    } catch (e) {
+        showToast('⚠️ Firebase غير متاح', 'warning');
+        badge.textContent = '⚠️ غير متاح';
         badge.className = 'badge';
         setTimeout(() => {
             badge.textContent = '☁️ مزامنة';
@@ -529,35 +465,32 @@ function syncFromFirebase() {
 }
 
 // ================================================================
-// SAVE USERS
-// ================================================================
-function saveUsers() { 
-    localStorage.setItem('mizan_users', JSON.stringify(window.users));
-    localStorage.setItem('mizan_current_user', JSON.stringify(window.currentUser)); 
-}
-
-// ================================================================
 // GET BACKUP DATA
 // ================================================================
 function getBackupData() {
     return {
-        products: window.products, 
-        customers: window.customers, 
-        suppliers: window.suppliers, 
-        purchases: window.purchases, 
-        sales: window.sales, 
-        returns: window.returns, 
-        expenses: window.expenses, 
-        treasury: window.treasury, 
-        bonds: window.bonds,
-        warehouses: window.warehouses, 
-        warehouseProducts: window.warehouseProducts,
-        permissions: window.permissions, 
-        companyData: window.companyData, 
-        backups: window.backups, 
-        cashierHistory: window.cashierHistory,
-        inventoryAdjustments: window.inventoryAdjustments,
-        createdAt: new Date().toISOString()
+        products: window.products || [],
+        customers: window.customers || [],
+        suppliers: window.suppliers || [],
+        purchases: window.purchases || [],
+        sales: window.sales || [],
+        returns: window.returns || [],
+        expenses: window.expenses || [],
+        treasury: window.treasury || [],
+        bonds: window.bonds || [],
+        warehouses: window.warehouses || [],
+        warehouseProducts: window.warehouseProducts || [],
+        permissions: window.permissions || [],
+        companyData: window.companyData || {},
+        backups: window.backups || [],
+        cashierHistory: window.cashierHistory || [],
+        inventoryAdjustments: window.inventoryAdjustments || [],
+        accounts: window.accounts || [],
+        auditLog: window.auditLog || [],
+        alerts: window.alerts || [],
+        users: window.users || [],
+        createdAt: new Date().toISOString(),
+        version: '3.0.0'
     };
 }
 
@@ -565,31 +498,21 @@ function getBackupData() {
 // RESTORE BACKUP DATA
 // ================================================================
 function restoreBackupData(data) {
-    ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns', 'expenses',
+    if (!data) return;
+    
+    const keys = ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns', 'expenses',
         'treasury', 'bonds', 'warehouses', 'warehouseProducts', 'permissions', 'companyData',
-        'backups', 'cashierHistory', 'inventoryAdjustments'
-    ].forEach(k => {
-        if (data[k]) {
+        'backups', 'cashierHistory', 'inventoryAdjustments', 'accounts', 'auditLog', 'alerts', 'users'
+    ];
+    
+    keys.forEach(k => {
+        if (data[k] !== undefined) {
             setData(k, data[k]);
-            if (k === 'products') window.products = data[k];
-            else if (k === 'customers') window.customers = data[k];
-            else if (k === 'suppliers') window.suppliers = data[k];
-            else if (k === 'purchases') window.purchases = data[k];
-            else if (k === 'sales') window.sales = data[k];
-            else if (k === 'returns') window.returns = data[k];
-            else if (k === 'expenses') window.expenses = data[k];
-            else if (k === 'treasury') window.treasury = data[k];
-            else if (k === 'bonds') window.bonds = data[k];
-            else if (k === 'warehouses') window.warehouses = data[k];
-            else if (k === 'warehouseProducts') window.warehouseProducts = data[k];
-            else if (k === 'permissions') window.permissions = data[k];
-            else if (k === 'companyData') window.companyData = data[k] || {};
-            else if (k === 'backups') window.backups = data[k];
-            else if (k === 'cashierHistory') window.cashierHistory = data[k] || [];
-            else if (k === 'inventoryAdjustments') window.inventoryAdjustments = data[k] || [];
+            window[k] = data[k];
         }
     });
-    if (typeof addAuditLog === 'function') addAuditLog('add', 'backup', 'استعادة نسخة من QR');
+    
+    if (typeof addAuditLog === 'function') addAuditLog('add', 'backup', 'استعادة نسخة احتياطية');
     if (typeof refreshAllPages === 'function') refreshAllPages();
     showToast('✅ تم استعادة البيانات بنجاح', 'success');
 }
