@@ -1,5 +1,5 @@
 // ================================================================
-// products.js - إدارة المنتجات (الملف الكامل مع سجل النشاطات)
+// products.js - إدارة المنتجات
 // ================================================================
 
 // ================================================================
@@ -15,14 +15,14 @@ function renderProducts() {
 
     const lowStock = window.products.filter(p => {
         if (!p) return false;
-        const total = window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0);
+        const total = window.warehouseProducts?.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0) || 0;
         return total <= (p.min || 0);
     });
     safeSetText('lowStock', lowStock.length);
 
     const totalValue = window.products.reduce((s, p) => {
         if (!p) return s;
-        const qty = window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((sum, wp) => sum + wp.qty, 0);
+        const qty = window.warehouseProducts?.filter(wp => wp.productId === p.id).reduce((sum, wp) => sum + wp.qty, 0) || 0;
         return s + ((p.sellPrice || 0) * qty);
     }, 0);
     safeSetText('totalValue', totalValue.toFixed(2));
@@ -30,6 +30,9 @@ function renderProducts() {
     filterProducts();
 }
 
+// ================================================================
+// FILTER PRODUCTS
+// ================================================================
 function filterProducts() {
     if (!window.products || !Array.isArray(window.products)) {
         window.products = [];
@@ -58,7 +61,7 @@ function filterProducts() {
 
     filtered.forEach(p => {
         if (!p) return;
-        const totalQty = window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0);
+        const totalQty = window.warehouseProducts?.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0) || 0;
         const lowClass = totalQty <= (p.min || 0) ? 'style="color:#E06060;font-weight:700;"' : '';
         html += `
             <div class="table-row" style="grid-template-columns:1.5fr 1fr 1fr 1fr 1fr 0.8fr;font-size:12px;">
@@ -112,23 +115,24 @@ function addProduct() {
         buyPrice: buyPrice,
         sellPrice: sellPrice,
         min: min,
-        barcode: barcode
+        barcode: barcode,
+        createdAt: new Date().toISOString()
     };
     window.products.push(product);
 
     if (warehouseId && qty > 0) {
-        const existing = window.warehouseProducts.find(wp => wp.warehouseId === warehouseId && wp.productId === product.id);
+        const existing = window.warehouseProducts?.find(wp => wp.warehouseId === warehouseId && wp.productId === product.id);
         if (existing) {
             existing.qty += qty;
         } else {
+            if (!window.warehouseProducts) window.warehouseProducts = [];
             window.warehouseProducts.push({ warehouseId: warehouseId, productId: product.id, qty: qty });
         }
     }
 
     saveAll();
     addAuditLog('add', 'product', 
-        `إضافة منتج: ${name} - سعر الشراء: ${buyPrice} - سعر البيع: ${sellPrice} - الكمية: ${qty}${barcode ? ' - باركود: ' + barcode : ''}`,
-        { name, buyPrice, sellPrice, qty, barcode }
+        `إضافة منتج: ${name} - سعر الشراء: ${buyPrice} - سعر البيع: ${sellPrice} - الكمية: ${qty}${barcode ? ' - باركود: ' + barcode : ''}`
     );
     renderProducts();
     populateAllSelects();
@@ -139,7 +143,7 @@ function addProduct() {
     document.getElementById('productMin').value = '';
     document.getElementById('productBarcode').value = '';
     showToast('✅ تم إضافة المنتج', 'success');
-    updateDashboard();
+    if (typeof updateDashboard === 'function') updateDashboard();
 }
 
 // ================================================================
@@ -190,10 +194,7 @@ function saveProductEdit(id) {
     p.barcode = barcode;
 
     saveAll();
-    addAuditLog('edit', 'product', 
-        `تعديل منتج: ${name} - سعر الشراء: ${buyPrice} - سعر البيع: ${sellPrice}`,
-        { name, buyPrice, sellPrice }
-    );
+    addAuditLog('edit', 'product', `تعديل منتج: ${name} - سعر الشراء: ${buyPrice} - سعر البيع: ${sellPrice}`);
     renderProducts();
     populateAllSelects();
     closeModal();
@@ -209,19 +210,16 @@ function deleteProduct(id) {
 
     const p = window.products.find(pr => pr.id === id);
     window.products = window.products.filter(pr => pr.id !== id);
-    window.warehouseProducts = window.warehouseProducts.filter(wp => wp.productId !== id);
+    window.warehouseProducts = window.warehouseProducts?.filter(wp => wp.productId !== id) || [];
 
     saveAll();
     if (p) {
-        addAuditLog('delete', 'product', 
-            `حذف منتج: ${p.name} - سعر الشراء: ${p.buyPrice} - سعر البيع: ${p.sellPrice}`,
-            { name: p.name, id: p.id, buyPrice: p.buyPrice, sellPrice: p.sellPrice }
-        );
+        addAuditLog('delete', 'product', `حذف منتج: ${p.name} - سعر الشراء: ${p.buyPrice} - سعر البيع: ${p.sellPrice}`);
     }
     renderProducts();
     populateAllSelects();
     showToast('🗑️ تم الحذف', 'info');
-    updateDashboard();
+    if (typeof updateDashboard === 'function') updateDashboard();
     closeModal();
 }
 
@@ -288,24 +286,23 @@ function saveQuickProduct() {
         buyPrice: buyPrice,
         sellPrice: sellPrice,
         min: min,
-        barcode: barcode
+        barcode: barcode,
+        createdAt: new Date().toISOString()
     };
     window.products.push(product);
 
     if (warehouseId && qty > 0) {
-        const existing = window.warehouseProducts.find(wp => wp.warehouseId === warehouseId && wp.productId === product.id);
+        const existing = window.warehouseProducts?.find(wp => wp.warehouseId === warehouseId && wp.productId === product.id);
         if (existing) {
             existing.qty += qty;
         } else {
+            if (!window.warehouseProducts) window.warehouseProducts = [];
             window.warehouseProducts.push({ warehouseId: warehouseId, productId: product.id, qty: qty });
         }
     }
 
     saveAll();
-    addAuditLog('add', 'product', 
-        `إضافة منتج سريع: ${name} - سعر الشراء: ${buyPrice} - سعر البيع: ${sellPrice} - الكمية: ${qty}`,
-        { name, buyPrice, sellPrice, qty }
-    );
+    addAuditLog('add', 'product', `إضافة منتج سريع: ${name} - سعر الشراء: ${buyPrice} - سعر البيع: ${sellPrice} - الكمية: ${qty}`);
     renderProducts();
     populateAllSelects();
     closeModal();
@@ -332,5 +329,5 @@ function saveQuickProduct() {
     }
 
     showToast(`✅ تم إضافة المنتج ${name}`, 'success');
-    updateDashboard();
+    if (typeof updateDashboard === 'function') updateDashboard();
 }
