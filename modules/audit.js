@@ -1,9 +1,9 @@
 // ================================================================
-// audit.js - سجل النشاطات (الملف الكامل)
+// audit.js - سجل النشاطات
 // ================================================================
 
 // ================================================================
-// ADD AUDIT LOG - إضافة سجل نشاط مع تفاصيل كاملة
+// ADD AUDIT LOG
 // ================================================================
 function addAuditLog(action, type, details, data = null) {
     if (typeof window.auditLog === 'undefined') {
@@ -34,13 +34,13 @@ function addAuditLog(action, type, details, data = null) {
 }
 
 // ================================================================
-// RENDER AUDIT - عرض سجل النشاطات
+// RENDER AUDIT
 // ================================================================
+let auditFilter = 'all';
+
 function renderAudit() {
     filterAudit('all');
 }
-
-let auditFilter = 'all';
 
 function filterAudit(filter) {
     auditFilter = filter;
@@ -146,7 +146,7 @@ function filterAudit(filter) {
 }
 
 // ================================================================
-// CLEAR AUDIT - مسح سجل النشاطات
+// CLEAR AUDIT
 // ================================================================
 function clearAudit() {
     if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
