@@ -3,10 +3,30 @@
 // ================================================================
 
 // ================================================================
+// INIT ALERTS
+// ================================================================
+function initAlerts() {
+    if (!window.alerts || !Array.isArray(window.alerts)) {
+        window.alerts = [];
+        setData('alerts', window.alerts);
+    }
+}
+
+// ================================================================
 // ADD ALERT
 // ================================================================
 function addAlert(title, desc, type = 'info') {
-    const alert = { id: Date.now(), title: title, desc: desc, type: type, date: new Date().toISOString(), read: false };
+    initAlerts();
+    
+    const alert = { 
+        id: Date.now(), 
+        title: title, 
+        desc: desc, 
+        type: type, 
+        date: new Date().toISOString(), 
+        read: false 
+    };
+    
     window.alerts.unshift(alert);
     if (window.alerts.length > 100) window.alerts = window.alerts.slice(0, 100);
     setData('alerts', window.alerts);
@@ -17,6 +37,8 @@ function addAlert(title, desc, type = 'info') {
 // UPDATE ALERTS UI
 // ================================================================
 function updateAlertsUI() {
+    initAlerts();
+    
     const unread = window.alerts.filter(a => !a.read).length;
     safeSetText('alertCount', unread);
     safeSetText('alertBadge', unread);
@@ -58,8 +80,13 @@ function updateAlertsUI() {
 // MARK ALERT READ
 // ================================================================
 function markAlertRead(id) {
+    initAlerts();
     const alert = window.alerts.find(a => a.id === id);
-    if (alert) { alert.read = true; setData('alerts', window.alerts); updateAlertsUI(); }
+    if (alert) { 
+        alert.read = true; 
+        setData('alerts', window.alerts); 
+        updateAlertsUI(); 
+    }
 }
 
 // ================================================================
@@ -69,6 +96,7 @@ function clearAllAlerts() {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (!confirm('⚠️ تحديد جميع التنبيهات كمقروءة؟')) return;
 
+    initAlerts();
     window.alerts.forEach(a => a.read = true);
     setData('alerts', window.alerts);
     updateAlertsUI();
@@ -79,6 +107,9 @@ function clearAllAlerts() {
 // CHECK LOW STOCK ALERT
 // ================================================================
 function checkLowStockAlert() {
+    if (!window.products || !window.warehouseProducts) return;
+    initAlerts();
+    
     window.products.forEach(p => {
         const total = window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0);
         if (total <= p.min) {
