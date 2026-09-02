@@ -34,7 +34,7 @@ function renderAccounts() {
     const container = document.getElementById('accountList');
     if (!container) return;
 
-    if (window.accounts.length === 0) {
+    if (!window.accounts || window.accounts.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-sitemap"></i><span>لا توجد حسابات</span></div>`;
         return;
     }
@@ -103,8 +103,10 @@ function populateAccountParents() {
     const select = document.getElementById('accountParent');
     if (select) {
         select.innerHTML = '<option value="">لا يوجد</option>';
-        window.accounts.forEach(a => {
-            select.innerHTML += `<option value="${a.id}">${a.name}</option>`;
-        });
+        if (window.accounts) {
+            window.accounts.forEach(a => {
+                select.innerHTML += `<option value="${a.id}">${a.name}</option>`;
+            });
+        }
     }
 }
