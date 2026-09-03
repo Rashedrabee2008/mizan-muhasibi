@@ -180,6 +180,22 @@ function updateUIByPermissions() {
         const roles = { admin: 'مدير', manager: 'مشرف', cashier: 'كاشير', viewer: 'مشاهد' };
         roleDisplay.textContent = roles[currentUser.role] || currentUser.role;
     }
+    updateSecurityButton();
+}
+
+// ================================================================
+// UPDATE SECURITY BUTTON - إظهار زر الأمن الخاص للمدير فقط
+// ================================================================
+
+function updateSecurityButton() {
+    const btn = document.getElementById('securityAuditBtn');
+    if (btn) {
+        if (isAdmin()) {
+            btn.style.display = 'block';
+        } else {
+            btn.style.display = 'none';
+        }
+    }
 }
 
 // ================================================================
@@ -394,6 +410,7 @@ function refreshAllPages() {
     if (typeof updateLicensePrice === 'function') updateLicensePrice();
     if (typeof refreshDashboard === 'function') refreshDashboard();
     updateUIByPermissions();
+    updateSecurityButton();
     if (typeof populateAdjustmentProducts === 'function') populateAdjustmentProducts();
     updateClock();
 
@@ -449,6 +466,7 @@ function checkLogin() {
             if (typeof refreshAllPages === 'function') refreshAllPages();
             if (typeof startAutoBackup === 'function') startAutoBackup();
             updateUIByPermissions();
+            updateSecurityButton();
             updateClock();
             if (typeof syncFromFirebase === 'function') syncFromFirebase();
         }, 300);
@@ -1912,7 +1930,7 @@ function updateStats() {
 }
 
 // ================================================================
-// ACCOUNTING FUNCTIONS - دوال المحاسبات
+// ACCOUNTING FUNCTIONS - دوال المحاسبات (المعدلة بالكامل)
 // ================================================================
 
 function updateAccounting() {
@@ -1940,8 +1958,8 @@ function updateAccounting() {
     safeSetText('accountingProfit', profit.toFixed(2));
 }
 
-// ===== showAudit - عرض تقرير المراجعة المحاسبية =====
-function showAudit() {
+// ===== showAuditReport - تقرير المراجعة المحاسبية =====
+function showAuditReport() {
     const container = document.getElementById('accountingResult');
     if (!container) return;
     
@@ -1949,11 +1967,14 @@ function showAudit() {
     let totalPurchases = 0;
     let totalExpenses = 0;
     let totalTreasury = 0;
+    let salesCount = 0;
+    let purchasesCount = 0;
     
     if (window.sales) {
         window.sales.forEach(s => {
             const total = s.totalWithTax || s.total || 0;
             totalSales += total;
+            salesCount++;
         });
     }
     
@@ -1961,6 +1982,7 @@ function showAudit() {
         window.purchases.forEach(p => {
             const total = p.totalWithTax || p.total || 0;
             totalPurchases += total;
+            purchasesCount++;
         });
     }
     
@@ -1981,8 +2003,6 @@ function showAudit() {
     const totalCosts = totalPurchases + totalExpenses;
     const netProfit = totalRevenue - totalCosts;
     const balance = totalTreasury;
-    const salesCount = window.sales ? window.sales.length : 0;
-    const purchasesCount = window.purchases ? window.purchases.length : 0;
     const totalInvoices = salesCount + purchasesCount;
     
     container.innerHTML = `
@@ -2031,7 +2051,6 @@ function showAudit() {
             <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
                 <button class="btn btn-info btn-sm" onclick="showDetailedAudit()"><i class="fas fa-search"></i> تدقيق مفصل</button>
                 <button class="btn btn-primary btn-sm" onclick="printAuditReport()"><i class="fas fa-print"></i> طباعة</button>
-                <button class="btn btn-secondary btn-sm" onclick="navigateTo('audit')"><i class="fas fa-history"></i> سجل النشاطات</button>
             </div>
         </div>
     `;
@@ -2039,7 +2058,7 @@ function showAudit() {
     addAuditLog('view', 'audit', 'عرض تقرير المراجعة المحاسبية');
 }
 
-// ===== showDetailedAudit - تدقيق مفصل =====
+// ===== showDetailedAudit - التدقيق المفصل =====
 function showDetailedAudit() {
     const container = document.getElementById('accountingResult');
     if (!container) return;
@@ -2107,7 +2126,7 @@ function showDetailedAudit() {
     html += `
             </div>
             <div style="margin-top:8px;display:flex;gap:6px;">
-                <button class="btn btn-secondary btn-sm" onclick="showAudit()"><i class="fas fa-arrow-right"></i> العودة</button>
+                <button class="btn btn-secondary btn-sm" onclick="showAuditReport()"><i class="fas fa-arrow-right"></i> العودة</button>
                 <button class="btn btn-primary btn-sm" onclick="printAuditReport()"><i class="fas fa-print"></i> طباعة</button>
             </div>
         </div>
@@ -2146,6 +2165,298 @@ function printAuditReport() {
         `);
         win.document.close();
     }
+}
+
+// ===== showLedger - دفتر الأستاذ =====
+function showLedger() {
+    const container = document.getElementById('accountingResult');
+    if (!container) return;
+    
+    let entries = [];
+    
+    if (window.sales) {
+        window.sales.forEach(s => {
+            const total = s.totalWithTax || s.total || 0;
+            entries.push({
+                date: s.date,
+                type: '💳 بيع',
+                description: `فاتورة بيع - ${s.customer || 'عميل'}`,
+                amount: total,
+                color: '#2D8F5E'
+            });
+        });
+    }
+    
+    if (window.purchases) {
+        window.purchases.forEach(p => {
+            const total = p.totalWithTax || p.total || 0;
+            entries.push({
+                date: p.date,
+                type: '🛒 شراء',
+                description: `فاتورة شراء - ${p.supplier || 'مورد'}`,
+                amount: total,
+                color: '#E06060'
+            });
+        });
+    }
+    
+    if (window.expenses) {
+        window.expenses.forEach(e => {
+            entries.push({
+                date: e.date,
+                type: '💸 مصروف',
+                description: e.note,
+                amount: e.amount,
+                color: '#E6A830'
+            });
+        });
+    }
+    
+    entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    let html = `
+        <div class="accounting-detail-content">
+            <h4 style="color:#C9A94E;font-size:16px;margin-bottom:10px;">📒 دفتر الأستاذ</h4>
+            <div style="max-height:400px;overflow-y:auto;font-size:12px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr 1fr;gap:4px;padding:4px 0;font-weight:800;border-bottom:2px solid #C9A94E;color:#F5E6C8;">
+                    <span>التاريخ</span><span>النوع</span><span>البيان</span><span>المبلغ</span>
+                </div>
+    `;
+    
+    if (entries.length === 0) {
+        html += `<div class="empty-state" style="padding:16px 0;"><span>لا توجد حركات</span></div>`;
+    } else {
+        entries.slice(0, 50).forEach(e => {
+            html += `
+                <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr 1fr;gap:4px;padding:4px 0;border-bottom:1px solid #2D2D2D;color:#F5E6C8;">
+                    <span style="font-size:10px;">${e.date}</span>
+                    <span style="color:${e.color};font-weight:700;">${e.type}</span>
+                    <span style="font-size:11px;">${e.description}</span>
+                    <span style="color:${e.color};font-weight:700;">${e.amount.toFixed(2)}</span>
+                </div>
+            `;
+        });
+    }
+    
+    html += `</div></div>`;
+    container.innerHTML = html;
+}
+
+// ===== showTrialBalance - ميزان المراجعة =====
+function showTrialBalance() {
+    const container = document.getElementById('accountingResult');
+    if (!container) return;
+    
+    let totalDebit = 0;
+    let totalCredit = 0;
+    
+    if (window.sales) {
+        window.sales.forEach(s => {
+            const total = s.totalWithTax || s.total || 0;
+            totalCredit += total;
+        });
+    }
+    
+    if (window.purchases) {
+        window.purchases.forEach(p => {
+            const total = p.totalWithTax || p.total || 0;
+            totalDebit += total;
+        });
+    }
+    
+    if (window.expenses) {
+        window.expenses.forEach(e => {
+            totalDebit += e.amount;
+        });
+    }
+    
+    if (window.treasury) {
+        window.treasury.forEach(t => {
+            if (t.type === 'deposit') totalDebit += t.amount;
+            else totalCredit += t.amount;
+        });
+    }
+    
+    const balance = totalDebit - totalCredit;
+    
+    container.innerHTML = `
+        <div class="accounting-detail-content">
+            <h4 style="color:#C9A94E;font-size:16px;margin-bottom:10px;">⚖️ ميزان المراجعة</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
+                <div style="padding:10px;background:#0D0D0D;border-radius:8px;border:1px solid #E06060;text-align:center;">
+                    <div style="color:#E06060;font-weight:700;">📉 المدين</div>
+                    <div style="font-size:22px;font-weight:900;color:#E06060;">${totalDebit.toFixed(2)}</div>
+                </div>
+                <div style="padding:10px;background:#0D0D0D;border-radius:8px;border:1px solid #2D8F5E;text-align:center;">
+                    <div style="color:#2D8F5E;font-weight:700;">📈 الدائن</div>
+                    <div style="font-size:22px;font-weight:900;color:#2D8F5E;">${totalCredit.toFixed(2)}</div>
+                </div>
+            </div>
+            <div style="margin-top:8px;padding:10px;background:#0D0D0D;border-radius:8px;border:2px solid #C9A94E;text-align:center;">
+                <div style="font-weight:700;color:#C9A94E;">الرصيد</div>
+                <div style="font-size:20px;font-weight:900;color:${balance >= 0 ? '#E06060' : '#2D8F5E'};">${balance.toFixed(2)}</div>
+                <div style="font-size:12px;color:#A89070;">${balance >= 0 ? 'مدين' : 'دائن'}</div>
+            </div>
+        </div>
+    `;
+}
+
+// ===== showIncomeStatement - قائمة الدخل =====
+function showIncomeStatement() {
+    const container = document.getElementById('accountingResult');
+    if (!container) return;
+    
+    let revenue = 0;
+    let expenses = 0;
+    
+    if (window.sales) {
+        window.sales.forEach(s => {
+            const total = s.totalWithTax || s.total || 0;
+            revenue += total;
+        });
+    }
+    
+    if (window.expenses) {
+        window.expenses.forEach(e => {
+            expenses += e.amount;
+        });
+    }
+    
+    if (window.purchases) {
+        window.purchases.forEach(p => {
+            const total = p.totalWithTax || p.total || 0;
+            expenses += total;
+        });
+    }
+    
+    const netIncome = revenue - expenses;
+    
+    container.innerHTML = `
+        <div class="accounting-detail-content">
+            <h4 style="color:#C9A94E;font-size:16px;margin-bottom:10px;">📄 قائمة الدخل</h4>
+            <div style="font-size:14px;">
+                <div style="padding:8px 0;border-bottom:1px solid #2D2D2D;">
+                    <span style="font-weight:600;color:#A89070;">💰 الإيرادات</span>
+                    <span style="float:left;color:#2D8F5E;font-weight:700;">${revenue.toFixed(2)} 🇪🇬</span>
+                </div>
+                <div style="padding:8px 0;border-bottom:1px solid #2D2D2D;">
+                    <span style="font-weight:600;color:#A89070;">💸 المصروفات</span>
+                    <span style="float:left;color:#E06060;font-weight:700;">${expenses.toFixed(2)} 🇪🇬</span>
+                </div>
+                <div style="padding:10px 0;border-top:2px solid #C9A94E;font-size:16px;">
+                    <span style="font-weight:800;color:#C9A94E;">📊 صافي الدخل</span>
+                    <span style="float:left;font-weight:900;color:${netIncome >= 0 ? '#2D8F5E' : '#E06060'};">${netIncome.toFixed(2)} 🇪🇬</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ===== showBalanceSheet - الميزانية العمومية =====
+function showBalanceSheet() {
+    const container = document.getElementById('accountingResult');
+    if (!container) return;
+    
+    let assets = 0;
+    let liabilities = 0;
+    let equity = 0;
+    
+    if (window.treasury) {
+        window.treasury.forEach(t => {
+            if (t.type === 'deposit') assets += t.amount;
+        });
+    }
+    
+    if (window.products && window.warehouseProducts) {
+        window.products.forEach(p => {
+            const qty = window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0);
+            assets += (p.sellPrice || 0) * qty;
+        });
+    }
+    
+    if (window.bonds) {
+        window.bonds.forEach(b => {
+            if (b.status === 'pending' || b.status === 'overdue') {
+                liabilities += b.amount;
+            }
+        });
+    }
+    
+    equity = assets - liabilities;
+    
+    container.innerHTML = `
+        <div class="accounting-detail-content">
+            <h4 style="color:#C9A94E;font-size:16px;margin-bottom:10px;">📊 الميزانية العمومية</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
+                <div style="padding:10px;background:#0D0D0D;border-radius:8px;border:1px solid #2D8F5E;text-align:center;">
+                    <div style="color:#2D8F5E;font-weight:700;">🏦 الأصول</div>
+                    <div style="font-size:22px;font-weight:900;color:#2D8F5E;">${assets.toFixed(2)}</div>
+                </div>
+                <div style="padding:10px;background:#0D0D0D;border-radius:8px;border:1px solid #E06060;text-align:center;">
+                    <div style="color:#E06060;font-weight:700;">📋 الخصوم</div>
+                    <div style="font-size:22px;font-weight:900;color:#E06060;">${liabilities.toFixed(2)}</div>
+                </div>
+            </div>
+            <div style="margin-top:8px;padding:10px;background:#0D0D0D;border-radius:8px;border:2px solid #C9A94E;text-align:center;">
+                <div style="font-weight:700;color:#C9A94E;">👑 حقوق الملكية</div>
+                <div style="font-size:20px;font-weight:900;color:${equity >= 0 ? '#2D8F5E' : '#E06060'};">${equity.toFixed(2)}</div>
+            </div>
+            <div style="margin-top:4px;font-size:11px;color:#A89070;text-align:center;">
+                الأصول = الخصوم + حقوق الملكية
+            </div>
+        </div>
+    `;
+}
+
+// ===== showCashFlow - التدفقات النقدية =====
+function showCashFlow() {
+    const container = document.getElementById('accountingResult');
+    if (!container) return;
+    
+    let cashIn = 0;
+    let cashOut = 0;
+    let transactionCount = 0;
+    
+    if (window.treasury) {
+        window.treasury.forEach(t => {
+            transactionCount++;
+            if (t.type === 'deposit') cashIn += t.amount;
+            else cashOut += t.amount;
+        });
+    }
+    
+    const netCash = cashIn - cashOut;
+    
+    container.innerHTML = `
+        <div class="accounting-detail-content">
+            <h4 style="color:#C9A94E;font-size:16px;margin-bottom:10px;">💰 التدفقات النقدية</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
+                <div style="padding:10px;background:#0D0D0D;border-radius:8px;border:1px solid #2D8F5E;text-align:center;">
+                    <div style="color:#2D8F5E;font-weight:700;">📥 التدفقات الداخلة</div>
+                    <div style="font-size:22px;font-weight:900;color:#2D8F5E;">${cashIn.toFixed(2)}</div>
+                </div>
+                <div style="padding:10px;background:#0D0D0D;border-radius:8px;border:1px solid #E06060;text-align:center;">
+                    <div style="color:#E06060;font-weight:700;">📤 التدفقات الخارجة</div>
+                    <div style="font-size:22px;font-weight:900;color:#E06060;">${cashOut.toFixed(2)}</div>
+                </div>
+            </div>
+            <div style="margin-top:8px;padding:10px;background:#0D0D0D;border-radius:8px;border:2px solid #C9A94E;text-align:center;">
+                <div style="font-weight:700;color:#C9A94E;">📊 صافي التدفق النقدي</div>
+                <div style="font-size:20px;font-weight:900;color:${netCash >= 0 ? '#2D8F5E' : '#E06060'};">${netCash.toFixed(2)}</div>
+            </div>
+            <div style="margin-top:4px;font-size:12px;text-align:center;color:${netCash >= 0 ? '#2D8F5E' : '#E06060'};">
+                ${netCash >= 0 ? '✅ التدفق النقدي موجب' : '⚠️ التدفق النقدي سالب'}
+            </div>
+            <div style="font-size:11px;color:#A89070;text-align:center;margin-top:2px;">
+                📋 عدد الحركات: ${transactionCount}
+            </div>
+        </div>
+    `;
+}
+
+// ===== showAudit - للتوافق مع الكود القديم =====
+function showAudit() {
+    showAuditReport();
 }
 
 // ================================================================
@@ -3409,6 +3720,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeof startAutoBackup === 'function') startAutoBackup();
             if (typeof syncFromFirebase === 'function') syncFromFirebase();
             updateUIByPermissions();
+            updateSecurityButton();
             updateClock();
         }, 300);
     }
