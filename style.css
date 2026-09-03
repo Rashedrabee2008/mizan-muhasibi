@@ -1119,6 +1119,118 @@ body, p, span, div, input, select, button, textarea, label {
 }
 
 /* ================================================================
+   INVOICE DETAILS - تحسين تنسيق الفاتورة
+   ================================================================ */
+
+/* تنسيق جدول الفاتورة في المودال */
+.invoice-details-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 8px 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.invoice-details-table th {
+    background: #2D2D2D;
+    padding: 8px 6px;
+    text-align: center;
+    font-weight: 800;
+    color: #C9A94E;
+    border: 1px solid #3D3D3D;
+    font-size: 11px;
+}
+
+.invoice-details-table td {
+    padding: 8px 6px;
+    text-align: center;
+    border: 1px solid #3D3D3D;
+    color: #F5E6C8;
+    font-size: 12px;
+}
+
+.invoice-details-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.invoice-details-table tr:hover {
+    background: rgba(201, 169, 78, 0.05);
+}
+
+/* تحسين عرض الفاتورة في المودال */
+.modal-box .invoice-print-boxed {
+    background: #1C1C1C;
+    border: 2px solid #C9A94E;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.modal-box .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.modal-box .items-table th {
+    background: #2D2D2D;
+    padding: 6px 4px;
+    text-align: center;
+    font-weight: 800;
+    color: #C9A94E;
+    border: 1px solid #3D3D3D;
+}
+
+.modal-box .items-table td {
+    padding: 6px 4px;
+    text-align: center;
+    border: 1px solid #3D3D3D;
+    color: #F5E6C8;
+}
+
+.modal-box .items-table tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* تنسيق تفاصيل الفاتورة - الأعمدة مضبوطة */
+.invoice-detail-row {
+    display: grid;
+    grid-template-columns: 1fr 0.8fr 0.8fr 1fr 0.6fr;
+    gap: 4px;
+    padding: 6px 0;
+    border-bottom: 1px solid #2D2D2D;
+    font-size: 12px;
+    color: #F5E6C8;
+    align-items: center;
+}
+
+.invoice-detail-row.header {
+    font-weight: 800;
+    color: #C9A94E;
+    border-bottom: 2px solid #C9A94E;
+    font-size: 11px;
+}
+
+.invoice-detail-row .col-product {
+    text-align: right;
+    font-weight: 600;
+}
+
+.invoice-detail-row .col-qty {
+    text-align: center;
+}
+
+.invoice-detail-row .col-price {
+    text-align: center;
+}
+
+.invoice-detail-row .col-total {
+    text-align: center;
+    font-weight: 700;
+    color: #C9A94E;
+}
+
+/* ================================================================
    BALANCE DETAILS
    ================================================================ */
 .balance-details {
@@ -2401,4 +2513,125 @@ input[type="file"]::file-selector-button {
 }
 input[type="file"]::file-selector-button:hover {
     background: #B8953A;
+}
+
+/* ================================================================
+   INVOICE DETAILS ROW - تنسيق محسن لعرض الأصناف في الفاتورة
+   ================================================================ */
+.invoice-detail-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 0.8fr 0.8fr 1fr 0.6fr;
+    gap: 6px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #2D2D2D;
+    font-size: 12px;
+    color: #F5E6C8;
+    align-items: center;
+}
+
+.invoice-detail-grid.header {
+    font-weight: 800;
+    color: #C9A94E;
+    border-bottom: 2px solid #C9A94E;
+    font-size: 11px;
+    background: #1C1C1C;
+    border-radius: 4px;
+}
+
+.invoice-detail-grid .product-name {
+    text-align: right;
+    font-weight: 600;
+}
+
+.invoice-detail-grid .qty {
+    text-align: center;
+}
+
+.invoice-detail-grid .price {
+    text-align: center;
+}
+
+.invoice-detail-grid .total {
+    text-align: center;
+    font-weight: 700;
+    color: #C9A94E;
+}
+
+.invoice-detail-grid .remove-btn {
+    text-align: center;
+}
+
+/* تنسيق الفاتورة في المودال */
+.modal-invoice-container {
+    background: #0D0D0D;
+    border-radius: 10px;
+    padding: 12px;
+    border: 1px solid #2D2D2D;
+}
+
+.modal-invoice-container .invoice-header {
+    border-bottom: 2px solid #C9A94E;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.modal-invoice-container .invoice-header h2 {
+    color: #C9A94E;
+    font-size: 18px;
+    margin: 0;
+}
+
+.modal-invoice-container .invoice-header .sub {
+    color: #A89070;
+    font-size: 11px;
+}
+
+.modal-invoice-container .invoice-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    font-size: 12px;
+    padding: 4px 0;
+    border-bottom: 1px solid #3D3D3D;
+    margin-bottom: 6px;
+}
+
+.modal-invoice-container .invoice-info-grid .label {
+    color: #A89070;
+    font-weight: 600;
+}
+
+.modal-invoice-container .invoice-info-grid .value {
+    color: #F5E6C8;
+    font-weight: 700;
+}
+
+.modal-invoice-container .invoice-total {
+    border-top: 2px solid #C9A94E;
+    padding: 8px 0;
+    margin-top: 6px;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+}
+
+.modal-invoice-container .invoice-total .amount {
+    color: #C9A94E;
+    font-size: 18px;
+}
+
+.modal-invoice-container .invoice-footer {
+    text-align: center;
+    border-top: 2px solid #C9A94E;
+    padding-top: 6px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #A89070;
+}
+
+.modal-invoice-container .invoice-footer .thanks {
+    font-size: 14px;
+    color: #F5E6C8;
+    font-weight: 700;
 }
