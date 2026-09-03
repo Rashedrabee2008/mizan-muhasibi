@@ -478,7 +478,11 @@
                     <div class="accounting-card" onclick="showIncomeStatement()"><i class="fas fa-file-invoice"></i><h4>قائمة الدخل</h4><p>الإيرادات والمصروفات</p></div>
                     <div class="accounting-card" onclick="showBalanceSheet()"><i class="fas fa-chart-pie"></i><h4>الميزانية العمومية</h4><p>الأصول والخصوم</p></div>
                     <div class="accounting-card" onclick="showCashFlow()"><i class="fas fa-money-bill-wave"></i><h4>التدفقات النقدية</h4><p>حركة النقدية</p></div>
-                    <div class="accounting-card" onclick="navigateTo('audit')" style="border-color:#4A8AB5;"><i class="fas fa-history"></i><h4>سجل النشاطات</h4><p>جميع العمليات</p></div>
+                    <div class="accounting-card" id="securityAuditBtn" onclick="navigateTo('audit')" style="border-color:#4A8AB5;display:none;">
+                        <i class="fas fa-shield-alt"></i>
+                        <h4>الأمن الخاص بالتطبيق</h4>
+                        <p>سجل العمليات</p>
+                    </div>
                 </div>
                 <div id="accountingResult"><div class="alert-item info"><div class="icon"><i class="fas fa-info-circle"></i></div><div class="content"><div class="title">اختر تقريراً محاسبياً</div><div class="desc">اضغط على أحد التقارير أعلاه</div></div></div></div>
             </div>
@@ -597,8 +601,14 @@
         <!-- ===== AUDIT ===== -->
         <div id="page-audit" class="page-container">
             <div class="page-content">
-                <h2><i class="fas fa-history"></i> سجل النشاطات</h2>
-                <div class="filter-chips"><button class="filter-chip active" onclick="filterAudit('all')">الكل</button><button class="filter-chip" onclick="filterAudit('add')">➕ إضافة</button><button class="filter-chip" onclick="filterAudit('edit')">✏️ تعديل</button><button class="filter-chip" onclick="filterAudit('delete')">🗑️ حذف</button><button class="filter-chip" onclick="filterAudit('sale')">💰 بيع</button></div>
+                <h2><i class="fas fa-history"></i> الأمن الخاص بالتطبيق</h2>
+                <div class="filter-chips">
+                    <button class="filter-chip active" onclick="filterAudit('all')">الكل</button>
+                    <button class="filter-chip" onclick="filterAudit('add')">➕ إضافة</button>
+                    <button class="filter-chip" onclick="filterAudit('edit')">✏️ تعديل</button>
+                    <button class="filter-chip" onclick="filterAudit('delete')">🗑️ حذف</button>
+                    <button class="filter-chip" onclick="filterAudit('sale')">💰 بيع</button>
+                </div>
                 <div id="auditList"><div class="empty-state"><i class="fas fa-history"></i><span>لا توجد نشاطات</span></div></div>
                 <button class="btn btn-danger btn-block" id="clearAuditBtn" onclick="clearAudit()" style="margin-top:8px;display:none;"><i class="fas fa-trash"></i> مسح السجل</button>
             </div>
@@ -841,6 +851,7 @@
             if (typeof updateClock === 'function') { updateClock(); }
             if (typeof initUsers === 'function') { initUsers(); console.log('✅ تم تهيئة المستخدمين'); }
             if (typeof refreshDashboard === 'function') { refreshDashboard(); console.log('✅ تم تحديث لوحة التحكم'); }
+            if (typeof updateSecurityButton === 'function') { updateSecurityButton(); }
             console.log('✅ الميزان جاهز للاستخدام');
             console.log('🔒 كلمة المرور: 123456');
             console.log('🔑 اضغط 5 مرات على رقم الإصدار في الإعدادات لتفعيل زر توليد المفاتيح');
