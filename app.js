@@ -46,7 +46,6 @@ function safeSetText(id, value) {
         el.textContent = value;
         return true;
     } else {
-        // ✅ تجاهل الخطأ بدل ما يوقف التطبيق - فقط تنبيه في الكونسول
         console.warn('⚠️ عنصر غير موجود، تم تخطيه:', id);
         return false;
     }
