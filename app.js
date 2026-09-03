@@ -883,141 +883,7 @@ function updateSupplierWhatsAppManual() {
 }
 
 // ================================================================
-// PRINT INVOICE
-// ================================================================
-
-function printInvoice(type) {
-    const company = window.companyData || {};
-    const dt = getCurrentDateTime();
-    let html = '';
-
-    if (type === 'sales') {
-        const customer = document.getElementById('salesCustomer')?.value?.trim() ||
-            document.getElementById('salesCustomerSelect')?.value || 'عميل';
-        
-        let total = 0;
-        const items = window.salesItems || [];
-        items.forEach(item => {
-            total += (item.total || 0);
-        });
-        
-        const invoiceType = document.getElementById('salesInvoiceType')?.value || 'simple';
-        const isTax = invoiceType === 'tax';
-        const taxRate = 14;
-        const taxAmount = isTax ? (total * taxRate) / 100 : 0;
-        const totalWithTax = isTax ? total + taxAmount : total;
-
-        const dateObj = new Date();
-        const dateStr = dateObj.toLocaleDateString('ar-EG');
-        const timeStr = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-        html = `
-            <div class="invoice-print-boxed">
-                <div class="company-header">
-                    <h2>${company.name || 'شركة الميزان'}</h2>
-                    <div class="sub-title">نظام محاسبة ونقاط بيع</div>
-                    <div class="contact-info">
-                        📍 ${company.address || 'القاهرة، مصر'} | 📞 ${company.phone || '0234567890'} | 📱 ${company.mobile || '01000000000'}
-                    </div>
-                </div>
-                
-                <div class="invoice-info">
-                    <div class="info-item"><span class="label">📅 التاريخ:</span><span class="value">${dateStr}</span></div>
-                    <div class="info-item"><span class="label">🕐 الوقت:</span><span class="value">${timeStr}</span></div>
-                </div>
-                
-                <div class="customer-info">
-                    <span class="label">👤 العميل:</span> ${customer}
-                </div>
-                
-                <table class="items-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>المنتج</th>
-                            <th>الكمية</th>
-                            <th>السعر</th>
-                            <th>الإجمالي</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${items.length > 0 ? items.map((item, i) => `
-                            <tr>
-                                <td>${i + 1}</td>
-                                <td>${item.productName || 'غير معروف'}</td>
-                                <td>${item.qty || 0}</td>
-                                <td>${(item.price || 0).toFixed(2)}</td>
-                                <td>${(item.total || 0).toFixed(2)}</td>
-                            </tr>
-                        `).join('') : `
-                            <tr>
-                                <td colspan="5" style="text-align:center;color:#999;">لا توجد أصناف</td>
-                            </tr>
-                        `}
-                    </tbody>
-                </table>
-                
-                <div class="total-box">
-                    <div>💵 الإجمالي: <span class="total-amount">${total.toFixed(2)} 🇪🇬</span></div>
-                    ${isTax ? `<div>📊 الضريبة (14%): <span class="total-amount">${taxAmount.toFixed(2)} 🇪🇬</span></div>` : ''}
-                    ${isTax ? `<div>💰 الإجمالي مع الضريبة: <span class="total-amount">${totalWithTax.toFixed(2)} 🇪🇬</span></div>` : ''}
-                </div>
-                
-                <div class="footer-box">
-                    <div class="thanks">خالص مع الشكر</div>
-                    <div style="margin-top:4px;font-size:9px;color:#555;">
-                        تم الطباعة في ${new Date().toLocaleString('ar-EG')}
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    const win = window.open('', '_blank', 'width=400,height=650,scrollbars=yes');
-    if (win) {
-        win.document.write(`
-            <!DOCTYPE html>
-            <html dir="rtl">
-            <head>
-                <meta charset="UTF-8">
-                <title>طباعة فاتورة</title>
-                <style>
-                    body { margin: 0; padding: 10px; background: #fff; font-family: 'Tajawal', Arial, sans-serif; direction: rtl; }
-                    .invoice-print-boxed { max-width: 320px; margin: 0 auto; padding: 15px; border: 1px solid #000; background: #fff; color: #000; font-size: 12px; text-align: center; }
-                    .company-header { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 8px; }
-                    .company-header h2 { font-size: 18px; margin: 0; color: #000; }
-                    .company-header .sub-title { font-size: 11px; color: #555; }
-                    .company-header .contact-info { font-size: 10px; color: #555; }
-                    .invoice-info { display: flex; justify-content: space-between; font-size: 11px; padding: 4px 0; border-bottom: 1px solid #ddd; margin-bottom: 6px; }
-                    .invoice-info .label { font-weight: 700; color: #000; }
-                    .customer-info { text-align: right; font-size: 11px; padding: 4px 0; border-bottom: 1px solid #ddd; margin-bottom: 6px; }
-                    .customer-info .label { font-weight: 700; color: #000; }
-                    .items-table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 6px 0; }
-                    .items-table th { border: 1px solid #000; padding: 4px 2px; background: #eee; font-weight: 800; color: #000; }
-                    .items-table td { border: 1px solid #000; padding: 4px 2px; color: #000; }
-                    .total-box { border-top: 2px solid #000; padding: 6px 0; margin-top: 6px; font-weight: 700; font-size: 13px; }
-                    .total-box .total-amount { color: #000; font-weight: 900; }
-                    .footer-box { border-top: 2px solid #000; padding-top: 6px; margin-top: 6px; font-size: 10px; color: #555; }
-                    .footer-box .thanks { font-size: 13px; color: #000; font-weight: 700; }
-                    @media print { body { padding: 0; } .invoice-print-boxed { border: 1px solid #000; } }
-                </style>
-            </head>
-            <body>
-                ${html}
-                <script>
-                    window.onload = function() { window.print(); };
-                <\/script>
-            </body>
-            </html>
-        `);
-        win.document.close();
-    } else {
-        showToast('⚠️ تم حظر النافذة المنبثقة، يرجى السماح بالنوافذ المنبثقة', 'error');
-    }
-}
-
-// ================================================================
-// WHATSAPP SEND
+// WHATSAPP SEND - إرسال فاتورة عبر واتساب (معدل)
 // ================================================================
 
 function sendWhatsApp() {
@@ -1155,123 +1021,9 @@ function sendWhatsApp() {
 }
 
 // ================================================================
-// SHOW INVOICE DETAILS - عرض تفاصيل الفاتورة (معدل)
+// WHATSAPP FROM MODAL - إرسال الفاتورة من النافذة المنبثقة
 // ================================================================
 
-function showInvoiceDetails(id, type) {
-    let invoice = null;
-    
-    if (type === 'sale') {
-        invoice = window.sales?.find(s => s.id === id);
-    } else if (type === 'purchase') {
-        invoice = window.purchases?.find(p => p.id === id);
-    } else if (type === 'return') {
-        invoice = window.returns?.find(r => r.id === id);
-    }
-
-    if (!invoice) {
-        showToast('⚠️ الفاتورة غير موجودة', 'error');
-        return;
-    }
-
-    const company = window.companyData || {};
-    const isTax = invoice.invoiceType === 'tax';
-    const total = invoice.totalWithTax || invoice.total || 0;
-    const taxAmount = isTax ? (total * 14) / 100 : 0;
-    const totalWithTax = isTax ? total + taxAmount : total;
-    const typeLabel = type === 'sale' ? 'فاتورة بيع' : type === 'purchase' ? 'فاتورة شراء' : 'مرتجع';
-    const customerName = invoice.customer || invoice.supplier || 'غير محدد';
-
-    // ===== تنسيق محسن للأصناف =====
-    let itemsHtml = `
-        <div style="display:grid;grid-template-columns:1.5fr 0.8fr 0.8fr 1fr 0.6fr;gap:4px;padding:6px 0;font-weight:800;color:#C9A94E;border-bottom:2px solid #C9A94E;font-size:11px;">
-            <span style="text-align:right;">المنتج</span>
-            <span style="text-align:center;">الكمية</span>
-            <span style="text-align:center;">السعر</span>
-            <span style="text-align:center;">الإجمالي</span>
-            <span style="text-align:center;">#</span>
-        </div>
-    `;
-
-    if (invoice.items && invoice.items.length > 0) {
-        invoice.items.forEach((item, i) => {
-            itemsHtml += `
-                <div style="display:grid;grid-template-columns:1.5fr 0.8fr 0.8fr 1fr 0.6fr;gap:4px;padding:6px 0;border-bottom:1px solid #2D2D2D;font-size:12px;color:#F5E6C8;align-items:center;">
-                    <span style="text-align:right;font-weight:600;">${item.productName || 'غير معروف'}</span>
-                    <span style="text-align:center;">${item.qty || 0}</span>
-                    <span style="text-align:center;">${(item.price || 0).toFixed(2)}</span>
-                    <span style="text-align:center;font-weight:700;color:#C9A94E;">${(item.total || 0).toFixed(2)}</span>
-                    <span style="text-align:center;font-size:10px;color:#A89070;">${i + 1}</span>
-                </div>
-            `;
-        });
-    } else {
-        itemsHtml += `
-            <div style="padding:12px;text-align:center;color:#A89070;border-bottom:1px solid #2D2D2D;">
-                لا توجد أصناف
-            </div>
-        `;
-    }
-
-    // ===== تنسيق محسن للفاتورة =====
-    const modalHtml = `
-        <div style="direction:rtl;text-align:right;max-width:500px;margin:0 auto;padding:10px;background:#1C1C1C;border-radius:12px;">
-            <!-- رأس الفاتورة -->
-            <div style="text-align:center;border-bottom:2px solid #C9A94E;padding-bottom:12px;margin-bottom:12px;">
-                <h2 style="color:#C9A94E;font-size:22px;margin:0;">${company.name || 'شركة الميزان'}</h2>
-                <div style="font-size:12px;color:#A89070;">نظام محاسبة ونقاط بيع</div>
-                <div style="font-size:11px;color:#A89070;">${company.address || ''} | ${company.phone || ''}</div>
-            </div>
-            
-            <!-- معلومات الفاتورة -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;padding:6px 0;border-bottom:1px solid #3D3D3D;margin-bottom:8px;">
-                <div><span style="font-weight:700;color:#C9A94E;">📅 التاريخ:</span> ${invoice.date}</div>
-                <div><span style="font-weight:700;color:#C9A94E;">🕐 الوقت:</span> ${invoice.time || '--:--'}</div>
-                <div><span style="font-weight:700;color:#C9A94E;">🧾 النوع:</span> ${typeLabel} ${isTax ? '(ضريبية)' : '(عادية)'}</div>
-                <div><span style="font-weight:700;color:#C9A94E;">📋 رقم الفاتورة:</span> #${invoice.invoiceNumber || invoice.id}</div>
-                <div><span style="font-weight:700;color:#C9A94E;">👤 العميل:</span> ${customerName}</div>
-                <div><span style="font-weight:700;color:#C9A94E;">💳 الدفع:</span> ${invoice.payment || 'نقدي'}</div>
-            </div>
-            
-            <!-- جدول الأصناف -->
-            <div style="background:#0D0D0D;border-radius:8px;padding:8px;border:1px solid #2D2D2D;">
-                ${itemsHtml}
-            </div>
-            
-            <!-- الإجماليات -->
-            <div style="border-top:2px solid #C9A94E;padding:10px 0;margin-top:8px;font-weight:700;font-size:14px;text-align:center;background:#0D0D0D;border-radius:6px;">
-                <div>💵 الإجمالي: <span style="color:#C9A94E;font-size:20px;">${total.toFixed(2)} 🇪🇬</span></div>
-                ${isTax ? `<div style="font-size:12px;color:#A89070;margin-top:2px;">📊 الضريبة (14%): ${taxAmount.toFixed(2)} 🇪🇬</div>` : ''}
-                ${isTax ? `<div style="font-size:14px;margin-top:4px;">💰 الإجمالي مع الضريبة: <span style="color:#C9A94E;font-size:18px;">${totalWithTax.toFixed(2)} 🇪🇬</span></div>` : ''}
-            </div>
-            
-            <!-- التذييل -->
-            <div style="text-align:center;border-top:2px solid #C9A94E;padding-top:8px;margin-top:8px;font-size:12px;color:#A89070;">
-                <div style="font-size:14px;color:#F5E6C8;font-weight:700;">خالص مع الشكر</div>
-                <div style="font-size:10px;margin-top:2px;">تم إنشاؤها بواسطة الميزان - نظام محاسبة ونقاط بيع</div>
-            </div>
-            
-            <!-- الأزرار -->
-            <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
-                <button class="btn btn-primary btn-block" onclick="printInvoiceModal()" style="flex:1;">
-                    <i class="fas fa-print"></i> طباعة
-                </button>
-                <button class="btn btn-success btn-block" onclick="sendInvoiceWhatsAppFromModal()" style="flex:1;background:#25D366;color:#fff;">
-                    <i class="fab fa-whatsapp"></i> واتساب
-                </button>
-                <button class="btn btn-secondary btn-block" onclick="closeModal()" style="flex:1;">
-                    <i class="fas fa-times"></i> إغلاق
-                </button>
-            </div>
-        </div>
-    `;
-
-    openModal('📋 تفاصيل الفاتورة', modalHtml);
-    
-    window._currentInvoice = { invoice, type };
-}
-
-// ===== إرسال الفاتورة عبر واتساب من النافذة المنبثقة =====
 function sendInvoiceWhatsAppFromModal() {
     if (!window._currentInvoice) {
         showToast('⚠️ لا توجد فاتورة', 'error');
@@ -1282,6 +1034,9 @@ function sendInvoiceWhatsAppFromModal() {
     const customerName = invoice.customer || invoice.supplier || 'عميل';
     const company = window.companyData || {};
     const total = invoice.totalWithTax || invoice.total || 0;
+    const isTax = invoice.invoiceType === 'tax';
+    const taxAmount = isTax ? (total * 14) / 100 : 0;
+    const totalWithTax = isTax ? total + taxAmount : total;
     
     let whatsappNumber = '01011993799';
     if (type === 'sale' || type === 'return') {
@@ -1295,29 +1050,221 @@ function sendInvoiceWhatsAppFromModal() {
         whatsappNumber = '20' + whatsappNumber;
     }
     
-    let message = `🏢 ${company.name || 'الميزان'}\n`;
-    message += `📋 فاتورة ${type === 'sale' ? 'بيع' : type === 'purchase' ? 'شراء' : 'مرتجع'}\n`;
-    message += `👤 ${customerName}\n`;
-    message += `📅 ${invoice.date}\n`;
-    message += `🕐 ${invoice.time || ''}\n`;
-    message += `━${'═'.repeat(30)}━\n`;
+    const line = '═'.repeat(36);
+    let message = '';
     
-    if (invoice.items) {
-        invoice.items.forEach(item => {
-            message += `${item.productName} | ${item.qty} × ${item.price} = ${item.total.toFixed(2)}\n`;
+    message += `╔${line}╗\n`;
+    message += `║     🏢 ${(company.name || 'الميزان').padEnd(24)}║\n`;
+    message += `║  نظام محاسبة ونقاط بيع  ${''.padEnd(12)}║\n`;
+    message += `╠${line}╣\n`;
+    message += `║ 📍 ${(company.address || 'القاهرة، مصر').padEnd(26)}║\n`;
+    message += `║ 📞 ${(company.phone || '0234567890').padEnd(26)}║\n`;
+    message += `║ 📱 ${(company.mobile || '01000000000').padEnd(26)}║\n`;
+    message += `╠${line}╣\n`;
+    message += `║ 📅 ${invoice.date}  🕐 ${(invoice.time || '').padEnd(16)}║\n`;
+    message += `╠${line}╣\n`;
+    
+    const typeLabel = type === 'sale' ? 'فاتورة بيع' : type === 'purchase' ? 'فاتورة شراء' : 'مرتجع';
+    message += `║ 🧾 ${typeLabel} ${isTax ? 'ضريبية' : 'عادية'.padEnd(22)}║\n`;
+    message += `║ 👤 ${customerName.padEnd(26)}║\n`;
+    message += `║ 💳 ${(invoice.payment || 'نقدي').padEnd(26)}║\n`;
+    message += `║ 📋 رقم الفاتورة: #${(invoice.invoiceNumber || invoice.id).toString().padEnd(15)}║\n`;
+    message += `╠${line}╣\n`;
+    
+    message += `║ # │ المنتج    │ العدد │ السعر │\n`;
+    message += `║───┼───────────┼───────┼───────╢\n`;
+    
+    if (invoice.items && invoice.items.length > 0) {
+        invoice.items.forEach((item, i) => {
+            const name = item.productName.length > 8 ? item.productName.substring(0, 8) + '..' : item.productName.padEnd(8);
+            const num = (i + 1).toString().padStart(1);
+            const qty = item.qty.toString().padStart(5);
+            const price = item.price.toFixed(0).padStart(5);
+            message += `║ ${num} │ ${name} │ ${qty} │ ${price} │\n`;
+            const totalItem = item.total.toFixed(2).padStart(7);
+            message += `║   │ الإجمالي  │      │ ${totalItem} │\n`;
         });
+    } else {
+        message += `║   │ لا توجد أصناف               ║\n`;
     }
     
-    message += `━${'═'.repeat(30)}━\n`;
-    message += `💰 الإجمالي: ${total.toFixed(2)} 🇪🇬\n`;
-    message += `💳 الدفع: ${invoice.payment || 'نقدي'}\n`;
-    message += `\n📱 تم الإرسال عبر الميزان`;
+    message += `╠${line}╣\n`;
+    message += `║ 💰 الإجمالي: ${total.toFixed(2).padStart(20)} 🇪🇬 ║\n`;
+    
+    if (isTax) {
+        message += `║ 📊 الضريبة (14%): ${taxAmount.toFixed(2).padStart(19)} ║\n`;
+        message += `║ 💰 الإجمالي مع الضريبة: ${totalWithTax.toFixed(2).padStart(14)} ║\n`;
+    }
+    
+    message += `╠${line}╣\n`;
+    message += `║        خالص مع الشكر           ║\n`;
+    message += `╠${line}╣\n`;
+    
+    let hasPayment = false;
+    if (company.vodafone) {
+        message += `║ 📱 فودافون كاش: ${company.vodafone.padEnd(20)}║\n`;
+        hasPayment = true;
+    }
+    if (company.instapay) {
+        message += `║ 📲 إنستاباي: ${company.instapay.padEnd(22)}║\n`;
+        hasPayment = true;
+    }
+    if (company.bankAccount) {
+        message += `║ 🏦 بنك: ${company.bankAccount.padEnd(24)}║\n`;
+        hasPayment = true;
+    }
+    if (company.cash) {
+        message += `║ 💰 كاش: ${company.cash.padEnd(25)}║\n`;
+        hasPayment = true;
+    }
+    
+    if (hasPayment) {
+        message += `╠${line}╣\n`;
+    }
+    
+    message += `║ 📱 رابط الدفع: bit.ly/mizan-pay  ║\n`;
+    message += `╚${line}╝\n`;
+    message += `\n📱 تم إرسال الفاتورة عبر الميزان`;
     
     const encoded = encodeURIComponent(message);
     const url = `https://wa.me/${whatsappNumber}?text=${encoded}`;
     window.open(url, '_blank');
     
     showToast(`📱 تم فتح واتساب للعميل ${customerName}`, 'success');
+}
+
+// ================================================================
+// PRINT INVOICE
+// ================================================================
+
+function printInvoice(type) {
+    const company = window.companyData || {};
+    const dt = getCurrentDateTime();
+    let html = '';
+
+    if (type === 'sales') {
+        const customer = document.getElementById('salesCustomer')?.value?.trim() ||
+            document.getElementById('salesCustomerSelect')?.value || 'عميل';
+        
+        let total = 0;
+        const items = window.salesItems || [];
+        items.forEach(item => {
+            total += (item.total || 0);
+        });
+        
+        const invoiceType = document.getElementById('salesInvoiceType')?.value || 'simple';
+        const isTax = invoiceType === 'tax';
+        const taxRate = 14;
+        const taxAmount = isTax ? (total * taxRate) / 100 : 0;
+        const totalWithTax = isTax ? total + taxAmount : total;
+
+        const dateObj = new Date();
+        const dateStr = dateObj.toLocaleDateString('ar-EG');
+        const timeStr = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        html = `
+            <div class="invoice-print-boxed">
+                <div class="company-header">
+                    <h2>${company.name || 'شركة الميزان'}</h2>
+                    <div class="sub-title">نظام محاسبة ونقاط بيع</div>
+                    <div class="contact-info">
+                        📍 ${company.address || 'القاهرة، مصر'} | 📞 ${company.phone || '0234567890'} | 📱 ${company.mobile || '01000000000'}
+                    </div>
+                </div>
+                
+                <div class="invoice-info">
+                    <div class="info-item"><span class="label">📅 التاريخ:</span><span class="value">${dateStr}</span></div>
+                    <div class="info-item"><span class="label">🕐 الوقت:</span><span class="value">${timeStr}</span></div>
+                </div>
+                
+                <div class="customer-info">
+                    <span class="label">👤 العميل:</span> ${customer}
+                </div>
+                
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>المنتج</th>
+                            <th>الكمية</th>
+                            <th>السعر</th>
+                            <th>الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${items.length > 0 ? items.map((item, i) => `
+                            <tr>
+                                <td>${i + 1}</td>
+                                <td>${item.productName || 'غير معروف'}</td>
+                                <td>${item.qty || 0}</td>
+                                <td>${(item.price || 0).toFixed(2)}</td>
+                                <td>${(item.total || 0).toFixed(2)}</td>
+                            </tr>
+                        `).join('') : `
+                            <tr>
+                                <td colspan="5" style="text-align:center;color:#999;">لا توجد أصناف</td>
+                            </tr>
+                        `}
+                    </tbody>
+                </table>
+                
+                <div class="total-box">
+                    <div>💵 الإجمالي: <span class="total-amount">${total.toFixed(2)} 🇪🇬</span></div>
+                    ${isTax ? `<div>📊 الضريبة (14%): <span class="total-amount">${taxAmount.toFixed(2)} 🇪🇬</span></div>` : ''}
+                    ${isTax ? `<div>💰 الإجمالي مع الضريبة: <span class="total-amount">${totalWithTax.toFixed(2)} 🇪🇬</span></div>` : ''}
+                </div>
+                
+                <div class="footer-box">
+                    <div class="thanks">خالص مع الشكر</div>
+                    <div style="margin-top:4px;font-size:9px;color:#555;">
+                        تم الطباعة في ${new Date().toLocaleString('ar-EG')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    const win = window.open('', '_blank', 'width=400,height=650,scrollbars=yes');
+    if (win) {
+        win.document.write(`
+            <!DOCTYPE html>
+            <html dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <title>طباعة فاتورة</title>
+                <style>
+                    body { margin: 0; padding: 10px; background: #fff; font-family: 'Tajawal', Arial, sans-serif; direction: rtl; }
+                    .invoice-print-boxed { max-width: 320px; margin: 0 auto; padding: 15px; border: 1px solid #000; background: #fff; color: #000; font-size: 12px; text-align: center; }
+                    .company-header { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 8px; }
+                    .company-header h2 { font-size: 18px; margin: 0; color: #000; }
+                    .company-header .sub-title { font-size: 11px; color: #555; }
+                    .company-header .contact-info { font-size: 10px; color: #555; }
+                    .invoice-info { display: flex; justify-content: space-between; font-size: 11px; padding: 4px 0; border-bottom: 1px solid #ddd; margin-bottom: 6px; }
+                    .invoice-info .label { font-weight: 700; color: #000; }
+                    .customer-info { text-align: right; font-size: 11px; padding: 4px 0; border-bottom: 1px solid #ddd; margin-bottom: 6px; }
+                    .customer-info .label { font-weight: 700; color: #000; }
+                    .items-table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 6px 0; }
+                    .items-table th { border: 1px solid #000; padding: 4px 2px; background: #eee; font-weight: 800; color: #000; }
+                    .items-table td { border: 1px solid #000; padding: 4px 2px; color: #000; }
+                    .total-box { border-top: 2px solid #000; padding: 6px 0; margin-top: 6px; font-weight: 700; font-size: 13px; }
+                    .total-box .total-amount { color: #000; font-weight: 900; }
+                    .footer-box { border-top: 2px solid #000; padding-top: 6px; margin-top: 6px; font-size: 10px; color: #555; }
+                    .footer-box .thanks { font-size: 13px; color: #000; font-weight: 700; }
+                    @media print { body { padding: 0; } .invoice-print-boxed { border: 1px solid #000; } }
+                </style>
+            </head>
+            <body>
+                ${html}
+                <script>
+                    window.onload = function() { window.print(); };
+                <\/script>
+            </body>
+            </html>
+        `);
+        win.document.close();
+    } else {
+        showToast('⚠️ تم حظر النافذة المنبثقة، يرجى السماح بالنوافذ المنبثقة', 'error');
+    }
 }
 
 // ================================================================
@@ -1439,6 +1386,115 @@ function printInvoiceModal() {
     } else {
         showToast('⚠️ تم حظر النافذة المنبثقة', 'error');
     }
+}
+
+// ================================================================
+// SHOW INVOICE DETAILS - عرض تفاصيل الفاتورة (معدل)
+// ================================================================
+
+function showInvoiceDetails(id, type) {
+    let invoice = null;
+    
+    if (type === 'sale') {
+        invoice = window.sales?.find(s => s.id === id);
+    } else if (type === 'purchase') {
+        invoice = window.purchases?.find(p => p.id === id);
+    } else if (type === 'return') {
+        invoice = window.returns?.find(r => r.id === id);
+    }
+
+    if (!invoice) {
+        showToast('⚠️ الفاتورة غير موجودة', 'error');
+        return;
+    }
+
+    const company = window.companyData || {};
+    const isTax = invoice.invoiceType === 'tax';
+    const total = invoice.totalWithTax || invoice.total || 0;
+    const taxAmount = isTax ? (total * 14) / 100 : 0;
+    const totalWithTax = isTax ? total + taxAmount : total;
+    const typeLabel = type === 'sale' ? 'فاتورة بيع' : type === 'purchase' ? 'فاتورة شراء' : 'مرتجع';
+    const customerName = invoice.customer || invoice.supplier || 'غير محدد';
+
+    let itemsHtml = `
+        <div style="display:grid;grid-template-columns:1.5fr 0.8fr 0.8fr 1fr 0.6fr;gap:4px;padding:6px 0;font-weight:800;color:#C9A94E;border-bottom:2px solid #C9A94E;font-size:11px;">
+            <span style="text-align:right;">المنتج</span>
+            <span style="text-align:center;">الكمية</span>
+            <span style="text-align:center;">السعر</span>
+            <span style="text-align:center;">الإجمالي</span>
+            <span style="text-align:center;">#</span>
+        </div>
+    `;
+
+    if (invoice.items && invoice.items.length > 0) {
+        invoice.items.forEach((item, i) => {
+            itemsHtml += `
+                <div style="display:grid;grid-template-columns:1.5fr 0.8fr 0.8fr 1fr 0.6fr;gap:4px;padding:6px 0;border-bottom:1px solid #2D2D2D;font-size:12px;color:#F5E6C8;align-items:center;">
+                    <span style="text-align:right;font-weight:600;">${item.productName || 'غير معروف'}</span>
+                    <span style="text-align:center;">${item.qty || 0}</span>
+                    <span style="text-align:center;">${(item.price || 0).toFixed(2)}</span>
+                    <span style="text-align:center;font-weight:700;color:#C9A94E;">${(item.total || 0).toFixed(2)}</span>
+                    <span style="text-align:center;font-size:10px;color:#A89070;">${i + 1}</span>
+                </div>
+            `;
+        });
+    } else {
+        itemsHtml += `
+            <div style="padding:12px;text-align:center;color:#A89070;border-bottom:1px solid #2D2D2D;">
+                لا توجد أصناف
+            </div>
+        `;
+    }
+
+    const modalHtml = `
+        <div style="direction:rtl;text-align:right;max-width:500px;margin:0 auto;padding:10px;background:#1C1C1C;border-radius:12px;">
+            <div style="text-align:center;border-bottom:2px solid #C9A94E;padding-bottom:12px;margin-bottom:12px;">
+                <h2 style="color:#C9A94E;font-size:22px;margin:0;">${company.name || 'شركة الميزان'}</h2>
+                <div style="font-size:12px;color:#A89070;">نظام محاسبة ونقاط بيع</div>
+                <div style="font-size:11px;color:#A89070;">${company.address || ''} | ${company.phone || ''}</div>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;padding:6px 0;border-bottom:1px solid #3D3D3D;margin-bottom:8px;">
+                <div><span style="font-weight:700;color:#C9A94E;">📅 التاريخ:</span> ${invoice.date}</div>
+                <div><span style="font-weight:700;color:#C9A94E;">🕐 الوقت:</span> ${invoice.time || '--:--'}</div>
+                <div><span style="font-weight:700;color:#C9A94E;">🧾 النوع:</span> ${typeLabel} ${isTax ? '(ضريبية)' : '(عادية)'}</div>
+                <div><span style="font-weight:700;color:#C9A94E;">📋 رقم الفاتورة:</span> #${invoice.invoiceNumber || invoice.id}</div>
+                <div><span style="font-weight:700;color:#C9A94E;">👤 العميل:</span> ${customerName}</div>
+                <div><span style="font-weight:700;color:#C9A94E;">💳 الدفع:</span> ${invoice.payment || 'نقدي'}</div>
+            </div>
+            
+            <div style="background:#0D0D0D;border-radius:8px;padding:8px;border:1px solid #2D2D2D;">
+                ${itemsHtml}
+            </div>
+            
+            <div style="border-top:2px solid #C9A94E;padding:10px 0;margin-top:8px;font-weight:700;font-size:14px;text-align:center;background:#0D0D0D;border-radius:6px;">
+                <div>💵 الإجمالي: <span style="color:#C9A94E;font-size:20px;">${total.toFixed(2)} 🇪🇬</span></div>
+                ${isTax ? `<div style="font-size:12px;color:#A89070;margin-top:2px;">📊 الضريبة (14%): ${taxAmount.toFixed(2)} 🇪🇬</div>` : ''}
+                ${isTax ? `<div style="font-size:14px;margin-top:4px;">💰 الإجمالي مع الضريبة: <span style="color:#C9A94E;font-size:18px;">${totalWithTax.toFixed(2)} 🇪🇬</span></div>` : ''}
+            </div>
+            
+            <div style="text-align:center;border-top:2px solid #C9A94E;padding-top:8px;margin-top:8px;font-size:12px;color:#A89070;">
+                <div style="font-size:14px;color:#F5E6C8;font-weight:700;">خالص مع الشكر</div>
+                <div style="font-size:10px;margin-top:2px;">تم إنشاؤها بواسطة الميزان - نظام محاسبة ونقاط بيع</div>
+            </div>
+            
+            <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+                <button class="btn btn-primary btn-block" onclick="printInvoiceModal()" style="flex:1;">
+                    <i class="fas fa-print"></i> طباعة
+                </button>
+                <button class="btn btn-success btn-block" onclick="sendInvoiceWhatsAppFromModal()" style="flex:1;background:#25D366;color:#fff;">
+                    <i class="fab fa-whatsapp"></i> واتساب
+                </button>
+                <button class="btn btn-secondary btn-block" onclick="closeModal()" style="flex:1;">
+                    <i class="fas fa-times"></i> إغلاق
+                </button>
+            </div>
+        </div>
+    `;
+
+    openModal('📋 تفاصيل الفاتورة', modalHtml);
+    
+    window._currentInvoice = { invoice, type };
 }
 
 // ================================================================
@@ -1856,7 +1912,7 @@ function updateStats() {
 }
 
 // ================================================================
-// ACCOUNTING FUNCTIONS - دوال المحاسبات (معدلة)
+// ACCOUNTING FUNCTIONS - دوال المحاسبات
 // ================================================================
 
 function updateAccounting() {
@@ -1884,7 +1940,7 @@ function updateAccounting() {
     safeSetText('accountingProfit', profit.toFixed(2));
 }
 
-// ===== showAudit - تفتح صفحة التدقيق وليس سجل النشاطات =====
+// ===== showAudit - عرض تقرير المراجعة المحاسبية =====
 function showAudit() {
     const container = document.getElementById('accountingResult');
     if (!container) return;
@@ -1925,10 +1981,13 @@ function showAudit() {
     const totalCosts = totalPurchases + totalExpenses;
     const netProfit = totalRevenue - totalCosts;
     const balance = totalTreasury;
+    const salesCount = window.sales ? window.sales.length : 0;
+    const purchasesCount = window.purchases ? window.purchases.length : 0;
+    const totalInvoices = salesCount + purchasesCount;
     
     container.innerHTML = `
         <div class="accounting-detail-content">
-            <h4 style="color:#C9A94E;font-size:16px;margin-bottom:10px;">📋 تقرير المراجعة المحاسبية</h4>
+            <h4 style="color:#C9A94E;font-size:16px;margin-bottom:10px;">🔍 تقرير المراجعة المحاسبية</h4>
             
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
                 <div style="background:#0D0D0D;border-radius:8px;padding:10px;border:1px solid #2D8F5E;">
@@ -1954,11 +2013,18 @@ function showAudit() {
                 </div>
                 <div style="background:#0D0D0D;border-radius:8px;padding:8px;border:1px solid #C9A94E;text-align:center;">
                     <div style="color:#A89070;font-size:10px;">📋 عدد الفواتير</div>
-                    <div style="font-size:16px;font-weight:900;color:#C9A94E;">${(window.sales?.length || 0) + (window.purchases?.length || 0)}</div>
+                    <div style="font-size:16px;font-weight:900;color:#C9A94E;">${totalInvoices}</div>
                 </div>
             </div>
             
-            <div style="font-size:11px;color:#A89070;border-top:1px solid #2D2D2D;padding-top:6px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;background:#0D0D0D;border-radius:6px;padding:8px;border:1px solid #2D2D2D;">
+                <div><span style="color:#A89070;">📊 المبيعات:</span> <span style="color:#2D8F5E;font-weight:700;">${salesCount} فاتورة</span></div>
+                <div><span style="color:#A89070;">🛒 المشتريات:</span> <span style="color:#E06060;font-weight:700;">${purchasesCount} فاتورة</span></div>
+                <div><span style="color:#A89070;">💸 المصروفات:</span> <span style="color:#E6A830;font-weight:700;">${window.expenses ? window.expenses.length : 0}</span></div>
+                <div><span style="color:#A89070;">📦 المنتجات:</span> <span style="color:#C9A94E;font-weight:700;">${window.products ? window.products.length : 0}</span></div>
+            </div>
+            
+            <div style="font-size:11px;color:#A89070;border-top:1px solid #2D2D2D;padding-top:6px;margin-top:6px;">
                 📅 آخر تحديث: ${new Date().toLocaleString('ar')}
             </div>
             
@@ -1973,7 +2039,7 @@ function showAudit() {
     addAuditLog('view', 'audit', 'عرض تقرير المراجعة المحاسبية');
 }
 
-// ===== دالة التدقيق المفصل =====
+// ===== showDetailedAudit - تدقيق مفصل =====
 function showDetailedAudit() {
     const container = document.getElementById('accountingResult');
     if (!container) return;
@@ -2050,7 +2116,7 @@ function showDetailedAudit() {
     container.innerHTML = html;
 }
 
-// ===== طباعة تقرير المراجعة =====
+// ===== printAuditReport - طباعة تقرير المراجعة =====
 function printAuditReport() {
     const content = document.querySelector('.accounting-detail-content');
     if (!content) return;
