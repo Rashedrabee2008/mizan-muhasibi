@@ -1,15 +1,12 @@
 // ================================================================
-// treasury.js - إدارة الخزنة (الملف الكامل)
+// treasury.js - إدارة الخزنة
 // ================================================================
 
 // ================================================================
-// ADD TREASURY TRANSACTION - إضافة حركة خزنة
+// ADD TREASURY TRANSACTION
 // ================================================================
 function addTreasuryTransaction() {
-    if (!canAdd()) { 
-        showToast('⚠️ ليس لديك صلاحية', 'error'); 
-        return; 
-    }
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     
     const type = document.getElementById('treasuryType')?.value;
     const amount = parseFloat(document.getElementById('treasuryAmount')?.value);
@@ -31,13 +28,14 @@ function addTreasuryTransaction() {
         date: date, 
         note: note,
         warehouseId: warehouseId, 
-        time: getCurrentTime() 
+        time: getCurrentTime(),
+        createdAt: new Date().toISOString()
     };
     
     window.treasury.push(transaction);
     saveAll();
     
-    addAuditLog('add', 'treasury', `${type === 'deposit' ? 'إيداع' : 'سحب'} - ${amount.toFixed(2)} 🇪🇬 - ${note}${method ? ' (' + method + ')' : ''}`, transaction);
+    addAuditLog('add', 'treasury', `${type === 'deposit' ? 'إيداع' : 'سحب'} - ${amount.toFixed(2)} 🇪🇬 - ${note}${method ? ' (' + method + ')' : ''}`);
     
     renderTreasury();
     if (typeof renderCashier === 'function') renderCashier();
@@ -50,7 +48,7 @@ function addTreasuryTransaction() {
 }
 
 // ================================================================
-// RENDER TREASURY - عرض الخزنة (نسخة محسنة)
+// RENDER TREASURY
 // ================================================================
 function renderTreasury() {
     if (!window.treasury || !Array.isArray(window.treasury)) {
@@ -125,13 +123,10 @@ function renderTreasury() {
 }
 
 // ================================================================
-// EDIT TREASURY - تعديل حركة خزنة
+// EDIT TREASURY
 // ================================================================
 function editTreasury(id) {
-    if (!canEdit()) { 
-        showToast('⚠️ ليس لديك صلاحية', 'error'); 
-        return; 
-    }
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     
     const t = window.treasury.find(tr => tr.id === id);
     if (!t) {
@@ -166,13 +161,10 @@ function editTreasury(id) {
 }
 
 // ================================================================
-// SAVE TREASURY EDIT - حفظ تعديل حركة الخزنة
+// SAVE TREASURY EDIT
 // ================================================================
 function saveTreasuryEdit(id) {
-    if (!canEdit()) { 
-        showToast('⚠️ ليس لديك صلاحية', 'error'); 
-        return; 
-    }
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     
     const t = window.treasury.find(tr => tr.id === id);
     if (!t) {
@@ -206,13 +198,10 @@ function saveTreasuryEdit(id) {
 }
 
 // ================================================================
-// DELETE TREASURY - حذف حركة خزنة
+// DELETE TREASURY
 // ================================================================
 function deleteTreasury(id) {
-    if (!canDelete()) { 
-        showToast('⚠️ ليس لديك صلاحية', 'error'); 
-        return; 
-    }
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (!confirm('⚠️ حذف الحركة نهائياً؟')) return;
 
     const t = window.treasury.find(tr => tr.id === id);
