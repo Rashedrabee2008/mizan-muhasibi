@@ -1,9 +1,9 @@
 // ================================================================
-// users.js - إدارة المستخدمين (نسخة كاملة مع تغيير كلمة المرور)
+// users.js - إدارة المستخدمين
 // ================================================================
 
 // ================================================================
-// INIT USERS - تهيئة المستخدمين
+// INIT USERS
 // ================================================================
 function initUsers() {
     if (!window.users || !Array.isArray(window.users) || window.users.length === 0) {
@@ -59,7 +59,8 @@ function addUser() {
         id: Date.now(),
         username: username,
         role: role,
-        password: password
+        password: password,
+        createdAt: new Date().toISOString()
     });
 
     saveUsers();
@@ -91,10 +92,8 @@ function renderUsers() {
         return;
     }
 
-    // تنظيف المصفوفة
     window.users = window.users.filter(u => u && typeof u === 'object' && u.username);
 
-    // تحديث الإحصائيات
     const total = window.users.length;
     const admins = window.users.filter(u => u.role === 'admin').length;
     const cashiers = window.users.filter(u => u.role === 'cashier').length;
@@ -259,7 +258,6 @@ function saveUserEdit(id) {
         return;
     }
 
-    // التحقق من عدم وجود اسم مكرر
     const duplicate = window.users.find(user =>
         user?.username === username && user?.id !== id
     );
@@ -272,10 +270,8 @@ function saveUserEdit(id) {
     u.username = username;
     u.role = role;
 
-    // تغيير كلمة المرور فقط إذا تم إدخال واحدة جديدة
     if (password && password.length >= 4) {
         u.password = password;
-        // إذا كان المستخدم الحالي هو نفسه، تحديث كلمة المرور الحالية
         if (u.username === window.currentUser?.username) {
             currentPassword = password;
             localStorage.setItem('app_password', password);
@@ -288,7 +284,6 @@ function saveUserEdit(id) {
     populateUsersSelect();
     closeModal();
 
-    // تحديث المستخدم الحالي
     if (window.currentUser?.username === u.username) {
         window.currentUser.role = role;
         localStorage.setItem('mizan_current_user', JSON.stringify(window.currentUser));
@@ -300,7 +295,7 @@ function saveUserEdit(id) {
 }
 
 // ================================================================
-// CHANGE USER PASSWORD - تغيير كلمة المرور
+// CHANGE USER PASSWORD
 // ================================================================
 function changeUserPassword() {
     const oldPassword = document.getElementById('changeOldPassword')?.value?.trim();
@@ -322,7 +317,6 @@ function changeUserPassword() {
         return;
     }
 
-    // التحقق من كلمة المرور الحالية
     const currentUser = window.users.find(u => u.username === window.currentUser?.username);
     if (!currentUser) {
         showToast('⚠️ المستخدم غير موجود', 'error');
@@ -334,7 +328,6 @@ function changeUserPassword() {
         return;
     }
 
-    // تحديث كلمة المرور
     currentUser.password = newPassword;
     currentPassword = newPassword;
     localStorage.setItem('app_password', newPassword);
@@ -467,7 +460,6 @@ function saveUsers() {
         localStorage.setItem('mizan_users', JSON.stringify(window.users));
         localStorage.setItem('mizan_current_user', JSON.stringify(window.currentUser));
 
-        // حفظ كلمة المرور الحالية
         const currentUser = window.users.find(u => u.username === window.currentUser?.username);
         if (currentUser?.password) {
             localStorage.setItem('app_password', currentUser.password);
