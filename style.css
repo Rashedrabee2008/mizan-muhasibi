@@ -1,6 +1,6 @@
 /* ================================================================
    الميزان - نظام محاسبة ونقاط بيع
-   جميع الأنماط - النسخة الكاملة
+   جميع الأنماط - النسخة الكاملة النهائية
    ================================================================ */
 
 /* ===== Reset & Base ===== */
@@ -2228,236 +2228,177 @@ body, p, span, div, input, select, button, textarea, label {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.3; }
 }
+
 /* ================================================================
-   PRINT STYLES - أنماط الطباعة المحسنة
+   SEARCH BOX
    ================================================================ */
+.search-box {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+.search-box input {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 2px solid #3D3D3D;
+    background: #1C1C1C;
+    color: #F5E6C8;
+    font-size: 14px;
+}
+.search-box input:focus {
+    outline: none;
+    border-color: #C9A94E;
+}
+.search-box input::placeholder {
+    color: #6B5B4B;
+}
 
-@media print {
-    /* إخفاء عناصر الواجهة غير الضرورية */
-    body {
-        background: #ffffff !important;
-        color: #000000 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: 100% !important;
-        font-size: 12px !important;
-        font-family: 'Tajawal', 'Arial', sans-serif !important;
-    }
+/* ================================================================
+   BARCODE SCANNER
+   ================================================================ */
+.barcode-scanner {
+    background: #0D0D0D;
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid #2D2D2D;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.barcode-scanner video {
+    width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    background: #000;
+}
+.barcode-result {
+    margin-top: 8px;
+    padding: 10px;
+    background: #1C1C1C;
+    border-radius: 8px;
+    border: 1px solid #2D2D2D;
+    text-align: center;
+    min-height: 50px;
+}
+.barcode-result.success {
+    border-color: #2D8F5E;
+}
+.barcode-result.error {
+    border-color: #E06060;
+}
 
-    /* إخفاء كل العناصر غير المرغوب فيها */
-    .bottom-nav,
-    .top-header,
-    .top-header .header-actions .lock-btn,
-    .top-header .header-actions .badge,
-    .more-overlay,
-    .more-panel,
-    .search-box .btn,
-    .btn:not(.no-print),
-    .filter-chips,
-    .actions .btn,
-    .grid-container,
-    .grid-item,
-    .main-card,
-    .dashboard-stats,
-    .chart-container,
-    .stats-row,
-    .settings-section,
-    #page-dashboard,
-    #page-home,
-    #page-inventory,
-    #page-sales,
-    #page-purchase,
-    #page-returns,
-    #page-warehouses,
-    #page-permissions,
-    #page-customers,
-    #page-suppliers,
-    #page-expenses,
-    #page-treasury,
-    #page-bonds,
-    #page-invoices,
-    #page-reports,
-    #page-accounting,
-    #page-accounts,
-    #page-cashier,
-    #page-customer_statement,
-    #page-supplier_statement,
-    #page-barcode,
-    #page-profit_analysis,
-    #page-audit,
-    #page-alerts,
-    #page-company,
-    #page-backup,
-    #page-users,
-    #page-settings,
-    #page-license_generator,
-    .bottom-nav,
-    .more-overlay,
-    .more-panel,
-    .toast,
-    .modal-overlay {
-        display: none !important;
-    }
+/* ================================================================
+   BOND STATS
+   ================================================================ */
+#bondStats .stats-row {
+    margin-bottom: 12px;
+}
+#bondStats .stat-card .number {
+    font-size: 18px;
+}
 
-    /* إظهار محتوى الطباعة فقط */
-    .invoice-print-boxed {
-        display: block !important;
-        border: 1px solid #000 !important;
-        background: #ffffff !important;
-        color: #000000 !important;
-        padding: 20px !important;
-        margin: 0 auto !important;
-        max-width: 320px !important;
-        font-size: 12px !important;
-        font-family: 'Tajawal', 'Arial', sans-serif !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        direction: rtl !important;
-        text-align: center !important;
-    }
+/* ================================================================
+   TABLE ACTIONS
+   ================================================================ */
+.actions {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.actions .btn-sm {
+    min-width: 24px;
+    min-height: 24px;
+    padding: 0 4px;
+    font-size: 10px;
+}
 
-    /* تنسيق رأس الفاتورة */
-    .invoice-print-boxed .company-header {
-        border-bottom: 2px solid #000 !important;
-        padding-bottom: 10px !important;
-        margin-bottom: 10px !important;
+/* ================================================================
+   ANIMATIONS
+   ================================================================ */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
     }
-    .invoice-print-boxed .company-header h2 {
-        font-size: 20px !important;
-        color: #000 !important;
-        margin: 0 !important;
-        font-weight: 900 !important;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
-    .invoice-print-boxed .company-header .sub-title {
-        font-size: 11px !important;
-        color: #555 !important;
-    }
-    .invoice-print-boxed .company-header .contact-info {
-        font-size: 10px !important;
-        color: #555 !important;
-        margin: 2px 0 !important;
-    }
+}
+.fade-in-up {
+    animation: fadeInUp 0.4s ease;
+}
 
-    /* تنسيق معلومات الفاتورة */
-    .invoice-print-boxed .invoice-info {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        flex-wrap: wrap !important;
-        font-size: 11px !important;
-        padding: 4px 0 !important;
-        border-bottom: 1px solid #ddd !important;
-        margin-bottom: 6px !important;
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
     }
-    .invoice-print-boxed .invoice-info .info-item {
-        display: flex !important;
-        gap: 4px !important;
-        font-size: 11px !important;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
-    .invoice-print-boxed .invoice-info .info-item .label {
-        font-weight: 700 !important;
-        color: #000 !important;
-    }
-    .invoice-print-boxed .invoice-info .info-item .value {
-        color: #000 !important;
-    }
+}
+.slide-down {
+    animation: slideDown 0.3s ease;
+}
 
-    /* تنسيق معلومات العميل */
-    .invoice-print-boxed .customer-info {
-        text-align: right !important;
-        font-size: 11px !important;
-        padding: 4px 0 !important;
-        border-bottom: 1px solid #ddd !important;
-        margin-bottom: 6px !important;
-    }
-    .invoice-print-boxed .customer-info .label {
-        font-weight: 700 !important;
-        color: #000 !important;
-    }
+/* ================================================================
+   UTILITIES
+   ================================================================ */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }
+.text-gold { color: #C9A94E; }
+.text-green { color: #2D8F5E; }
+.text-red { color: #E06060; }
+.text-muted { color: #A89070; }
+.text-small { font-size: 11px; }
+.text-large { font-size: 18px; }
+.font-bold { font-weight: 700; }
+.font-black { font-weight: 900; }
 
-    /* تنسيق جدول الأصناف */
-    .invoice-print-boxed .items-table {
-        width: 100% !important;
-        border-collapse: collapse !important;
-        font-size: 10px !important;
-        margin: 6px 0 !important;
-        text-align: center !important;
-    }
-    .invoice-print-boxed .items-table th {
-        border: 1px solid #000 !important;
-        padding: 4px 2px !important;
-        font-weight: 800 !important;
-        text-align: center !important;
-        color: #000 !important;
-        background: #eee !important;
-        font-size: 10px !important;
-    }
-    .invoice-print-boxed .items-table td {
-        border: 1px solid #000 !important;
-        padding: 4px 2px !important;
-        text-align: center !important;
-        color: #000 !important;
-        font-size: 10px !important;
-    }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
 
-    /* تنسيق الإجمالي */
-    .invoice-print-boxed .total-box {
-        border-top: 2px solid #000 !important;
-        padding: 6px 0 !important;
-        margin-top: 6px !important;
-        font-weight: 700 !important;
-        font-size: 13px !important;
-        text-align: center !important;
-    }
-    .invoice-print-boxed .total-box .total-amount {
-        color: #000 !important;
-        font-weight: 900 !important;
-    }
+.p-1 { padding: 4px; }
+.p-2 { padding: 8px; }
+.p-3 { padding: 12px; }
 
-    /* تنسيق التذييل */
-    .invoice-print-boxed .footer-box {
-        border-top: 2px solid #000 !important;
-        padding-top: 6px !important;
-        margin-top: 6px !important;
-        font-size: 10px !important;
-        color: #555 !important;
-        text-align: center !important;
-    }
-    .invoice-print-boxed .footer-box .thanks {
-        font-size: 13px !important;
-        color: #000 !important;
-        font-weight: 700 !important;
-    }
-    .invoice-print-boxed .footer-box .payment-methods {
-        font-size: 10px !important;
-        color: #333 !important;
-        margin: 4px 0 !important;
-        text-align: right !important;
-    }
-    .invoice-print-boxed .footer-box .payment-methods .pm-label {
-        font-weight: 700 !important;
-        color: #000 !important;
-    }
-    .invoice-print-boxed .footer-box .payment-methods .pm-value {
-        color: #333 !important;
-    }
+.flex { display: flex; }
+.flex-center { display: flex; align-items: center; justify-content: center; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-wrap { flex-wrap: wrap; }
+.gap-1 { gap: 4px; }
+.gap-2 { gap: 8px; }
+.gap-3 { gap: 12px; }
 
-    /* منع كسر الصفحات داخل الفاتورة */
-    .invoice-print-boxed .items-table tr,
-    .invoice-print-boxed .items-table td,
-    .invoice-print-boxed .items-table th {
-        page-break-inside: avoid !important;
-    }
-    .invoice-print-boxed {
-        page-break-after: avoid !important;
-    }
-
-    /* إزالة أي خلفيات داكنة */
-    .invoice-print-boxed,
-    .invoice-print-boxed * {
-        background-color: #ffffff !important;
-        color: #000000 !important;
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-    }
+/* ================================================================
+   DARK THEME OVERRIDES
+   ================================================================ */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+    color-scheme: dark;
+}
+input[type="file"] {
+    color: #F5E6C8;
+}
+input[type="file"]::file-selector-button {
+    background: #C9A94E;
+    color: #0D0D0D;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+}
+input[type="file"]::file-selector-button:hover {
+    background: #B8953A;
 }
