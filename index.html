@@ -120,7 +120,6 @@
                         <div class="label">مبيعات اليوم</div>
                         <div class="change" id="dashTodayPurchases" style="color:#E06060;">0 مشتريات</div>
                     </div>
-                    <!-- ===== عناصر جديدة للمخزون ===== -->
                     <div class="dashboard-card">
                         <div class="icon"><i class="fas fa-box"></i></div>
                         <div class="number" id="dashInventoryQty">0</div>
@@ -672,6 +671,7 @@
         <div id="page-bonds" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-file-signature"></i> السندات</h2>
+                <div id="bondStats"></div>
                 <div style="background:#0D0D0D;border-radius:10px;padding:10px;margin-bottom:10px;border:1px solid #2D2D2D;">
                     <h4 style="margin-bottom:8px;color:#C9A94E;font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة سند</h4>
                     <div class="form-row">
@@ -1277,11 +1277,13 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
-    <!-- 2. app.js أولاً (الدوال الأساسية) -->
+    <!-- 2. database.js (تعريف دوال التخزين الأساسية) -->
+    <script src="modules/database.js"></script>
+
+    <!-- 3. app.js (الدوال الأساسية التي تعتمد على database.js) -->
     <script src="app.js"></script>
 
-    <!-- 3. ثم الموديولات -->
-    <script src="modules/database.js"></script>
+    <!-- 4. باقي الموديولات -->
     <script src="modules/products.js"></script>
     <script src="modules/customers.js"></script>
     <script src="modules/suppliers.js"></script>
