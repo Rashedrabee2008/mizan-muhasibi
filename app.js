@@ -38,13 +38,16 @@ function showToast(msg, type = 'info') {
     t._timer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function safeSetText(id, value) {
+// ===== safeSetText - معدلة لإخفاء التحذيرات اختيارياً =====
+function safeSetText(id, value, warnIfMissing = false) {
     const el = document.getElementById(id);
     if (el) {
         el.textContent = value;
         return true;
     } else {
-        console.warn('⚠️ عنصر غير موجود، تم تخطيه:', id);
+        if (warnIfMissing) {
+            console.warn('⚠️ عنصر غير موجود، تم تخطيه:', id);
+        }
         return false;
     }
 }
@@ -1434,6 +1437,7 @@ function showInvoiceDetails(id, type) {
     const typeLabel = type === 'sale' ? 'فاتورة بيع' : type === 'purchase' ? 'فاتورة شراء' : 'مرتجع';
     const customerName = invoice.customer || invoice.supplier || 'غير محدد';
 
+    // ===== تنسيق محسن للأصناف =====
     let itemsHtml = `
         <div style="display:grid;grid-template-columns:1.5fr 0.8fr 0.8fr 1fr 0.6fr;gap:4px;padding:6px 0;font-weight:800;color:#C9A94E;border-bottom:2px solid #C9A94E;font-size:11px;">
             <span style="text-align:right;">المنتج</span>
@@ -1464,14 +1468,17 @@ function showInvoiceDetails(id, type) {
         `;
     }
 
+    // ===== تنسيق محسن للفاتورة =====
     const modalHtml = `
         <div style="direction:rtl;text-align:right;max-width:500px;margin:0 auto;padding:10px;background:#1C1C1C;border-radius:12px;">
+            <!-- رأس الفاتورة -->
             <div style="text-align:center;border-bottom:2px solid #C9A94E;padding-bottom:12px;margin-bottom:12px;">
                 <h2 style="color:#C9A94E;font-size:22px;margin:0;">${company.name || 'شركة الميزان'}</h2>
                 <div style="font-size:12px;color:#A89070;">نظام محاسبة ونقاط بيع</div>
                 <div style="font-size:11px;color:#A89070;">${company.address || ''} | ${company.phone || ''}</div>
             </div>
             
+            <!-- معلومات الفاتورة -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;padding:6px 0;border-bottom:1px solid #3D3D3D;margin-bottom:8px;">
                 <div><span style="font-weight:700;color:#C9A94E;">📅 التاريخ:</span> ${invoice.date}</div>
                 <div><span style="font-weight:700;color:#C9A94E;">🕐 الوقت:</span> ${invoice.time || '--:--'}</div>
@@ -1481,21 +1488,25 @@ function showInvoiceDetails(id, type) {
                 <div><span style="font-weight:700;color:#C9A94E;">💳 الدفع:</span> ${invoice.payment || 'نقدي'}</div>
             </div>
             
+            <!-- جدول الأصناف -->
             <div style="background:#0D0D0D;border-radius:8px;padding:8px;border:1px solid #2D2D2D;">
                 ${itemsHtml}
             </div>
             
+            <!-- الإجماليات -->
             <div style="border-top:2px solid #C9A94E;padding:10px 0;margin-top:8px;font-weight:700;font-size:14px;text-align:center;background:#0D0D0D;border-radius:6px;">
                 <div>💵 الإجمالي: <span style="color:#C9A94E;font-size:20px;">${total.toFixed(2)} 🇪🇬</span></div>
                 ${isTax ? `<div style="font-size:12px;color:#A89070;margin-top:2px;">📊 الضريبة (14%): ${taxAmount.toFixed(2)} 🇪🇬</div>` : ''}
                 ${isTax ? `<div style="font-size:14px;margin-top:4px;">💰 الإجمالي مع الضريبة: <span style="color:#C9A94E;font-size:18px;">${totalWithTax.toFixed(2)} 🇪🇬</span></div>` : ''}
             </div>
             
+            <!-- التذييل -->
             <div style="text-align:center;border-top:2px solid #C9A94E;padding-top:8px;margin-top:8px;font-size:12px;color:#A89070;">
                 <div style="font-size:14px;color:#F5E6C8;font-weight:700;">خالص مع الشكر</div>
                 <div style="font-size:10px;margin-top:2px;">تم إنشاؤها بواسطة الميزان - نظام محاسبة ونقاط بيع</div>
             </div>
             
+            <!-- الأزرار -->
             <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
                 <button class="btn btn-primary btn-block" onclick="printInvoiceModal()" style="flex:1;">
                     <i class="fas fa-print"></i> طباعة
@@ -1927,6 +1938,64 @@ function updateStats() {
     
     safeSetText('dashTodaySales', todaySales.toFixed(2));
     safeSetText('dashTodayPurchases', todayPurchases.toFixed(2));
+}
+
+// ================================================================
+// UPDATE DASHBOARD DETAILS - مع إخفاء التحذير للعناصر الجديدة
+// ================================================================
+
+function updateDashboardDetails() {
+    const today = getTodayDate();
+    let todaySales = 0;
+    let todayPurchases = 0;
+    let todayReturns = 0;
+    
+    if (window.sales) {
+        window.sales.forEach(s => {
+            if (s.date === today) {
+                const total = s.totalWithTax || s.total || 0;
+                todaySales += total;
+            }
+        });
+    }
+    
+    if (window.purchases) {
+        window.purchases.forEach(p => {
+            if (p.date === today) {
+                const total = p.totalWithTax || p.total || 0;
+                todayPurchases += total;
+            }
+        });
+    }
+    
+    if (window.returns) {
+        window.returns.forEach(r => {
+            if (r.date === today) {
+                const total = r.items ? r.items.reduce((sum, item) => sum + (item.total || 0), 0) : (r.total || 0);
+                todayReturns += total;
+            }
+        });
+    }
+    
+    safeSetText('dashTodaySales', todaySales.toFixed(2));
+    safeSetText('dashTodayPurchases', todayPurchases.toFixed(2));
+    // إخفاء التحذير للعناصر الجديدة
+    safeSetText('dashTodayReturns', todayReturns.toFixed(2), false);
+    
+    let totalQty = 0;
+    let totalValue = 0;
+    if (window.products && window.warehouseProducts) {
+        window.products.forEach(p => {
+            let qty = 0;
+            window.warehouseProducts.forEach(wp => {
+                if (wp.productId === p.id) qty += wp.qty;
+            });
+            totalQty += qty;
+            totalValue += (p.sellPrice || 0) * qty;
+        });
+    }
+    safeSetText('dashInventoryQty', totalQty);
+    safeSetText('dashInventoryValue', totalValue.toFixed(2));
 }
 
 // ================================================================
