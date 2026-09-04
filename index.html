@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#0D0D0D" />
-    <!-- تم التعديل: استبدال الوسم القديم بالوسم القياسي -->
     <meta name="mobile-web-app-capable" content="yes" />
     <title>الميزان - نظام محاسبة ونقاط بيع</title>
     
@@ -72,7 +71,6 @@
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-users"></i></div><div class="number" id="dashTotalCustomers">0</div><div class="label">العملاء</div><div class="change" id="dashTotalSuppliers" style="color:#4A8AB5;">0 مورد</div></div>
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-vault"></i></div><div class="number" id="dashTreasuryBalance" style="color:#C9A94E;">0</div><div class="label">رصيد الخزنة</div><div class="change">💰</div></div>
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-calendar-day"></i></div><div class="number" id="dashTodaySales" style="color:#2D8F5E;">0</div><div class="label">مبيعات اليوم</div><div class="change" id="dashTodayPurchases" style="color:#E06060;">0 مشتريات</div></div>
-                    <!-- تم إضافة عنصر مرتجعات اليوم -->
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-undo-alt"></i></div><div class="number" id="dashTodayReturns" style="color:#E6A830;">0</div><div class="label">مرتجعات اليوم</div><div class="change" style="color:#E6A830;">0 فاتورة</div></div>
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-box"></i></div><div class="number" id="dashInventoryQty">0</div><div class="label">الكمية بالمخزون</div><div class="change">📦</div></div>
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-money-bill"></i></div><div class="number" id="dashInventoryValue">0</div><div class="label">قيمة المخزون</div><div class="change">💰</div></div>
@@ -293,7 +291,10 @@
                 <h2><i class="fas fa-undo-alt"></i> مرتجعات</h2>
                 <div style="background:#0D0D0D;border-radius:10px;padding:10px;margin-bottom:10px;border:1px solid #2D2D2D;">
                     <h4 style="margin-bottom:8px;color:#C9A94E;font-size:14px;"><i class="fas fa-plus-circle"></i> تسجيل مرتجع</h4>
-                    <div class="form-group"><label>العميل</label><select id="returnCustomerSelect" onchange="document.getElementById('returnCustomer').value=this.value"><option value="">اختر عميل...</option></select><input type="text" id="returnCustomer" placeholder="أو اكتب اسم العميل" style="margin-top:3px;" /></div>
+                    <div class="form-group"><label>العميل</label>
+                        <select id="returnCustomerSelect" onchange="document.getElementById('returnCustomer').value=this.value"><option value="">اختر عميل...</option></select>
+                        <input type="text" id="returnCustomer" placeholder="أو اكتب اسم العميل" style="margin-top:3px;" />
+                    </div>
                     <div class="form-group"><label>المخزن</label><select id="returnWarehouse"></select></div>
                     <div class="form-group"><label>التاريخ</label><input type="date" id="returnDate" /></div>
                     <div class="form-group"><label>السبب</label><select id="returnReason"><option value="عيوب صنع">عيوب صنع</option><option value="خطأ في الطلب">خطأ في الطلب</option><option value="منتج تالف">منتج تالف</option><option value="أسباب أخرى">أسباب أخرى</option></select></div>
