@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#0D0D0D" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- تم التعديل: استبدال الوسم القديم بالوسم القياسي -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>الميزان - نظام محاسبة ونقاط بيع</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -71,6 +72,8 @@
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-users"></i></div><div class="number" id="dashTotalCustomers">0</div><div class="label">العملاء</div><div class="change" id="dashTotalSuppliers" style="color:#4A8AB5;">0 مورد</div></div>
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-vault"></i></div><div class="number" id="dashTreasuryBalance" style="color:#C9A94E;">0</div><div class="label">رصيد الخزنة</div><div class="change">💰</div></div>
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-calendar-day"></i></div><div class="number" id="dashTodaySales" style="color:#2D8F5E;">0</div><div class="label">مبيعات اليوم</div><div class="change" id="dashTodayPurchases" style="color:#E06060;">0 مشتريات</div></div>
+                    <!-- تم إضافة عنصر مرتجعات اليوم -->
+                    <div class="dashboard-card"><div class="icon"><i class="fas fa-undo-alt"></i></div><div class="number" id="dashTodayReturns" style="color:#E6A830;">0</div><div class="label">مرتجعات اليوم</div><div class="change" style="color:#E6A830;">0 فاتورة</div></div>
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-box"></i></div><div class="number" id="dashInventoryQty">0</div><div class="label">الكمية بالمخزون</div><div class="change">📦</div></div>
                     <div class="dashboard-card"><div class="icon"><i class="fas fa-money-bill"></i></div><div class="number" id="dashInventoryValue">0</div><div class="label">قيمة المخزون</div><div class="change">💰</div></div>
                 </div>
