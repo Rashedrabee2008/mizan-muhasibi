@@ -873,7 +873,6 @@ function updateCustomerWhatsApp() {
         group.style.display = 'none';
     }
     
-    // تحديث رصيد العميل
     setTimeout(() => {
         if (typeof updateCustomerBalanceDisplay === 'function') {
             updateCustomerBalanceDisplay();
@@ -908,7 +907,6 @@ function updateSupplierWhatsApp() {
         group.style.display = 'none';
     }
     
-    // تحديث رصيد المورد
     setTimeout(() => {
         if (typeof updateSupplierBalanceDisplay === 'function') {
             updateSupplierBalanceDisplay();
@@ -925,12 +923,11 @@ function updateSupplierWhatsAppManual() {
 // ================================================================
 
 function getCustomerBalance(customerName) {
-    let totalSales = 0;      // إجمالي المبيعات للعميل
-    let totalReturns = 0;    // إجمالي مرتجعات العميل
-    let totalPaid = 0;       // إجمالي المدفوعات (سندات تحصيل مدفوعة)
-    let totalBonds = 0;      // إجمالي السندات المعلقة (تحصيل عميل)
+    let totalSales = 0;
+    let totalReturns = 0;
+    let totalPaid = 0;
+    let totalBonds = 0;
     
-    // حساب المبيعات
     if (window.sales) {
         window.sales.forEach(s => {
             if (s.customer === customerName) {
@@ -940,7 +937,6 @@ function getCustomerBalance(customerName) {
         });
     }
     
-    // حساب المرتجعات
     if (window.returns) {
         window.returns.forEach(r => {
             if (r.customer === customerName) {
@@ -950,7 +946,6 @@ function getCustomerBalance(customerName) {
         });
     }
     
-    // حساب سندات التحصيل (المدفوعات)
     if (window.bonds) {
         window.bonds.forEach(b => {
             if (b.customerName === customerName && b.type === 'تحصيل عميل' && b.status === 'paid') {
@@ -959,16 +954,14 @@ function getCustomerBalance(customerName) {
         });
     }
     
-    // حساب سندات التحصيل المعلقة
     if (window.bonds) {
         window.bonds.forEach(b => {
-            if (b.customerName === customerName && b.type === 'تحصيل عميل' && b.status === 'pending') {
+            if (b.customerName === customerName && b.type === 'تحصيل عميل' && (b.status === 'pending' || b.status === 'overdue')) {
                 totalBonds += b.amount;
             }
         });
     }
     
-    // صافي الرصيد = (المبيعات - المرتجعات) - (المدفوعات + السندات المعلقة)
     const netBalance = (totalSales - totalReturns) - (totalPaid + totalBonds);
     
     return {
@@ -986,12 +979,11 @@ function getCustomerBalance(customerName) {
 // ================================================================
 
 function getSupplierBalance(supplierName) {
-    let totalPurchases = 0;    // إجمالي المشتريات من المورد
-    let totalReturns = 0;      // إجمالي مرتجعات المورد
-    let totalPaid = 0;         // إجمالي المدفوعات (سندات سداد مدفوعة)
-    let totalBonds = 0;        // إجمالي السندات المعلقة (سداد مورد)
+    let totalPurchases = 0;
+    let totalReturns = 0;
+    let totalPaid = 0;
+    let totalBonds = 0;
     
-    // حساب المشتريات
     if (window.purchases) {
         window.purchases.forEach(p => {
             if (p.supplier === supplierName) {
@@ -1001,7 +993,6 @@ function getSupplierBalance(supplierName) {
         });
     }
     
-    // حساب مرتجعات المشتريات
     if (window.returns) {
         window.returns.forEach(r => {
             if (r.supplier === supplierName) {
@@ -1011,7 +1002,6 @@ function getSupplierBalance(supplierName) {
         });
     }
     
-    // حساب سندات السداد (المدفوعات)
     if (window.bonds) {
         window.bonds.forEach(b => {
             if (b.customerName === supplierName && b.type === 'سداد مورد' && b.status === 'paid') {
@@ -1020,16 +1010,14 @@ function getSupplierBalance(supplierName) {
         });
     }
     
-    // حساب سندات السداد المعلقة
     if (window.bonds) {
         window.bonds.forEach(b => {
-            if (b.customerName === supplierName && b.type === 'سداد مورد' && b.status === 'pending') {
+            if (b.customerName === supplierName && b.type === 'سداد مورد' && (b.status === 'pending' || b.status === 'overdue')) {
                 totalBonds += b.amount;
             }
         });
     }
     
-    // صافي الرصيد = (المشتريات - المرتجعات) - (المدفوعات + السندات المعلقة)
     const netBalance = (totalPurchases - totalReturns) - (totalPaid + totalBonds);
     
     return {
@@ -1043,7 +1031,7 @@ function getSupplierBalance(supplierName) {
 }
 
 // ================================================================
-// UPDATE CUSTOMER BALANCE DISPLAY - عرض رصيد العميل
+// UPDATE CUSTOMER BALANCE DISPLAY
 // ================================================================
 
 function updateCustomerBalanceDisplay() {
@@ -1082,7 +1070,7 @@ function updateCustomerBalanceDisplay() {
 }
 
 // ================================================================
-// UPDATE SUPPLIER BALANCE DISPLAY - عرض رصيد المورد
+// UPDATE SUPPLIER BALANCE DISPLAY
 // ================================================================
 
 function updateSupplierBalanceDisplay() {
@@ -1119,10 +1107,6 @@ function updateSupplierBalanceDisplay() {
         </div>
     `;
 }
-
-// ================================================================
-// UPDATE RETURN CUSTOMER BALANCE - عرض رصيد العميل في المرتجع
-// ================================================================
 
 function updateReturnCustomerBalance() {
     const select = document.getElementById('returnCustomerSelect');
@@ -1296,10 +1280,6 @@ function sendWhatsApp() {
     }
     showToast(`📱 تم فتح واتساب للعميل ${customer}`, 'success');
 }
-
-// ================================================================
-// WHATSAPP FROM MODAL
-// ================================================================
 
 function sendInvoiceWhatsAppFromModal() {
     if (!window._currentInvoice) {
@@ -1543,10 +1523,6 @@ function printInvoice(type) {
         showToast('⚠️ تم حظر النافذة المنبثقة، يرجى السماح بالنوافذ المنبثقة', 'error');
     }
 }
-
-// ================================================================
-// PRINT INVOICE MODAL
-// ================================================================
 
 function printInvoiceModal() {
     if (!window._currentInvoice) {
@@ -2246,7 +2222,7 @@ function updateDashboardDetails() {
 }
 
 // ================================================================
-// ACCOUNTING FUNCTIONS - دوال المحاسبات
+// ACCOUNTING FUNCTIONS
 // ================================================================
 
 function updateAccounting() {
@@ -2374,7 +2350,6 @@ function showAuditReport() {
     addAuditLog('view', 'audit', 'عرض تقرير المراجعة المحاسبية');
 }
 
-// ===== showDetailedAudit - التدقيق المفصل =====
 function showDetailedAudit() {
     const container = document.getElementById('accountingResult');
     if (!container) return;
@@ -2451,7 +2426,6 @@ function showDetailedAudit() {
     container.innerHTML = html;
 }
 
-// ===== printAuditReport - طباعة تقرير المراجعة =====
 function printAuditReport() {
     const content = document.querySelector('.accounting-detail-content');
     if (!content) return;
@@ -2483,7 +2457,6 @@ function printAuditReport() {
     }
 }
 
-// ===== showLedger - دفتر الأستاذ =====
 function showLedger() {
     const container = document.getElementById('accountingResult');
     if (!container) return;
@@ -2558,7 +2531,6 @@ function showLedger() {
     container.innerHTML = html;
 }
 
-// ===== showTrialBalance - ميزان المراجعة =====
 function showTrialBalance() {
     const container = document.getElementById('accountingResult');
     if (!container) return;
@@ -2617,7 +2589,6 @@ function showTrialBalance() {
     `;
 }
 
-// ===== showIncomeStatement - قائمة الدخل =====
 function showIncomeStatement() {
     const container = document.getElementById('accountingResult');
     if (!container) return;
@@ -2668,7 +2639,6 @@ function showIncomeStatement() {
     `;
 }
 
-// ===== showBalanceSheet - الميزانية العمومية =====
 function showBalanceSheet() {
     const container = document.getElementById('accountingResult');
     if (!container) return;
@@ -2724,7 +2694,6 @@ function showBalanceSheet() {
     `;
 }
 
-// ===== showCashFlow - التدفقات النقدية =====
 function showCashFlow() {
     const container = document.getElementById('accountingResult');
     if (!container) return;
@@ -2770,16 +2739,415 @@ function showCashFlow() {
     `;
 }
 
-// ===== showAudit - للتوافق مع الكود القديم =====
 function showAudit() {
     showAuditReport();
 }
 
 // ================================================================
-// DUMMY FUNCTIONS - دوال مؤقتة (سيتم استكمالها في ملفات منفصلة)
+// BONDS FUNCTIONS - دوال السندات (المعدلة بالكامل)
 // ================================================================
 
-// ===== دوال الفواتير =====
+function addBond() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    
+    const type = document.getElementById('bondType')?.value;
+    const amount = parseFloat(document.getElementById('bondAmount')?.value);
+    const customerId = document.getElementById('bondCustomer')?.value;
+    const date = document.getElementById('bondDate')?.value || new Date().toISOString().split('T')[0];
+    const dueDate = document.getElementById('bondDueDate')?.value || '';
+    const note = document.getElementById('bondNote')?.value?.trim() || 'سند';
+
+    if (isNaN(amount) || amount <= 0) { 
+        showToast('⚠️ أدخل مبلغ صحيح', 'error'); 
+        return; 
+    }
+
+    let customerName = 'غير محدد';
+    let isSupplier = false;
+    if (customerId) {
+        if (customerId.startsWith('s_')) {
+            const supplierId = parseInt(customerId.replace('s_', ''));
+            const supplier = window.suppliers?.find(s => s.id === supplierId);
+            if (supplier) {
+                customerName = supplier.name + ' (مورد)';
+                isSupplier = true;
+            }
+        } else {
+            const customer = window.customers?.find(c => c.id == customerId);
+            if (customer) customerName = customer.name;
+        }
+    }
+
+    // ===== تحديد الحالة الأولية =====
+    let status = 'pending';
+    if (dueDate && new Date(dueDate) < new Date()) {
+        status = 'overdue';
+    }
+
+    const bond = {
+        id: Date.now(),
+        type: type,
+        amount: amount,
+        customerId: customerId || null,
+        customerName: customerName,
+        date: date,
+        dueDate: dueDate,
+        note: note,
+        status: status,
+        isSupplier: isSupplier,
+        createdAt: new Date().toISOString()
+    };
+
+    if (!window.bonds) window.bonds = [];
+    window.bonds.push(bond);
+
+    saveAll();
+    addAuditLog('add', 'bond', `إضافة سند ${type} - ${amount} للعميل ${customerName} - الحالة: ${status}`);
+    renderBonds();
+    updateCustomerBalanceDisplay();
+    updateSupplierBalanceDisplay();
+    
+    document.getElementById('bondAmount').value = '';
+    document.getElementById('bondNote').value = '';
+    document.getElementById('bondCustomer').value = '';
+    document.getElementById('bondDueDate').value = '';
+    
+    const statusText = status === 'pending' ? '⏳ معلق' : '⏰ متأخر';
+    showToast(`✅ تم إضافة السند - الحالة: ${statusText}`, 'success');
+}
+
+function markBondPaid(id) {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    
+    const b = window.bonds?.find(bond => bond.id === id);
+    if (!b) { showToast('⚠️ السند غير موجود', 'error'); return; }
+    
+    if (b.status === 'paid') {
+        showToast('⚠️ السند مدفوع بالفعل', 'warning');
+        return;
+    }
+    
+    if (!confirm(`✅ تأكيد تسديد سند ${b.type} - ${b.amount.toFixed(2)} للعميل ${b.customerName}؟`)) return;
+    
+    // ===== تحديث حالة السند =====
+    b.status = 'paid';
+    b.paidAt = new Date().toISOString();
+    
+    // ===== إضافة حركة للخزنة =====
+    if (!window.treasury) window.treasury = [];
+    
+    const treasuryType = b.type === 'تحصيل عميل' ? 'deposit' : 'withdraw';
+    window.treasury.push({
+        id: Date.now() + 1,
+        type: treasuryType,
+        amount: b.amount,
+        method: 'نقدي',
+        note: `تسديد سند: ${b.type} - ${b.note || ''} - ${b.customerName}`,
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toLocaleTimeString('ar'),
+        bondId: b.id,
+        customerName: b.customerName
+    });
+    
+    // ===== إذا كان تحصيل عميل، نضيف تنبيه =====
+    if (b.type === 'تحصيل عميل') {
+        addAlert(
+            `💰 تم تحصيل ${b.amount.toFixed(2)} من ${b.customerName}`,
+            `سند تحصيل - ${b.note || ''}`,
+            'success'
+        );
+    }
+    
+    saveAll();
+    addAuditLog('edit', 'bond', `تسديد سند - ${b.type} - ${b.amount} للعميل ${b.customerName}`);
+    
+    renderBonds();
+    if (typeof renderTreasury === 'function') renderTreasury();
+    if (typeof renderCashier === 'function') renderCashier();
+    if (typeof updateDashboard === 'function') updateDashboard();
+    if (typeof updateCustomerBalanceDisplay === 'function') updateCustomerBalanceDisplay();
+    if (typeof updateSupplierBalanceDisplay === 'function') updateSupplierBalanceDisplay();
+    
+    showToast(`✅ تم تسديد السند - ${b.amount.toFixed(2)}`, 'success');
+}
+
+function editBond(id) {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    
+    const b = window.bonds?.find(bond => bond.id === id);
+    if (!b) { showToast('⚠️ السند غير موجود', 'error'); return; }
+
+    // لا يمكن تعديل سند مدفوع
+    if (b.status === 'paid') {
+        showToast('⚠️ لا يمكن تعديل سند مدفوع', 'warning');
+        return;
+    }
+
+    const html = `
+        <div class="form-row">
+            <div class="form-group"><label>النوع</label>
+                <select id="editBondType">
+                    <option value="تحصيل عميل" ${b.type === 'تحصيل عميل' ? 'selected' : ''}>تحصيل عميل</option>
+                    <option value="سداد مورد" ${b.type === 'سداد مورد' ? 'selected' : ''}>سداد مورد</option>
+                    <option value="تسوية ضغط" ${b.type === 'تسوية ضغط' ? 'selected' : ''}>تسوية ضغط</option>
+                </select>
+            </div>
+            <div class="form-group"><label>المبلغ</label><input type="number" id="editBondAmount" value="${b.amount}" min="0.01" step="0.01" /></div>
+        </div>
+        <div class="form-group"><label>العميل / المورد</label>
+            <select id="editBondCustomer">
+                <option value="">اختر...</option>
+                ${window.customers ? window.customers.map(c => `<option value="${c.id}" ${c.id == b.customerId ? 'selected' : ''}>${c.name}</option>`).join('') : ''}
+                ${window.suppliers ? window.suppliers.map(s => `<option value="s_${s.id}" ${'s_'+s.id == b.customerId ? 'selected' : ''}>${s.name} (مورد)</option>`).join('') : ''}
+            </select>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>التاريخ</label><input type="date" id="editBondDate" value="${b.date}" /></div>
+            <div class="form-group"><label>تاريخ الاستحقاق</label><input type="date" id="editBondDueDate" value="${b.dueDate || ''}" /></div>
+        </div>
+        <div class="form-group"><label>البيان</label><input type="text" id="editBondNote" value="${b.note}" /></div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn btn-primary btn-block" onclick="saveBondEdit(${b.id})"><i class="fas fa-save"></i> حفظ</button>
+            <button class="btn btn-secondary btn-block" onclick="closeModal()"><i class="fas fa-times"></i> إلغاء</button>
+        </div>
+    `;
+    openModal('✏️ تعديل السند', html);
+}
+
+function saveBondEdit(id) {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    
+    const b = window.bonds?.find(bond => bond.id === id);
+    if (!b) { showToast('⚠️ السند غير موجود', 'error'); return; }
+
+    const type = document.getElementById('editBondType')?.value;
+    const amount = parseFloat(document.getElementById('editBondAmount')?.value);
+    const customerId = document.getElementById('editBondCustomer')?.value;
+    const date = document.getElementById('editBondDate')?.value;
+    const dueDate = document.getElementById('editBondDueDate')?.value;
+    const note = document.getElementById('editBondNote')?.value?.trim();
+
+    if (isNaN(amount) || amount <= 0) { showToast('⚠️ مبلغ صحيح', 'error'); return; }
+
+    let customerName = 'غير محدد';
+    if (customerId) {
+        if (customerId.startsWith('s_')) {
+            const supplierId = parseInt(customerId.replace('s_', ''));
+            const supplier = window.suppliers?.find(s => s.id === supplierId);
+            if (supplier) customerName = supplier.name + ' (مورد)';
+        } else {
+            const customer = window.customers?.find(c => c.id == customerId);
+            if (customer) customerName = customer.name;
+        }
+    }
+
+    // تحديث الحالة إذا كان تاريخ الاستحقاق قد فات
+    let status = b.status;
+    if (dueDate && new Date(dueDate) < new Date() && status !== 'paid') {
+        status = 'overdue';
+    } else if (dueDate && new Date(dueDate) >= new Date() && status === 'overdue') {
+        status = 'pending';
+    }
+
+    b.type = type;
+    b.amount = amount;
+    b.customerId = customerId || null;
+    b.customerName = customerName;
+    b.date = date || b.date;
+    b.dueDate = dueDate || '';
+    b.note = note || b.note;
+    b.status = status;
+
+    saveAll();
+    addAuditLog('edit', 'bond', `تعديل سند - ${type} - ${amount}`);
+    renderBonds();
+    updateCustomerBalanceDisplay();
+    updateSupplierBalanceDisplay();
+    closeModal();
+    showToast('✅ تم التعديل', 'success');
+}
+
+function deleteBond(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    if (!confirm('⚠️ حذف السند نهائياً؟')) return;
+
+    const b = window.bonds?.find(bond => bond.id === id);
+    if (!b) { showToast('⚠️ السند غير موجود', 'error'); return; }
+    
+    // إذا كان السند مدفوع، نحذف حركة الخزنة المرتبطة
+    if (b.status === 'paid') {
+        const treasuryIdx = window.treasury?.findIndex(t => t.bondId === id) || -1;
+        if (treasuryIdx > -1) {
+            window.treasury.splice(treasuryIdx, 1);
+        }
+    }
+
+    window.bonds = window.bonds.filter(bond => bond.id !== id);
+    saveAll();
+    addAuditLog('delete', 'bond', `حذف سند - ${b.type} - ${b.amount}`);
+    renderBonds();
+    updateCustomerBalanceDisplay();
+    updateSupplierBalanceDisplay();
+    if (typeof renderTreasury === 'function') renderTreasury();
+    showToast('🗑️ تم حذف السند', 'info');
+    closeModal();
+}
+
+function renderBonds() {
+    const container = document.getElementById('bondList');
+    if (!container) return;
+
+    if (!window.bonds || window.bonds.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-file-signature"></i><span>لا توجد سندات</span></div>`;
+        return;
+    }
+
+    // ===== تحديث حالة السندات المتأخرة =====
+    const today = new Date();
+    let updated = false;
+    window.bonds.forEach(b => {
+        if ((b.status === 'pending' || b.status === 'overdue') && b.dueDate) {
+            const due = new Date(b.dueDate);
+            if (due < today && b.status !== 'overdue') {
+                b.status = 'overdue';
+                updated = true;
+            }
+        }
+    });
+    if (updated) {
+        saveAll();
+    }
+
+    const canEditBonds = canEdit();
+    const canDeleteBonds = canDelete();
+
+    let html = `<div class="table-header" style="grid-template-columns:0.7fr 1.2fr 1fr 1fr 0.8fr 0.6fr 0.6fr;">
+        <span>النوع</span><span>العميل/المورد</span><span>المبلغ</span><span>تاريخ الاستحقاق</span><span>الحالة</span><span>البيان</span><span></span>
+    </div>`;
+
+    window.bonds.slice().reverse().forEach(b => {
+        const typeColor = b.type === 'تحصيل عميل' ? '#2D8F5E' : b.type === 'سداد مورد' ? '#E06060' : '#E6A830';
+        
+        let statusText = '';
+        let statusColor = '';
+        let statusIcon = '';
+        
+        if (b.status === 'paid') {
+            statusText = 'مدفوع';
+            statusColor = '#2D8F5E';
+            statusIcon = '✅';
+        } else if (b.status === 'overdue') {
+            statusText = 'متأخر';
+            statusColor = '#E06060';
+            statusIcon = '🔴';
+        } else if (b.status === 'pending') {
+            statusText = 'معلق';
+            statusColor = '#E6A830';
+            statusIcon = '🟡';
+        } else {
+            statusText = b.status || 'غير معروف';
+            statusColor = '#A89070';
+            statusIcon = '⚪';
+        }
+
+        html += `
+            <div class="table-row" style="grid-template-columns:0.7fr 1.2fr 1fr 1fr 0.8fr 0.6fr 0.6fr;font-size:11px;">
+                <span style="color:${typeColor};font-weight:700;">${b.type}</span>
+                <span>${b.customerName || 'غير محدد'}</span>
+                <span style="color:${typeColor};font-weight:700;">${b.amount.toFixed(2)}</span>
+                <span style="font-size:10px;color:${b.dueDate && new Date(b.dueDate) < new Date() ? '#E06060' : '#A89070'};">${b.dueDate || '-'}</span>
+                <span><span class="status-badge" style="background:${statusColor};color:#fff;">${statusIcon} ${statusText}</span></span>
+                <span style="font-size:10px;color:#A89070;">${b.note || '-'}</span>
+                <div class="actions">
+                    ${(b.status === 'pending' || b.status === 'overdue') && canEditBonds ? `
+                        <button class="btn btn-success btn-sm" onclick="markBondPaid(${b.id})" title="تسديد">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    ` : ''}
+                    ${canEditBonds && b.status !== 'paid' ? `
+                        <button class="btn btn-warning btn-sm" onclick="editBond(${b.id})"><i class="fas fa-edit"></i></button>
+                    ` : ''}
+                    ${canDeleteBonds ? `
+                        <button class="btn btn-danger btn-sm" onclick="deleteBond(${b.id})"><i class="fas fa-trash"></i></button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    renderBondStats();
+}
+
+function renderBondStats() {
+    const container = document.getElementById('bondStats');
+    if (!container) return;
+    
+    if (!window.bonds) window.bonds = [];
+    
+    const totalPending = window.bonds.filter(b => b.status === 'pending').reduce((s, b) => s + b.amount, 0);
+    const totalOverdue = window.bonds.filter(b => b.status === 'overdue').reduce((s, b) => s + b.amount, 0);
+    const totalPaid = window.bonds.filter(b => b.status === 'paid').reduce((s, b) => s + b.amount, 0);
+    const totalAll = window.bonds.reduce((s, b) => s + b.amount, 0);
+    
+    container.innerHTML = `
+        <div class="stats-row" style="margin-bottom:12px;">
+            <div class="stat-card">
+                <div class="number" style="color:#E6A830;">${totalPending.toFixed(2)}</div>
+                <div class="label">🟡 معلق</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" style="color:#E06060;">${totalOverdue.toFixed(2)}</div>
+                <div class="label">🔴 متأخر</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" style="color:#2D8F5E;">${totalPaid.toFixed(2)}</div>
+                <div class="label">✅ مدفوع</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" style="color:#C9A94E;">${totalAll.toFixed(2)}</div>
+                <div class="label">📊 الإجمالي</div>
+            </div>
+        </div>
+    `;
+}
+
+function updateBondStatus() {
+    if (!window.bonds) return;
+    
+    const today = new Date();
+    let updated = false;
+    
+    window.bonds.forEach(b => {
+        if ((b.status === 'pending' || b.status === 'overdue') && b.dueDate) {
+            const due = new Date(b.dueDate);
+            if (due < today && b.status !== 'overdue') {
+                b.status = 'overdue';
+                updated = true;
+                addAlert(
+                    `⏰ سند متأخر`,
+                    `${b.type} - ${b.amount.toFixed(2)} للعميل ${b.customerName} - استحق في ${b.dueDate}`,
+                    'danger'
+                );
+            }
+        }
+    });
+    
+    if (updated) {
+        saveAll();
+        renderBonds();
+    }
+}
+
+// ===== تشغيل الفحص كل ساعة =====
+setInterval(updateBondStatus, 60 * 60 * 1000);
+// ===== فحص فوري عند تحميل الصفحة =====
+setTimeout(updateBondStatus, 5000);
+
+// ================================================================
+// DUMMY FUNCTIONS
+// ================================================================
+
 function renderSales() { 
     const container = document.getElementById('salesList');
     if (!container) return;
@@ -3071,7 +3439,6 @@ function removeSalesItem(index) {
     renderSalesItems();
 }
 
-// ===== saveSaleInvoice - مع تسجيل الديون =====
 function saveSaleInvoice() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
 
@@ -3117,7 +3484,6 @@ function saveSaleInvoice() {
     if (!window.sales) window.sales = [];
     window.sales.push(invoice);
 
-    // تحديث المخزون
     items.forEach(item => {
         const wp = window.warehouseProducts?.find(w => w.warehouseId === warehouseId && w.productId === item.productId);
         if (wp) {
@@ -3125,8 +3491,8 @@ function saveSaleInvoice() {
         }
     });
 
-    // ===== إذا كان الدفع آجل، نضيف سند =====
     if (payment === 'آجل') {
+        if (!window.bonds) window.bonds = [];
         window.bonds.push({
             id: Date.now(),
             type: 'تحصيل عميل',
@@ -3143,8 +3509,8 @@ function saveSaleInvoice() {
         showToast(`📋 تم تسجيل فاتورة آجل للعميل ${customer} - ${totalWithTax.toFixed(2)}`, 'info');
     }
 
-    // إضافة حركة للخزنة (إذا كان الدفع نقدي أو غير آجل)
     if (payment !== 'آجل') {
+        if (!window.treasury) window.treasury = [];
         window.treasury.push({
             id: Date.now() + 1,
             type: 'deposit',
@@ -3246,7 +3612,6 @@ function removePurchaseItem(index) {
     renderPurchaseItems();
 }
 
-// ===== savePurchaseInvoice - مع تسجيل الديون =====
 function savePurchaseInvoice() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
 
@@ -3292,7 +3657,6 @@ function savePurchaseInvoice() {
     if (!window.purchases) window.purchases = [];
     window.purchases.push(invoice);
 
-    // تحديث المخزون
     items.forEach(item => {
         const existing = window.warehouseProducts?.find(w => w.warehouseId === warehouseId && w.productId === item.productId);
         if (existing) {
@@ -3307,8 +3671,8 @@ function savePurchaseInvoice() {
         }
     });
 
-    // ===== إذا كان الدفع آجل، نضيف سند =====
     if (payment === 'آجل') {
+        if (!window.bonds) window.bonds = [];
         window.bonds.push({
             id: Date.now(),
             type: 'سداد مورد',
@@ -3325,8 +3689,8 @@ function savePurchaseInvoice() {
         showToast(`📋 تم تسجيل فاتورة آجل للمورد ${supplier} - ${totalWithTax.toFixed(2)}`, 'info');
     }
 
-    // إضافة حركة للخزنة (إذا كان الدفع نقدي أو غير آجل)
     if (payment !== 'آجل') {
+        if (!window.treasury) window.treasury = [];
         window.treasury.push({
             id: Date.now() + 1,
             type: 'withdraw',
@@ -3453,7 +3817,6 @@ function saveReturnInvoice() {
     if (!window.returns) window.returns = [];
     window.returns.push(invoice);
 
-    // تحديث المخزون (إرجاع للمخزون)
     items.forEach(item => {
         const wp = window.warehouseProducts?.find(w => w.warehouseId === warehouseId && w.productId === item.productId);
         if (wp) {
@@ -4040,7 +4403,7 @@ function cashierPrintReport() {
 }
 
 // ================================================================
-// GENERATE CUSTOMER STATEMENT - كشف حساب العميل (معدل)
+// GENERATE CUSTOMER STATEMENT - كشف حساب العميل
 // ================================================================
 
 function generateCustomerStatement() {
@@ -4062,7 +4425,6 @@ function generateCustomerStatement() {
         return;
     }
 
-    // ===== جلب جميع الحركات =====
     let transactions = [];
     let runningBalance = 0;
 
@@ -4109,7 +4471,7 @@ function generateCustomerStatement() {
                 const amount = b.amount || 0;
                 transactions.push({
                     date: b.date,
-                    type: b.status === 'paid' ? 'تحصيل (مدفوع)' : 'تحصيل (معلق)',
+                    type: b.status === 'paid' ? 'تحصيل (مدفوع)' : b.status === 'overdue' ? 'تحصيل (متأخر)' : 'تحصيل (معلق)',
                     description: b.note || 'سند تحصيل',
                     debit: 0,
                     credit: amount,
@@ -4120,10 +4482,8 @@ function generateCustomerStatement() {
         });
     }
 
-    // ترتيب حسب التاريخ
     transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // حساب الرصيد التراكمي
     transactions.forEach(t => {
         runningBalance += t.debit - t.credit;
         t.balance = runningBalance;
@@ -4133,7 +4493,6 @@ function generateCustomerStatement() {
     let totalCredit = transactions.reduce((s, t) => s + t.credit, 0);
     let finalBalance = totalDebit - totalCredit;
 
-    // ===== عرض الكشف =====
     let html = `
         <div class="accounting-detail-content">
             <h4 style="color:#C9A94E;font-size:16px;margin-bottom:6px;">📋 كشف حساب العميل: ${customer.name}</h4>
@@ -4201,10 +4560,6 @@ function generateCustomerDetailedStatement() {
     showToast('📋 تم عرض الكشف التفصيلي', 'info');
 }
 
-// ================================================================
-// GENERATE SUPPLIER STATEMENT - كشف حساب المورد
-// ================================================================
-
 function generateSupplierStatement() {
     const container = document.getElementById('supplierStatementResult');
     if (!container) return;
@@ -4224,11 +4579,9 @@ function generateSupplierStatement() {
         return;
     }
 
-    // ===== جلب جميع الحركات =====
     let transactions = [];
     let runningBalance = 0;
 
-    // المشتريات
     if (window.purchases) {
         window.purchases.forEach(p => {
             if (p.supplier === supplier.name && (!fromDate || p.date >= fromDate) && (!toDate || p.date <= toDate)) {
@@ -4246,7 +4599,6 @@ function generateSupplierStatement() {
         });
     }
 
-    // مرتجعات المشتريات
     if (window.returns) {
         window.returns.forEach(r => {
             if (r.supplier === supplier.name && (!fromDate || r.date >= fromDate) && (!toDate || r.date <= toDate)) {
@@ -4264,14 +4616,13 @@ function generateSupplierStatement() {
         });
     }
 
-    // سندات السداد
     if (window.bonds) {
         window.bonds.forEach(b => {
             if (b.customerName === supplier.name && b.type === 'سداد مورد' && (!fromDate || b.date >= fromDate) && (!toDate || b.date <= toDate)) {
                 const amount = b.amount || 0;
                 transactions.push({
                     date: b.date,
-                    type: b.status === 'paid' ? 'سداد (مدفوع)' : 'سداد (معلق)',
+                    type: b.status === 'paid' ? 'سداد (مدفوع)' : b.status === 'overdue' ? 'سداد (متأخر)' : 'سداد (معلق)',
                     description: b.note || 'سند سداد',
                     debit: 0,
                     credit: amount,
@@ -4282,10 +4633,8 @@ function generateSupplierStatement() {
         });
     }
 
-    // ترتيب حسب التاريخ
     transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // حساب الرصيد التراكمي
     transactions.forEach(t => {
         runningBalance += t.debit - t.credit;
         t.balance = runningBalance;
@@ -4391,6 +4740,392 @@ function printStatement() {
         `);
         win.document.close();
     }
+}
+
+// ================================================================
+// GENERATE PROFIT ANALYSIS
+// ================================================================
+
+function generateProfitAnalysis() {
+    const container = document.getElementById('profitAnalysisResult');
+    if (!container) return;
+
+    const totalProducts = window.products ? window.products.length : 0;
+    safeSetText('profitTotalProducts', totalProducts);
+
+    if (!window.sales || window.sales.length === 0) {
+        safeSetText('profitAvgMargin', '0');
+        safeSetText('profitTopProduct', '0');
+        container.innerHTML = `
+            <div class="alert-item info">
+                <div class="icon"><i class="fas fa-info-circle"></i></div>
+                <div class="content">
+                    <div class="title">لا توجد بيانات</div>
+                    <div class="desc">لا توجد مبيعات مسجلة لعرض تحليل الأرباح</div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    const productProfits = {};
+    let totalProfit = 0;
+    let maxProfit = 0;
+    let topProduct = '';
+    let productCount = 0;
+    
+    window.sales.forEach(sale => {
+        if (sale.items) {
+            sale.items.forEach(item => {
+                const productName = item.productName || 'منتج غير معروف';
+                if (!productProfits[productName]) {
+                    productProfits[productName] = {
+                        totalRevenue: 0,
+                        totalCost: 0,
+                        totalQty: 0
+                    };
+                    productCount++;
+                }
+                const revenue = item.total || 0;
+                productProfits[productName].totalRevenue += revenue;
+                productProfits[productName].totalQty += item.qty || 0;
+                
+                const product = window.products.find(p => p.name === productName);
+                if (product) {
+                    productProfits[productName].totalCost += (product.buyPrice || 0) * (item.qty || 0);
+                }
+            });
+        }
+    });
+
+    let avgMargin = 0;
+    Object.keys(productProfits).forEach(name => {
+        const data = productProfits[name];
+        const profit = data.totalRevenue - data.totalCost;
+        totalProfit += profit;
+        if (profit > maxProfit) {
+            maxProfit = profit;
+            topProduct = name;
+        }
+    });
+    
+    avgMargin = productCount > 0 ? totalProfit / productCount : 0;
+
+    safeSetText('profitAvgMargin', avgMargin.toFixed(2));
+    safeSetText('profitTopProduct', topProduct || 'لا يوجد');
+
+    let html = `
+        <div class="accounting-detail-content">
+            <h4 style="color:#C9A94E;font-size:15px;margin-bottom:6px;">📊 تحليل ربحية المنتجات</h4>
+            <div style="max-height:300px;overflow-y:auto;font-size:12px;">
+                <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:4px;padding:4px 0;font-weight:800;border-bottom:2px solid #C9A94E;color:#F5E6C8;">
+                    <span>المنتج</span><span>الكمية</span><span>الإيرادات</span><span>التكلفة</span><span>الربح</span>
+                </div>
+    `;
+
+    Object.keys(productProfits).forEach(name => {
+        const data = productProfits[name];
+        const profit = data.totalRevenue - data.totalCost;
+        const color = profit >= 0 ? '#2D8F5E' : '#E06060';
+        html += `
+            <div style="display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr;gap:4px;padding:3px 0;border-bottom:1px solid #2D2D2D;color:#F5E6C8;">
+                <span><strong>${name}</strong></span>
+                <span>${data.totalQty}</span>
+                <span style="color:#2D8F5E;">${data.totalRevenue.toFixed(2)}</span>
+                <span style="color:#E06060;">${data.totalCost.toFixed(2)}</span>
+                <span style="color:${color};font-weight:700;">${profit.toFixed(2)}</span>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+            <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;font-size:12px;border:1px solid #2D2D2D;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;color:#F5E6C8;">
+                    <div><span style="font-weight:600;color:#A89070;">🏆 أعلى ربح:</span> <span style="color:#C9A94E;font-weight:700;">${topProduct || 'لا يوجد'}</span></div>
+                    <div><span style="font-weight:600;color:#A89070;">📊 متوسط الربح:</span> <span style="color:#C9A94E;font-weight:700;">${avgMargin.toFixed(2)}</span></div>
+                    <div><span style="font-weight:600;color:#A89070;">📦 المنتجات:</span> <span style="color:#C9A94E;font-weight:700;">${productCount}</span></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+    addAuditLog('add', 'report', 'عرض تحليل الأرباح');
+}
+
+// ================================================================
+// GENERATE REPORT
+// ================================================================
+
+function generateReport(type) {
+    const container = document.getElementById('reportResult');
+    if (!container) return;
+
+    let html = '';
+    let title = '';
+    let details = '';
+
+    switch(type) {
+        case 'sales':
+            title = '📊 تقرير المبيعات';
+            let salesTotal = 0;
+            let salesCount = 0;
+            if (window.sales) {
+                window.sales.forEach(s => {
+                    const total = s.totalWithTax || s.total || 0;
+                    salesTotal += total;
+                    salesCount++;
+                });
+            }
+            details = `
+                <div class="detail-row"><span class="detail-label">📊 إجمالي المبيعات</span><span class="detail-value" style="color:#2D8F5E;">${salesTotal.toFixed(2)} 🇪🇬</span></div>
+                <div class="detail-row"><span class="detail-label">📋 عدد الفواتير</span><span class="detail-value">${salesCount}</span></div>
+                <div class="detail-row"><span class="detail-label">📅 اليوم</span><span class="detail-value">${getTodayDate()}</span></div>
+            `;
+            break;
+        case 'purchases':
+            title = '📊 تقرير المشتريات';
+            let purchaseTotal = 0;
+            let purchaseCount = 0;
+            if (window.purchases) {
+                window.purchases.forEach(p => {
+                    const total = p.totalWithTax || p.total || 0;
+                    purchaseTotal += total;
+                    purchaseCount++;
+                });
+            }
+            details = `
+                <div class="detail-row"><span class="detail-label">📊 إجمالي المشتريات</span><span class="detail-value" style="color:#E06060;">${purchaseTotal.toFixed(2)} 🇪🇬</span></div>
+                <div class="detail-row"><span class="detail-label">📋 عدد الفواتير</span><span class="detail-value">${purchaseCount}</span></div>
+                <div class="detail-row"><span class="detail-label">📅 اليوم</span><span class="detail-value">${getTodayDate()}</span></div>
+            `;
+            break;
+        case 'profit':
+            title = '📊 تقرير الأرباح';
+            let profitSales = 0;
+            let profitPurchases = 0;
+            if (window.sales) {
+                window.sales.forEach(s => {
+                    const total = s.totalWithTax || s.total || 0;
+                    profitSales += total;
+                });
+            }
+            if (window.purchases) {
+                window.purchases.forEach(p => {
+                    const total = p.totalWithTax || p.total || 0;
+                    profitPurchases += total;
+                });
+            }
+            const netProfit = profitSales - profitPurchases;
+            details = `
+                <div class="detail-row"><span class="detail-label">💰 إجمالي المبيعات</span><span class="detail-value" style="color:#2D8F5E;">${profitSales.toFixed(2)} 🇪🇬</span></div>
+                <div class="detail-row"><span class="detail-label">💸 إجمالي المشتريات</span><span class="detail-value" style="color:#E06060;">${profitPurchases.toFixed(2)} 🇪🇬</span></div>
+                <div class="detail-row"><span class="detail-label">📈 صافي الربح</span><span class="detail-value" style="color:${netProfit >= 0 ? '#2D8F5E' : '#E06060'};font-weight:700;">${netProfit.toFixed(2)} 🇪🇬</span></div>
+            `;
+            break;
+        case 'inventory':
+            title = '📊 تقرير المخزون';
+            let totalQty = 0;
+            let totalValue = 0;
+            if (window.products && window.warehouseProducts) {
+                window.products.forEach(p => {
+                    let qty = 0;
+                    window.warehouseProducts.forEach(wp => {
+                        if (wp.productId === p.id) qty += wp.qty;
+                    });
+                    totalQty += qty;
+                    totalValue += (p.sellPrice || 0) * qty;
+                });
+            }
+            details = `
+                <div class="detail-row"><span class="detail-label">📦 عدد المنتجات</span><span class="detail-value">${window.products ? window.products.length : 0}</span></div>
+                <div class="detail-row"><span class="detail-label">📊 إجمالي الكمية</span><span class="detail-value">${totalQty}</span></div>
+                <div class="detail-row"><span class="detail-label">💰 قيمة المخزون</span><span class="detail-value" style="color:#C9A94E;">${totalValue.toFixed(2)} 🇪🇬</span></div>
+            `;
+            break;
+        case 'customers_report':
+            title = '📊 تقرير العملاء';
+            const activeCustomers = window.customers ? window.customers.filter(c => c.active !== false).length : 0;
+            details = `
+                <div class="detail-row"><span class="detail-label">👥 إجمالي العملاء</span><span class="detail-value">${window.customers ? window.customers.length : 0}</span></div>
+                <div class="detail-row"><span class="detail-label">✅ العملاء النشطون</span><span class="detail-value" style="color:#2D8F5E;">${activeCustomers}</span></div>
+                <div class="detail-row"><span class="detail-label">📅 آخر تحديث</span><span class="detail-value">${getTodayDate()}</span></div>
+            `;
+            break;
+        case 'warehouse':
+            title = '📊 تقرير المخازن';
+            let warehouseDetails = '';
+            if (window.warehouses) {
+                window.warehouses.forEach(w => {
+                    const count = window.warehouseProducts ? window.warehouseProducts.filter(wp => wp.warehouseId === w.id).reduce((s, wp) => s + wp.qty, 0) : 0;
+                    warehouseDetails += `
+                        <div class="detail-row"><span class="detail-label">🏢 ${w.name}</span><span class="detail-value">${count} منتج</span></div>
+                    `;
+                });
+            }
+            details = warehouseDetails || `
+                <div class="detail-row"><span class="detail-label">لا توجد مخازن</span><span class="detail-value">-</span></div>
+            `;
+            break;
+        case 'expenses':
+            title = '📊 تقرير المصروفات';
+            const expensesTotal = window.expenses ? window.expenses.reduce((s, e) => s + e.amount, 0) : 0;
+            const expensesCount = window.expenses ? window.expenses.length : 0;
+            details = `
+                <div class="detail-row"><span class="detail-label">💸 إجمالي المصروفات</span><span class="detail-value" style="color:#E06060;">${expensesTotal.toFixed(2)} 🇪🇬</span></div>
+                <div class="detail-row"><span class="detail-label">📋 عدد المصروفات</span><span class="detail-value">${expensesCount}</span></div>
+                <div class="detail-row"><span class="detail-label">📅 آخر تحديث</span><span class="detail-value">${getTodayDate()}</span></div>
+            `;
+            break;
+        default:
+            title = '📊 تقرير غير معروف';
+            details = `<div class="detail-row"><span class="detail-label">⚠️</span><span class="detail-value">نوع التقرير غير معروف</span></div>`;
+    }
+
+    html = `
+        <div class="accounting-detail-content">
+            <h4 style="color:#C9A94E;font-size:15px;margin-bottom:6px;">${title}</h4>
+            ${details}
+            <div style="margin-top:8px;display:flex;gap:6px;">
+                <button class="btn btn-primary btn-block" onclick="printReport()"><i class="fas fa-print"></i> طباعة</button>
+                <button class="btn btn-secondary btn-block" onclick="closeModal()"><i class="fas fa-times"></i> إغلاق</button>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+    addAuditLog('add', 'report', `عرض تقرير: ${title}`);
+}
+
+function printReport() {
+    const content = document.querySelector('.accounting-detail-content');
+    if (!content) return;
+    
+    const win = window.open('', '_blank', 'width=600,height=500');
+    if (win) {
+        win.document.write(`
+            <!DOCTYPE html>
+            <html dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <title>تقرير</title>
+                <style>
+                    body { font-family: 'Tajawal', sans-serif; background: #fff; color: #000; padding: 20px; direction: rtl; }
+                    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; }
+                    .detail-label { font-weight: 600; color: #555; }
+                    .detail-value { font-weight: 700; color: #000; }
+                    h4 { color: #C9A94E; }
+                    @media print { body { padding: 10px; } }
+                </style>
+            </head>
+            <body>
+                ${content.outerHTML}
+                <script>window.onload = function() { window.print(); };<\/script>
+            </body>
+            </html>
+        `);
+        win.document.close();
+    }
+}
+
+// ================================================================
+// SEARCH BY BARCODE
+// ================================================================
+
+function searchByBarcode() {
+    const barcode = document.getElementById('barcodeSearch')?.value?.trim();
+    const result = document.getElementById('barcodeSearchResult');
+    if (!result) return;
+    
+    if (!barcode) {
+        result.innerHTML = `<div style="color:#A89070;font-size:12px;padding:8px;">📷 أدخل باركود للبحث</div>`;
+        return;
+    }
+    
+    const product = window.products?.find(p => p.barcode === barcode);
+    if (product) {
+        const totalQty = window.warehouseProducts?.filter(wp => wp.productId === product.id).reduce((s, wp) => s + wp.qty, 0) || 0;
+        result.innerHTML = `
+            <div style="padding:10px;background:#0D0D0D;border:1px solid #2D8F5E;border-radius:6px;margin-top:6px;">
+                <div style="font-weight:700;color:#C9A94E;font-size:14px;">✅ ${product.name}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;margin-top:4px;">
+                    <div><span style="color:#A89070;">🏷️ الباركود:</span> ${product.barcode}</div>
+                    <div><span style="color:#A89070;">💰 السعر:</span> ${product.sellPrice || 0} 🇪🇬</div>
+                    <div><span style="color:#A89070;">📦 الكمية:</span> ${totalQty}</div>
+                    <div><span style="color:#A89070;">🛒 سعر الشراء:</span> ${product.buyPrice || 0} 🇪🇬</div>
+                </div>
+                <div style="margin-top:6px;display:flex;gap:4px;">
+                    <button class="btn btn-success btn-sm" onclick="addProductToSale(${product.id})"><i class="fas fa-cart-plus"></i> إضافة للبيع</button>
+                    <button class="btn btn-info btn-sm" onclick="showProductDetails(${product.id})"><i class="fas fa-eye"></i> تفاصيل</button>
+                </div>
+            </div>
+        `;
+    } else {
+        result.innerHTML = `
+            <div style="padding:10px;background:#0D0D0D;border:1px solid #E06060;border-radius:6px;margin-top:6px;color:#E06060;">
+                <i class="fas fa-exclamation-triangle"></i> لا يوجد منتج بهذا الباركود
+            </div>
+        `;
+    }
+}
+
+function addProductToSale(productId) {
+    const product = window.products?.find(p => p.id === productId);
+    if (!product) {
+        showToast('⚠️ المنتج غير موجود', 'error');
+        return;
+    }
+    
+    const select = document.getElementById('salesItemProduct');
+    if (select) {
+        select.value = productId;
+        if (typeof updateSalesPrice === 'function') updateSalesPrice();
+        document.getElementById('salesItemQty').value = 1;
+        if (typeof addSalesItem === 'function') addSalesItem();
+        showToast(`✅ تم إضافة ${product.name} للفاتورة`, 'success');
+        closeModal();
+    }
+}
+
+function showProductDetails(productId) {
+    const product = window.products?.find(p => p.id === productId);
+    if (!product) {
+        showToast('⚠️ المنتج غير موجود', 'error');
+        return;
+    }
+    
+    const totalQty = window.warehouseProducts?.filter(wp => wp.productId === product.id).reduce((s, wp) => s + wp.qty, 0) || 0;
+    const warehouses = window.warehouseProducts?.filter(wp => wp.productId === product.id) || [];
+    
+    let warehouseDetails = '';
+    warehouses.forEach(wp => {
+        const w = window.warehouses?.find(wh => wh.id === wp.warehouseId);
+        warehouseDetails += `<div style="font-size:11px;color:#A89070;">🏢 ${w?.name || 'غير معروف'}: ${wp.qty}</div>`;
+    });
+    
+    const html = `
+        <div style="padding:10px;">
+            <h4 style="color:#C9A94E;font-size:16px;">${product.name}</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:13px;margin-top:8px;">
+                <div><span style="color:#A89070;">🏷️ الباركود:</span> ${product.barcode || '-'}</div>
+                <div><span style="color:#A89070;">💰 سعر البيع:</span> <span style="color:#2D8F5E;font-weight:700;">${product.sellPrice || 0} 🇪🇬</span></div>
+                <div><span style="color:#A89070;">🛒 سعر الشراء:</span> <span style="color:#E06060;font-weight:700;">${product.buyPrice || 0} 🇪🇬</span></div>
+                <div><span style="color:#A89070;">📦 إجمالي الكمية:</span> <span style="color:#C9A94E;font-weight:700;">${totalQty}</span></div>
+                <div><span style="color:#A89070;">📋 الحد الأدنى:</span> ${product.min || 5}</div>
+                <div><span style="color:#A89070;">📊 الهامش:</span> <span style="color:${(product.sellPrice - product.buyPrice) >= 0 ? '#2D8F5E' : '#E06060'};font-weight:700;">${((product.sellPrice - product.buyPrice) / product.buyPrice * 100).toFixed(1)}%</span></div>
+            </div>
+            <div style="margin-top:8px;border-top:1px solid #2D2D2D;padding-top:6px;">
+                <div style="color:#A89070;font-size:12px;">🏢 التوزيع في المخازن:</div>
+                ${warehouseDetails || '<div style="font-size:11px;color:#A89070;">لا توجد كميات في المخازن</div>'}
+            </div>
+            <div style="margin-top:8px;display:flex;gap:4px;">
+                <button class="btn btn-success btn-sm" onclick="addProductToSale(${product.id})"><i class="fas fa-cart-plus"></i> إضافة للبيع</button>
+                <button class="btn btn-secondary btn-sm" onclick="closeModal()"><i class="fas fa-times"></i> إغلاق</button>
+            </div>
+        </div>
+    `;
+    openModal(`📦 ${product.name}`, html);
 }
 
 // ================================================================
