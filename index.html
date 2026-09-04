@@ -206,7 +206,6 @@
                             <button class="btn btn-success btn-sm" onclick="openAddCustomerModal()" title="إضافة عميل جديد"><i class="fas fa-user-plus"></i></button>
                         </div>
                     </div>
-                    <!-- ===== عرض رصيد العميل ===== -->
                     <div id="customerBalanceDisplay" style="display:none;margin-top:4px;"></div>
                     <div class="form-group" style="display:none;" id="customerWhatsAppGroup">
                         <label>📱 رقم واتساب العميل</label>
@@ -273,7 +272,6 @@
                             <button class="btn btn-success btn-sm" onclick="openAddSupplierModal()" title="إضافة مورد جديد"><i class="fas fa-user-plus"></i></button>
                         </div>
                     </div>
-                    <!-- ===== عرض رصيد المورد ===== -->
                     <div id="supplierBalanceDisplay" style="display:none;margin-top:4px;"></div>
                     <div class="form-group" style="display:none;" id="supplierWhatsAppGroup">
                         <label>📱 رقم واتساب المورد</label>
@@ -331,7 +329,6 @@
                         <select id="returnCustomerSelect" onchange="document.getElementById('returnCustomer').value=this.value; updateReturnCustomerBalance();"><option value="">اختر عميل...</option></select>
                         <input type="text" id="returnCustomer" placeholder="أو اكتب اسم العميل" style="margin-top:3px;" onchange="updateReturnCustomerBalance();" />
                     </div>
-                    <!-- ===== عرض رصيد العميل في المرتجع ===== -->
                     <div id="returnCustomerBalanceDisplay" style="display:none;margin-top:4px;"></div>
                     <div class="form-group"><label>المخزن</label><select id="returnWarehouse"></select></div>
                     <div class="form-group"><label>التاريخ</label><input type="date" id="returnDate" /></div>
@@ -797,6 +794,17 @@
                     <div class="settings-info-row"><span class="label">الفواتير</span><span class="value" id="infoInvoices">0</span></div>
                 </div>
                 <div class="settings-section" style="border-color:#E06060;">
+                    <h4 style="color:#E06060;"><i class="fas fa-sign-out-alt"></i> إدارة الجلسة</h4>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <button class="btn btn-warning btn-block" onclick="logoutApp()" style="flex:1;">
+                            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                        </button>
+                        <button class="btn btn-danger btn-block" onclick="clearAllData()" style="flex:1;">
+                            <i class="fas fa-trash"></i> مسح البيانات
+                        </button>
+                    </div>
+                </div>
+                <div class="settings-section" style="border-color:#E06060;">
                     <h4 style="color:#E06060;"><i class="fas fa-trash-alt"></i> مسح البيانات</h4>
                     <p style="font-size:13px;color:#A89070;margin-bottom:8px;">⚠️ تحذير: سيتم حذف جميع البيانات بشكل نهائي.</p>
                     <button class="clear-data-btn" onclick="clearAllData()"><i class="fas fa-exclamation-triangle"></i> مسح جميع البيانات</button>
@@ -905,13 +913,41 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 بدء تشغيل الميزان v3.0.0');
-            if (typeof activateDemoLicense === 'function') { activateDemoLicense(); console.log('✅ تم تفعيل الترخيص التجريبي'); }
-            if (typeof seedData === 'function') { seedData(); console.log('✅ تم تهيئة البيانات'); }
-            if (typeof refreshAllPages === 'function') { refreshAllPages(); console.log('✅ تم تحديث جميع الصفحات'); }
-            if (typeof updateClock === 'function') { updateClock(); }
-            if (typeof initUsers === 'function') { initUsers(); console.log('✅ تم تهيئة المستخدمين'); }
-            if (typeof refreshDashboard === 'function') { refreshDashboard(); console.log('✅ تم تحديث لوحة التحكم'); }
-            if (typeof updateSecurityButton === 'function') { updateSecurityButton(); }
+            
+            // تهيئة المستخدمين أولاً
+            if (typeof initUsers === 'function') { 
+                initUsers(); 
+                console.log('✅ تم تهيئة المستخدمين');
+            }
+            
+            if (typeof activateDemoLicense === 'function') { 
+                activateDemoLicense(); 
+                console.log('✅ تم تفعيل الترخيص التجريبي');
+            }
+            
+            if (typeof seedData === 'function') { 
+                seedData(); 
+                console.log('✅ تم تهيئة البيانات');
+            }
+            
+            if (typeof refreshAllPages === 'function') { 
+                refreshAllPages(); 
+                console.log('✅ تم تحديث جميع الصفحات');
+            }
+            
+            if (typeof updateClock === 'function') { 
+                updateClock(); 
+            }
+            
+            if (typeof refreshDashboard === 'function') { 
+                refreshDashboard(); 
+                console.log('✅ تم تحديث لوحة التحكم');
+            }
+            
+            if (typeof updateSecurityButton === 'function') { 
+                updateSecurityButton(); 
+            }
+            
             console.log('✅ الميزان جاهز للاستخدام');
             console.log('🔒 كلمة المرور: 123456');
             console.log('🔑 اضغط 5 مرات على رقم الإصدار في الإعدادات لتفعيل زر توليد المفاتيح');
