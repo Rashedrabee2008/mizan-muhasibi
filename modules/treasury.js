@@ -7,20 +7,16 @@
 // ================================================================
 function addTreasuryTransaction() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    
     const type = document.getElementById('treasuryType')?.value;
     const amount = parseFloat(document.getElementById('treasuryAmount')?.value);
     const method = document.getElementById('treasuryMethod')?.value || 'نقدي';
-    const date = document.getElementById('treasuryDate')?.value || getTodayDate();
+    const date = document.getElementById('treasuryDate')?.value || new Date().toISOString().split('T')[0];
     const note = document.getElementById('treasuryNote')?.value?.trim() || 'حركة خزنة';
     const warehouseId = parseInt(document.getElementById('treasuryWarehouse')?.value) || null;
 
-    if (isNaN(amount) || amount <= 0) { 
-        showToast('⚠️ مبلغ صحيح', 'error'); 
-        return; 
-    }
+    if (isNaN(amount) || amount <= 0) { showToast('⚠️ مبلغ صحيح', 'error'); return; }
 
-    const transaction = {
+    window.treasury.push({ 
         id: Date.now(), 
         type: type, 
         amount: amount, 
@@ -28,22 +24,14 @@ function addTreasuryTransaction() {
         date: date, 
         note: note,
         warehouseId: warehouseId, 
-        time: getCurrentTime(),
-        createdAt: new Date().toISOString()
-    };
-    
-    window.treasury.push(transaction);
+        time: new Date().toLocaleTimeString('ar') 
+    });
     saveAll();
-    
-    addAuditLog('add', 'treasury', `${type === 'deposit' ? 'إيداع' : 'سحب'} - ${amount.toFixed(2)} 🇪🇬 - ${note}${method ? ' (' + method + ')' : ''}`);
-    
+    addAuditLog('add', 'treasury', `${type === 'deposit' ? 'إيداع' : 'سحب'} ${amount} - ${note}`);
     renderTreasury();
     if (typeof renderCashier === 'function') renderCashier();
-    if (typeof updateDashboard === 'function') updateDashboard();
-    
     document.getElementById('treasuryAmount').value = '';
     document.getElementById('treasuryNote').value = '';
-    
     showToast('✅ تم إضافة الحركة', 'success');
 }
 
@@ -51,10 +39,6 @@ function addTreasuryTransaction() {
 // RENDER TREASURY
 // ================================================================
 function renderTreasury() {
-    if (!window.treasury || !Array.isArray(window.treasury)) {
-        window.treasury = [];
-    }
-    
     const balance = window.treasury.reduce((s, t) => {
         if (t.type === 'deposit') return s + t.amount;
         else return s - t.amount;
@@ -93,14 +77,12 @@ function renderTreasury() {
     const canEditTreasury = canEdit();
     const canDeleteTreasury = canDelete();
 
-    let html = `<div class="table-header" style="grid-template-columns:1.2fr 1fr 0.8fr 0.8fr 0.8fr 1fr 0.6fr;">
-        <span>البيان</span><span>المبلغ</span><span>النوع</span><span>طريقة الدفع</span><span>المخزن</span><span>التاريخ</span><span></span>
-    </div>`;
+    let html = `<div class="table-header" style="grid-template-columns:1.2fr 1fr 0.8fr 0.8fr 0.8fr 1fr 0.6fr;"><span>البيان</span><span>المبلغ</span><span>النوع</span><span>طريقة الدفع</span><span>المخزن</span><span>التاريخ</span><span></span></div>`;
 
     window.treasury.slice().reverse().forEach(t => {
         const color = t.type === 'deposit' ? '#2D8F5E' : '#E06060';
         const sign = t.type === 'deposit' ? '+' : '-';
-        const w = window.warehouses?.find(wh => wh.id === t.warehouseId);
+        const w = window.warehouses.find(wh => wh.id === t.warehouseId);
         const wName = w ? w.name : '-';
 
         html += `
@@ -127,12 +109,8 @@ function renderTreasury() {
 // ================================================================
 function editTreasury(id) {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    
     const t = window.treasury.find(tr => tr.id === id);
-    if (!t) {
-        showToast('⚠️ الحركة غير موجودة', 'error');
-        return;
-    }
+    if (!t) return;
 
     const html = `
         <div class="form-row">
@@ -160,17 +138,10 @@ function editTreasury(id) {
     openModal('✏️ تعديل الحركة', html);
 }
 
-// ================================================================
-// SAVE TREASURY EDIT
-// ================================================================
 function saveTreasuryEdit(id) {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    
     const t = window.treasury.find(tr => tr.id === id);
-    if (!t) {
-        showToast('⚠️ الحركة غير موجودة', 'error');
-        return;
-    }
+    if (!t) return;
 
     const type = document.getElementById('editTreasuryType')?.value;
     const amount = parseFloat(document.getElementById('editTreasuryAmount')?.value);
@@ -178,10 +149,7 @@ function saveTreasuryEdit(id) {
     const date = document.getElementById('editTreasuryDate')?.value;
     const note = document.getElementById('editTreasuryNote')?.value?.trim();
 
-    if (isNaN(amount) || amount <= 0) { 
-        showToast('⚠️ مبلغ صحيح', 'error'); 
-        return; 
-    }
+    if (isNaN(amount) || amount <= 0) { showToast('⚠️ مبلغ صحيح', 'error'); return; }
 
     t.type = type;
     t.amount = amount;
@@ -190,7 +158,7 @@ function saveTreasuryEdit(id) {
     t.note = note;
 
     saveAll();
-    addAuditLog('edit', 'treasury', `تعديل حركة خزنة: ${note} - ${amount.toFixed(2)} 🇪🇬`);
+    addAuditLog('edit', 'treasury', `تعديل حركة خزنة: ${note}`);
     renderTreasury();
     if (typeof renderCashier === 'function') renderCashier();
     closeModal();
@@ -202,20 +170,15 @@ function saveTreasuryEdit(id) {
 // ================================================================
 function deleteTreasury(id) {
     if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    if (!confirm('⚠️ حذف الحركة نهائياً؟')) return;
+    if (!confirm('⚠️ حذف الحركة؟')) return;
 
     const t = window.treasury.find(tr => tr.id === id);
-    if (!t) {
-        showToast('⚠️ الحركة غير موجودة', 'error');
-        return;
-    }
-
     window.treasury = window.treasury.filter(tr => tr.id !== id);
+
     saveAll();
-    
-    addAuditLog('delete', 'treasury', `🗑️ حذف حركة خزنة: ${t.note} - ${t.amount.toFixed(2)} 🇪🇬`);
+    if (t) addAuditLog('delete', 'treasury', `حذف حركة خزنة: ${t.note}`);
     renderTreasury();
     if (typeof renderCashier === 'function') renderCashier();
-    showToast('🗑️ تم حذف الحركة', 'info');
+    showToast('🗑️ تم الحذف', 'info');
     closeModal();
 }

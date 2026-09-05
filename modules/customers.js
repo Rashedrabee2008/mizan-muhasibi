@@ -19,16 +19,7 @@ function addCustomer() {
         return;
     }
 
-    window.customers.push({ 
-        id: Date.now(), 
-        name: name, 
-        phone: phone, 
-        whatsapp: whatsapp, 
-        email: email, 
-        address: address, 
-        active: true,
-        createdAt: new Date().toISOString()
-    });
+    window.customers.push({ id: Date.now(), name: name, phone: phone, whatsapp: whatsapp, email: email, address: address, active: true });
     saveAll();
     addAuditLog('add', 'customer', `إضافة عميل: ${name} - واتساب: ${whatsapp || 'لا يوجد'}`);
     renderCustomers();
@@ -39,7 +30,7 @@ function addCustomer() {
     document.getElementById('customerEmail').value = '';
     document.getElementById('customerAddress').value = '';
     showToast('✅ تم إضافة العميل', 'success');
-    if (typeof updateDashboard === 'function') updateDashboard();
+    updateDashboard();
 }
 
 // ================================================================
@@ -99,13 +90,6 @@ function editCustomer(id) {
             <div class="form-group"><label>البريد</label><input type="email" id="editCustomerEmail" value="${c.email || ''}" /></div>
             <div class="form-group"><label>العنوان</label><input type="text" id="editCustomerAddress" value="${c.address || ''}" /></div>
         </div>
-        <div class="form-group">
-            <label>الحالة</label>
-            <select id="editCustomerStatus">
-                <option value="true" ${c.active !== false ? 'selected' : ''}>نشط</option>
-                <option value="false" ${c.active === false ? 'selected' : ''}>غير نشط</option>
-            </select>
-        </div>
         <button class="btn btn-primary btn-block" onclick="saveCustomerEdit(${c.id})"><i class="fas fa-save"></i> حفظ</button>
         ${canDelete() ? `<button class="btn btn-danger btn-block" onclick="deleteCustomer(${c.id})" style="margin-top:6px;"><i class="fas fa-trash"></i> حذف</button>` : ''}
     `;
@@ -122,7 +106,6 @@ function saveCustomerEdit(id) {
     const whatsapp = document.getElementById('editCustomerWhatsapp')?.value?.trim() || '';
     const email = document.getElementById('editCustomerEmail')?.value?.trim();
     const address = document.getElementById('editCustomerAddress')?.value?.trim();
-    const active = document.getElementById('editCustomerStatus')?.value === 'true';
 
     if (!name) { showToast('⚠️ أدخل الاسم', 'error'); return; }
 
@@ -131,7 +114,6 @@ function saveCustomerEdit(id) {
     c.whatsapp = whatsapp;
     c.email = email;
     c.address = address;
-    c.active = active;
 
     saveAll();
     addAuditLog('edit', 'customer', `تعديل عميل: ${name} - واتساب: ${whatsapp || 'لا يوجد'}`);
@@ -156,7 +138,7 @@ function deleteCustomer(id) {
     renderCustomers();
     populateAllSelects();
     showToast('🗑️ تم الحذف', 'info');
-    if (typeof updateDashboard === 'function') updateDashboard();
+    updateDashboard();
     closeModal();
 }
 
@@ -192,16 +174,7 @@ function saveQuickCustomer() {
         return;
     }
 
-    window.customers.push({ 
-        id: Date.now(), 
-        name: name, 
-        phone: phone, 
-        whatsapp: whatsapp, 
-        email: '', 
-        address: '', 
-        active: true,
-        createdAt: new Date().toISOString()
-    });
+    window.customers.push({ id: Date.now(), name: name, phone: phone, whatsapp: whatsapp, email: '', address: '', active: true });
     saveAll();
     addAuditLog('add', 'customer', `إضافة عميل سريع: ${name}`);
     renderCustomers();
@@ -221,5 +194,5 @@ function saveQuickCustomer() {
     if (input) input.value = name;
 
     showToast(`✅ تم إضافة العميل ${name}`, 'success');
-    if (typeof updateDashboard === 'function') updateDashboard();
+    updateDashboard();
 }

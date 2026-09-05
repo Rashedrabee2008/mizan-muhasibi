@@ -1,9 +1,9 @@
 // ================================================================
-// audit.js - سجل النشاطات
+// audit.js - سجل النشاطات (الملف الكامل)
 // ================================================================
 
 // ================================================================
-// ADD AUDIT LOG
+// ADD AUDIT LOG - إضافة سجل نشاط مع تفاصيل كاملة
 // ================================================================
 function addAuditLog(action, type, details, data = null) {
     if (typeof window.auditLog === 'undefined') {
@@ -34,13 +34,13 @@ function addAuditLog(action, type, details, data = null) {
 }
 
 // ================================================================
-// RENDER AUDIT
+// RENDER AUDIT - عرض سجل النشاطات
 // ================================================================
-let auditFilter = 'all';
-
 function renderAudit() {
     filterAudit('all');
 }
+
+let auditFilter = 'all';
 
 function filterAudit(filter) {
     auditFilter = filter;
@@ -71,40 +71,123 @@ function filterAudit(filter) {
         return;
     }
 
+    // تعريف الأيقونات والألوان
     const actionIcons = {
-        'add': 'fa-plus-circle', 'edit': 'fa-edit', 'delete': 'fa-trash-alt',
-        'sale': 'fa-receipt', 'purchase': 'fa-shopping-cart', 'return': 'fa-undo-alt',
-        'sync': 'fa-sync', 'backup': 'fa-cloud-upload-alt', 'cashier': 'fa-cash-register',
-        'adjustment': 'fa-balance-scale', 'license': 'fa-key', 'treasury': 'fa-vault',
-        'permission': 'fa-exchange-alt', 'warehouse': 'fa-warehouse', 'product': 'fa-box',
-        'customer': 'fa-user', 'supplier': 'fa-truck', 'expense': 'fa-money-bill-wave',
-        'bond': 'fa-file-signature', 'account': 'fa-sitemap', 'report': 'fa-chart-pie',
-        'invoice': 'fa-file-invoice', 'user': 'fa-user-cog', 'company': 'fa-building',
-        'whatsapp': 'fa-whatsapp', 'login': 'fa-sign-in-alt', 'logout': 'fa-sign-out-alt'
+        'add': 'fa-plus-circle',
+        'edit': 'fa-edit',
+        'delete': 'fa-trash-alt',
+        'sale': 'fa-receipt',
+        'purchase': 'fa-shopping-cart',
+        'return': 'fa-undo-alt',
+        'sync': 'fa-sync',
+        'backup': 'fa-cloud-upload-alt',
+        'cashier': 'fa-cash-register',
+        'adjustment': 'fa-balance-scale',
+        'license': 'fa-key',
+        'treasury': 'fa-vault',
+        'permission': 'fa-exchange-alt',
+        'warehouse': 'fa-warehouse',
+        'product': 'fa-box',
+        'customer': 'fa-user',
+        'supplier': 'fa-truck',
+        'expense': 'fa-money-bill-wave',
+        'bond': 'fa-file-signature',
+        'account': 'fa-sitemap',
+        'report': 'fa-chart-pie',
+        'invoice': 'fa-file-invoice',
+        'user': 'fa-user-cog',
+        'company': 'fa-building',
+        'whatsapp': 'fa-whatsapp',
+        'login': 'fa-sign-in-alt',
+        'logout': 'fa-sign-out-alt'
     };
 
     const actionColors = {
-        'add': '#2D8F5E', 'edit': '#E6A830', 'delete': '#E06060',
-        'sale': '#2D8F5E', 'purchase': '#E06060', 'return': '#E6A830',
-        'sync': '#4A8AB5', 'backup': '#4A8AB5', 'cashier': '#C9A94E',
-        'adjustment': '#C9A94E', 'license': '#C9A94E', 'treasury': '#4A8AB5',
-        'permission': '#4A8AB5', 'warehouse': '#4A8AB5', 'product': '#2D8F5E',
-        'customer': '#2D8F5E', 'supplier': '#E06060', 'expense': '#E06060',
-        'bond': '#C9A94E', 'account': '#4A8AB5', 'report': '#4A8AB5',
-        'invoice': '#4A8AB5', 'user': '#C9A94E', 'company': '#4A8AB5',
-        'whatsapp': '#25D366', 'login': '#2D8F5E', 'logout': '#E06060'
+        'add': '#2D8F5E',
+        'edit': '#E6A830',
+        'delete': '#E06060',
+        'sale': '#2D8F5E',
+        'purchase': '#E06060',
+        'return': '#E6A830',
+        'sync': '#4A8AB5',
+        'backup': '#4A8AB5',
+        'cashier': '#C9A94E',
+        'adjustment': '#C9A94E',
+        'license': '#C9A94E',
+        'treasury': '#4A8AB5',
+        'permission': '#4A8AB5',
+        'warehouse': '#4A8AB5',
+        'product': '#2D8F5E',
+        'customer': '#2D8F5E',
+        'supplier': '#E06060',
+        'expense': '#E06060',
+        'bond': '#C9A94E',
+        'account': '#4A8AB5',
+        'report': '#4A8AB5',
+        'invoice': '#4A8AB5',
+        'user': '#C9A94E',
+        'company': '#4A8AB5',
+        'whatsapp': '#25D366',
+        'login': '#2D8F5E',
+        'logout': '#E06060'
+    };
+
+    const typeLabels = {
+        'sale': 'بيع',
+        'purchase': 'شراء',
+        'return': 'مرتجع',
+        'invoice': 'فاتورة',
+        'product': 'منتج',
+        'customer': 'عميل',
+        'supplier': 'مورد',
+        'expense': 'مصروف',
+        'treasury': 'خزنة',
+        'bond': 'سند',
+        'permission': 'إذن',
+        'warehouse': 'مخزن',
+        'adjustment': 'تسوية',
+        'account': 'حساب',
+        'user': 'مستخدم',
+        'backup': 'نسخ احتياطي',
+        'sync': 'مزامنة',
+        'company': 'شركة',
+        'license': 'ترخيص',
+        'cashier': 'كاشف',
+        'report': 'تقرير',
+        'whatsapp': 'واتساب',
+        'settings': 'إعدادات',
+        'login': 'تسجيل دخول',
+        'logout': 'تسجيل خروج'
     };
 
     const actionLabels = {
-        'add': '➕ إضافة', 'edit': '✏️ تعديل', 'delete': '🗑️ حذف',
-        'sale': '💰 بيع', 'purchase': '🛒 شراء', 'return': '🔄 مرتجع',
-        'sync': '☁️ مزامنة', 'backup': '💾 نسخ', 'cashier': '🧾 كاشف',
-        'adjustment': '⚖️ تسوية', 'license': '🔑 ترخيص', 'treasury': '🏦 خزنة',
-        'permission': '📋 إذن', 'warehouse': '🏢 مخزن', 'product': '📦 منتج',
-        'customer': '👤 عميل', 'supplier': '🚚 مورد', 'expense': '💸 مصروف',
-        'bond': '📄 سند', 'account': '📊 حساب', 'report': '📈 تقرير',
-        'invoice': '🧾 فاتورة', 'user': '👥 مستخدم', 'company': '🏢 شركة',
-        'whatsapp': '💬 واتساب', 'login': '🔓 دخول', 'logout': '🔒 خروج'
+        'add': '➕ إضافة',
+        'edit': '✏️ تعديل',
+        'delete': '🗑️ حذف',
+        'sale': '💰 بيع',
+        'purchase': '🛒 شراء',
+        'return': '🔄 مرتجع',
+        'sync': '☁️ مزامنة',
+        'backup': '💾 نسخ',
+        'cashier': '🧾 كاشف',
+        'adjustment': '⚖️ تسوية',
+        'license': '🔑 ترخيص',
+        'treasury': '🏦 خزنة',
+        'permission': '📋 إذن',
+        'warehouse': '🏢 مخزن',
+        'product': '📦 منتج',
+        'customer': '👤 عميل',
+        'supplier': '🚚 مورد',
+        'expense': '💸 مصروف',
+        'bond': '📄 سند',
+        'account': '📊 حساب',
+        'report': '📈 تقرير',
+        'invoice': '🧾 فاتورة',
+        'user': '👥 مستخدم',
+        'company': '🏢 شركة',
+        'whatsapp': '💬 واتساب',
+        'login': '🔓 دخول',
+        'logout': '🔒 خروج'
     };
 
     let html = `
@@ -124,6 +207,7 @@ function filterAudit(filter) {
         const icon = actionIcons[a.action] || 'fa-circle';
         const color = actionColors[a.action] || '#A89070';
         const actionLabel = actionLabels[a.action] || a.action;
+        const typeLabel = typeLabels[a.type] || a.type || 'نشاط';
         
         const dateObj = new Date(a.date);
         const dateStr = dateObj.toLocaleDateString('ar');
@@ -135,6 +219,7 @@ function filterAudit(filter) {
                 <div style="display:flex;align-items:center;gap:4px;">
                     <i class="fas ${icon}" style="color:${color};font-size:12px;"></i>
                     <span style="color:${color};font-weight:700;font-size:11px;">${actionLabel}</span>
+                    <span style="color:#A89070;font-size:9px;">${typeLabel}</span>
                 </div>
                 <span style="font-size:11px;color:#F5E6C8;">${a.details}</span>
                 <span style="font-size:10px;color:#5D5D5D;text-align:center;">${a.user || 'admin'}</span>
@@ -146,7 +231,7 @@ function filterAudit(filter) {
 }
 
 // ================================================================
-// CLEAR AUDIT
+// CLEAR AUDIT - مسح سجل النشاطات
 // ================================================================
 function clearAudit() {
     if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }

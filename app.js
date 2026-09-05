@@ -1,5 +1,5 @@
 // ================================================================
-// app.js - التطبيق الرئيسي (النسخة النهائية المستقرة)
+// app.js - التطبيق الرئيسي (الملف الكامل)
 // ================================================================
 
 // ================================================================
@@ -21,37 +21,17 @@ let currentUser = JSON.parse(localStorage.getItem('mizan_current_user')) || { us
 
 function safeSetText(id, value) {
     const el = document.getElementById(id);
-    if (el) el.textContent = value !== undefined && value !== null ? value : '';
+    if (el) el.textContent = value;
 }
 
 function safeSetValue(id, value) {
     const el = document.getElementById(id);
-    if (el) el.value = value !== undefined && value !== null ? value : '';
-}
-
-function safeGetValue(id) {
-    const el = document.getElementById(id);
-    return el ? el.value : '';
-}
-
-function safeGetNumber(id) {
-    const el = document.getElementById(id);
-    return el ? parseFloat(el.value) || 0 : 0;
-}
-
-function safeGetInt(id) {
-    const el = document.getElementById(id);
-    return el ? parseInt(el.value) || 0 : 0;
+    if (el) el.value = value;
 }
 
 function showToast(msg, type = 'info') {
-    let t = document.getElementById('toast');
-    if (!t) {
-        t = document.createElement('div');
-        t.id = 'toast';
-        t.className = 'toast';
-        document.body.appendChild(t);
-    }
+    const t = document.getElementById('toast');
+    if (!t) return;
     t.textContent = msg;
     t.className = 'toast ' + type + ' show';
     clearTimeout(t._timer);
@@ -102,7 +82,9 @@ function copyToClipboard(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(() => {
             showToast('📋 تم نسخ البيانات', 'success');
-        }).catch(() => fallbackCopy(text));
+        }).catch(() => {
+            fallbackCopy(text);
+        });
     } else {
         fallbackCopy(text);
     }
@@ -128,11 +110,34 @@ function fallbackCopy(text) {
 // PERMISSIONS
 // ================================================================
 
-function isAdmin() { return currentUser.role === 'admin'; }
-function canDelete() { return currentUser.role === 'admin'; }
-function canEdit() { return currentUser.role === 'admin' || currentUser.role === 'manager'; }
-function canAdd() { return currentUser.role !== 'viewer'; }
-function canViewAudit() { return currentUser.role === 'admin'; }
+function hasPermission(action) {
+    const role = currentUser.role;
+    if (role === 'admin') return true;
+    if (role === 'manager') return ['add', 'edit', 'view'].includes(action);
+    if (role === 'cashier') return ['add', 'view'].includes(action);
+    if (role === 'viewer') return ['view'].includes(action);
+    return false;
+}
+
+function isAdmin() {
+    return currentUser.role === 'admin';
+}
+
+function canDelete() {
+    return currentUser.role === 'admin';
+}
+
+function canEdit() {
+    return currentUser.role === 'admin' || currentUser.role === 'manager';
+}
+
+function canAdd() {
+    return currentUser.role !== 'viewer';
+}
+
+function canViewAudit() {
+    return currentUser.role === 'admin';
+}
 
 // ================================================================
 // UPDATE UI BY PERMISSIONS
@@ -140,8 +145,9 @@ function canViewAudit() { return currentUser.role === 'admin'; }
 
 function updateUIByPermissions() {
     const clearAuditBtn = document.getElementById('clearAuditBtn');
-    if (clearAuditBtn) clearAuditBtn.style.display = canViewAudit() ? 'block' : 'none';
-    
+    if (clearAuditBtn) {
+        clearAuditBtn.style.display = canViewAudit() ? 'block' : 'none';
+    }
     document.querySelectorAll('.btn-danger').forEach(btn => {
         if (!canDelete() && !btn.closest('.actions')?.classList?.contains('no-permission')) {
             btn.style.display = 'none';
@@ -159,7 +165,6 @@ function updateUIByPermissions() {
             }
         }
     });
-    
     const display = document.getElementById('currentUserDisplay');
     const roleDisplay = document.getElementById('currentRoleDisplay');
     if (display) display.textContent = currentUser.username;
@@ -182,7 +187,9 @@ function updateClock() {
     hours = hours % 12;
     hours = hours ? hours : 12;
     const clock = document.getElementById('liveClock');
-    if (clock) clock.textContent = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
+    if (clock) {
+        clock.textContent = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
+    }
 }
 setInterval(updateClock, 1000);
 updateClock();
@@ -208,18 +215,13 @@ function checkLogin() {
         showToast('🔓 مرحباً بك في الميزان!', 'success');
 
         setTimeout(() => {
-            loadAllData();
             if (typeof seedData === 'function') seedData();
             if (typeof populateAllSelects === 'function') populateAllSelects();
             if (typeof refreshAllPages === 'function') refreshAllPages();
             if (typeof startAutoBackup === 'function') startAutoBackup();
             updateUIByPermissions();
             updateClock();
-            setTimeout(() => {
-                if (navigator.onLine && typeof syncFromFirebase === 'function') {
-                    syncFromFirebase();
-                }
-            }, 1000);
+            if (typeof syncFromFirebase === 'function') syncFromFirebase();
         }, 300);
     } else {
         if (error) error.classList.add('show');
@@ -233,7 +235,6 @@ function checkLogin() {
 
 function lockApp() {
     if (confirm('🔒 هل تريد قفل التطبيق؟')) {
-        saveAllData();
         const appContent = document.getElementById('appContent');
         const loginContainer = document.getElementById('loginContainer');
         const loginPassword = document.getElementById('loginPassword');
@@ -250,7 +251,6 @@ function lockApp() {
 
 function logoutApp() {
     if (confirm('⚠️ هل تريد تسجيل الخروج؟')) {
-        saveAllData();
         const appContent = document.getElementById('appContent');
         const loginContainer = document.getElementById('loginContainer');
         const loginPassword = document.getElementById('loginPassword');
@@ -261,7 +261,6 @@ function logoutApp() {
             loginPassword.focus();
         }
         localStorage.removeItem('app_unlocked');
-        localStorage.removeItem('mizan_current_user');
         showToast('👋 تم تسجيل الخروج', 'info');
     }
 }
@@ -286,46 +285,60 @@ function navigateTo(pageId) {
 }
 
 function refreshPage(pageId) {
-    const refreshFunctions = {
-        'dashboard': ['updateDashboard', 'updateDashboardDetails', 'refreshDashboard'],
-        'inventory': ['renderProducts'],
-        'warehouses': ['renderWarehouses'],
-        'permissions': ['renderPermissions'],
-        'customers': ['renderCustomers'],
-        'suppliers': ['renderSuppliers'],
-        'expenses': ['renderExpenses'],
-        'treasury': ['renderTreasury'],
-        'bonds': ['renderBonds'],
-        'invoices': ['renderAllInvoices'],
-        'accounting': ['updateAccounting'],
-        'cashier': ['renderCashier'],
-        'settings': ['updateSettingsUI', 'updateLicenseUI'],
-        'company': ['loadCompanyData'],
-        'backup': ['renderBackups'],
-        'accounts': ['renderAccounts'],
-        'audit': ['renderAudit'],
-        'alerts': ['updateAlertsUI'],
-        'profit_analysis': ['generateProfitAnalysis'],
-        'license_generator': ['renderGeneratedKeys', 'updateLicensePrice'],
-        'sales': ['populateAllSelects', 'updateCustomerWhatsApp'],
-        'purchase': ['populateAllSelects', 'updateSupplierWhatsApp'],
-        'returns': ['populateAllSelects'],
-        'customer_statement': ['populateCustomerStatement'],
-        'supplier_statement': ['populateSupplierStatement'],
-        'users': ['renderUsers', 'populateUsersSelect'],
-        'inventory_adjustment': ['populateAdjustmentProducts', 'renderAdjustmentHistory', 'updateAdjustmentDateTime']
-    };
-
-    const functions = refreshFunctions[pageId] || [];
-    functions.forEach(funcName => {
-        if (typeof window[funcName] === 'function') {
-            try {
-                window[funcName]();
-            } catch (e) {
-                console.warn('⚠️ خطأ في استدعاء ' + funcName + ':', e);
-            }
-        }
-    });
+    if (pageId === 'dashboard') {
+        if (typeof updateDashboard === 'function') updateDashboard();
+        if (typeof updateDashboardDetails === 'function') updateDashboardDetails();
+        if (typeof refreshDashboard === 'function') refreshDashboard();
+    }
+    if (pageId === 'inventory' && typeof renderProducts === 'function') renderProducts();
+    if (pageId === 'warehouses' && typeof renderWarehouses === 'function') renderWarehouses();
+    if (pageId === 'permissions' && typeof renderPermissions === 'function') renderPermissions();
+    if (pageId === 'customers' && typeof renderCustomers === 'function') renderCustomers();
+    if (pageId === 'suppliers' && typeof renderSuppliers === 'function') renderSuppliers();
+    if (pageId === 'expenses' && typeof renderExpenses === 'function') renderExpenses();
+    if (pageId === 'treasury' && typeof renderTreasury === 'function') renderTreasury();
+    if (pageId === 'bonds' && typeof renderBonds === 'function') renderBonds();
+    if (pageId === 'invoices' && typeof renderAllInvoices === 'function') renderAllInvoices();
+    if (pageId === 'accounting' && typeof updateAccounting === 'function') updateAccounting();
+    if (pageId === 'cashier' && typeof renderCashier === 'function') renderCashier();
+    if (pageId === 'settings') {
+        if (typeof updateSettingsUI === 'function') updateSettingsUI();
+        if (typeof updateLicenseUI === 'function') updateLicenseUI();
+    }
+    if (pageId === 'company' && typeof loadCompanyData === 'function') loadCompanyData();
+    if (pageId === 'backup' && typeof renderBackups === 'function') renderBackups();
+    if (pageId === 'accounts' && typeof renderAccounts === 'function') renderAccounts();
+    if (pageId === 'audit' && typeof renderAudit === 'function') renderAudit();
+    if (pageId === 'alerts' && typeof updateAlertsUI === 'function') updateAlertsUI();
+    if (pageId === 'profit_analysis' && typeof generateProfitAnalysis === 'function') generateProfitAnalysis();
+    if (pageId === 'license_generator') {
+        if (typeof renderGeneratedKeys === 'function') renderGeneratedKeys();
+        if (typeof updateLicensePrice === 'function') updateLicensePrice();
+    }
+    if (pageId === 'sales' || pageId === 'purchase' || pageId === 'returns') {
+        if (typeof populateAllSelects === 'function') populateAllSelects();
+    }
+    if (pageId === 'customer_statement' && typeof populateCustomerStatement === 'function') populateCustomerStatement();
+    if (pageId === 'supplier_statement' && typeof populateSupplierStatement === 'function') populateSupplierStatement();
+    if (pageId === 'barcode' && typeof updateAlertsUI === 'function') updateAlertsUI();
+    if (pageId === 'users') {
+        if (typeof renderUsers === 'function') renderUsers();
+        if (typeof populateUsersSelect === 'function') populateUsersSelect();
+        updateUIByPermissions();
+    }
+    if (pageId === 'sales') {
+        if (typeof updateCustomerWhatsApp === 'function') updateCustomerWhatsApp();
+        if (typeof updateCustomerWhatsAppManual === 'function') updateCustomerWhatsAppManual();
+    }
+    if (pageId === 'purchase') {
+        if (typeof updateSupplierWhatsApp === 'function') updateSupplierWhatsApp();
+        if (typeof updateSupplierWhatsAppManual === 'function') updateSupplierWhatsAppManual();
+    }
+    if (pageId === 'inventory_adjustment') {
+        if (typeof populateAdjustmentProducts === 'function') populateAdjustmentProducts();
+        if (typeof renderAdjustmentHistory === 'function') renderAdjustmentHistory();
+        if (typeof updateAdjustmentDateTime === 'function') updateAdjustmentDateTime();
+    }
 
     updateUIByPermissions();
     updateClock();
@@ -350,30 +363,42 @@ function closeMorePanel() {
 // ================================================================
 
 function refreshAllPages() {
-    const allFunctions = [
-        'renderProducts', 'renderSales', 'renderAllPurchases', 'renderAllReturns',
-        'renderAllInvoices', 'renderWarehouses', 'renderPermissions', 'renderCustomers',
-        'renderSuppliers', 'renderExpenses', 'renderTreasury', 'renderBonds',
-        'renderBackups', 'renderAccounts', 'renderAudit', 'renderGeneratedKeys',
-        'renderCashier', 'renderUsers', 'renderAdjustmentHistory',
-        'updateDashboard', 'updateAccounting', 'updateSettingsUI', 'updateAlertsUI',
-        'updateLicenseUI', 'loadCompanyData', 'populateAllSelects', 'updateLicensePrice',
-        'refreshDashboard', 'populateAdjustmentProducts', 'updateCustomerWhatsApp',
-        'updateSupplierWhatsApp'
-    ];
-
-    allFunctions.forEach(funcName => {
-        if (typeof window[funcName] === 'function') {
-            try {
-                window[funcName]();
-            } catch (e) {
-                console.warn('⚠️ خطأ في ' + funcName + ':', e);
-            }
-        }
-    });
-
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderSales === 'function') renderSales();
+    if (typeof renderAllPurchases === 'function') renderAllPurchases();
+    if (typeof renderAllReturns === 'function') renderAllReturns();
+    if (typeof renderAllInvoices === 'function') renderAllInvoices();
+    if (typeof renderWarehouses === 'function') renderWarehouses();
+    if (typeof renderPermissions === 'function') renderPermissions();
+    if (typeof renderCustomers === 'function') renderCustomers();
+    if (typeof renderSuppliers === 'function') renderSuppliers();
+    if (typeof renderExpenses === 'function') renderExpenses();
+    if (typeof renderTreasury === 'function') renderTreasury();
+    if (typeof renderBonds === 'function') renderBonds();
+    if (typeof renderBackups === 'function') renderBackups();
+    if (typeof renderAccounts === 'function') renderAccounts();
+    if (typeof renderAudit === 'function') renderAudit();
+    if (typeof renderGeneratedKeys === 'function') renderGeneratedKeys();
+    if (typeof renderCashier === 'function') renderCashier();
+    if (typeof renderUsers === 'function') renderUsers();
+    if (typeof renderAdjustmentHistory === 'function') renderAdjustmentHistory();
+    if (typeof updateDashboard === 'function') updateDashboard();
+    if (typeof updateAccounting === 'function') updateAccounting();
+    if (typeof updateSettingsUI === 'function') updateSettingsUI();
+    if (typeof updateAlertsUI === 'function') updateAlertsUI();
+    if (typeof updateLicenseUI === 'function') updateLicenseUI();
+    if (typeof loadCompanyData === 'function') loadCompanyData();
+    if (typeof populateAllSelects === 'function') populateAllSelects();
+    if (typeof updateLicensePrice === 'function') updateLicensePrice();
+    if (typeof refreshDashboard === 'function') refreshDashboard();
     updateUIByPermissions();
+    if (typeof populateAdjustmentProducts === 'function') populateAdjustmentProducts();
     updateClock();
+
+    setTimeout(() => {
+        if (typeof updateCustomerWhatsApp === 'function') updateCustomerWhatsApp();
+        if (typeof updateSupplierWhatsApp === 'function') updateSupplierWhatsApp();
+    }, 200);
 }
 
 // ================================================================
@@ -383,12 +408,8 @@ function refreshAllPages() {
 function startAutoBackup() {
     if (backupInterval) clearInterval(backupInterval);
     backupInterval = setInterval(() => {
-        saveAllData();
         if (typeof createAutoBackup === 'function') createAutoBackup();
-        if (navigator.onLine && typeof syncToFirebase === 'function') {
-            syncToFirebase();
-        }
-    }, 5 * 60 * 1000);
+    }, 6 * 60 * 60 * 1000);
 }
 
 // ================================================================
@@ -580,7 +601,8 @@ function renderGeneratedKeys() {
         <span>العميل</span><span>المدة</span><span>المبلغ</span><span>تاريخ الانتهاء</span>
     </div>`;
 
-    keys.slice(0, 20).forEach(k => {
+    for (let i = 0; i < keys.length && i < 20; i++) {
+        const k = keys[i];
         html += `
             <div class="table-row" style="grid-template-columns:1.2fr 1fr 0.8fr 1.2fr;font-size:12px;">
                 <span><strong>${k.customerName}</strong></span>
@@ -589,12 +611,12 @@ function renderGeneratedKeys() {
                 <span>${k.expiryDate}</span>
             </div>
         `;
-    });
+    }
     container.innerHTML = html;
 }
 
 // ================================================================
-// COUNT VERSION CLICKS
+// COUNT VERSION CLICKS - إظهار زر توليد المفاتيح بعد 5 ضغطات
 // ================================================================
 
 function countVersionClicks() {
@@ -612,6 +634,7 @@ function countVersionClicks() {
             btn.style.display = 'block';
             btn.style.animation = 'pulse 1s infinite';
             showToast('🔑 تم تفعيل زر توليد المفاتيح!', 'success');
+
             setTimeout(() => {
                 versionClickCount = 0;
                 if (btn) {
@@ -641,7 +664,7 @@ document.addEventListener('keydown', e => {
     }
     if (e.ctrlKey && e.key === 's') {
         e.preventDefault();
-        saveAllData();
+        if (typeof saveAll === 'function') saveAll();
         showToast('💾 تم الحفظ', 'success');
     }
 });
@@ -652,13 +675,13 @@ document.addEventListener('keydown', e => {
 
 setInterval(() => {
     if (document.getElementById('appContent').style.display !== 'none') {
-        saveAllData();
+        if (typeof saveAll === 'function') saveAll();
         updateClock();
     }
 }, 30000);
 
 window.addEventListener('beforeunload', function() {
-    saveAllData();
+    if (typeof saveAll === 'function') saveAll();
 });
 
 // ================================================================
@@ -689,7 +712,9 @@ function updateCustomerWhatsApp() {
     }
 }
 
-function updateCustomerWhatsAppManual() { updateCustomerWhatsApp(); }
+function updateCustomerWhatsAppManual() {
+    updateCustomerWhatsApp();
+}
 
 function updateSupplierWhatsApp() {
     const select = document.getElementById('purchaseSupplierSelect');
@@ -715,7 +740,9 @@ function updateSupplierWhatsApp() {
     }
 }
 
-function updateSupplierWhatsAppManual() { updateSupplierWhatsApp(); }
+function updateSupplierWhatsAppManual() {
+    updateSupplierWhatsApp();
+}
 
 function sendWhatsApp() {
     if (!canAdd()) {
@@ -814,7 +841,9 @@ function sendWhatsApp() {
     const url = `https://wa.me/${whatsappNumber}?text=${encoded}`;
     window.open(url, '_blank');
 
-    addAuditLog('sale', 'whatsapp', `إرسال فاتورة واتساب للعميل: ${customer} - رقم: ${whatsappNumber}`);
+    if (typeof addAuditLog === 'function') {
+        addAuditLog('sale', 'whatsapp', `إرسال فاتورة واتساب للعميل: ${customer} - رقم: ${whatsappNumber}`);
+    }
     showToast(`📱 تم فتح واتساب للعميل ${customer}`, 'success');
 }
 
@@ -897,7 +926,9 @@ function printInvoice(type) {
 // ================================================================
 
 function addAuditLog(action, type, details) {
-    if (typeof window.auditLog === 'undefined') window.auditLog = [];
+    if (typeof window.auditLog === 'undefined') {
+        window.auditLog = [];
+    }
     window.auditLog.unshift({
         id: Date.now(),
         action: action,
@@ -929,64 +960,37 @@ function updateSettingsUI() {
 }
 
 function changePasswordSettings() {
-    if (typeof window.changePasswordSettings === 'function') {
-        window.changePasswordSettings();
-    } else {
-        if (!canEdit()) {
-            showToast('⚠️ ليس لديك صلاحية', 'error');
-            return;
-        }
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
 
-        const oldEl = document.getElementById('oldPassword');
-        const newEl = document.getElementById('newPassword');
-        const confirmEl = document.getElementById('confirmPassword');
+    const oldEl = document.getElementById('oldPassword');
+    const newEl = document.getElementById('newPassword');
+    const confirmEl = document.getElementById('confirmPassword');
 
-        if (!oldEl || !newEl || !confirmEl) return;
-        const old = oldEl.value;
-        const newPwd = newEl.value;
-        const confirm = confirmEl.value;
+    if (!oldEl || !newEl || !confirmEl) return;
+    const old = oldEl.value;
+    const newPwd = newEl.value;
+    const confirm = confirmEl.value;
 
-        const user = (window.users || []).find(u => u.username === currentUser.username);
-        if (!user) {
-            showToast('⚠️ المستخدم غير موجود', 'error');
-            return;
-        }
-
-        if (old !== user.password && old !== DEFAULT_PASSWORD) {
-            showToast('❌ كلمة المرور الحالية غير صحيحة', 'error');
-            return;
-        }
-        if (newPwd.length < 4) {
-            showToast('❌ 4 أحرف على الأقل', 'error');
-            return;
-        }
-        if (newPwd !== confirm) {
-            showToast('❌ غير مطابقة', 'error');
-            return;
-        }
-
-        user.password = newPwd;
-        if (currentUser.username === user.username) {
-            currentPassword = newPwd;
-        }
-
-        localStorage.setItem('mizan_users', JSON.stringify(window.users));
-        localStorage.setItem('app_password', newPwd);
-        addAuditLog('edit', 'settings', 'تغيير كلمة المرور للمستخدم: ' + user.username);
-
-        oldEl.value = '';
-        newEl.value = '';
-        confirmEl.value = '';
-
-        showToast('✅ تم تغيير كلمة المرور بنجاح', 'success');
+    if (old !== currentPassword && old !== DEFAULT_PASSWORD) {
+        showToast('❌ كلمة المرور الحالية غير صحيحة', 'error');
+        return;
     }
+    if (newPwd.length < 4) { showToast('❌ 4 أحرف على الأقل', 'error'); return; }
+    if (newPwd !== confirm) { showToast('❌ غير مطابقة', 'error'); return; }
+
+    currentPassword = newPwd;
+    localStorage.setItem('app_password', newPwd);
+    addAuditLog('edit', 'settings', 'تغيير كلمة المرور');
+
+    oldEl.value = '';
+    newEl.value = '';
+    confirmEl.value = '';
+
+    showToast('✅ تم التغيير', 'success');
 }
 
 function clearAllData() {
-    if (!canDelete()) {
-        showToast('⚠️ ليس لديك صلاحية', 'error');
-        return;
-    }
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (!confirm('⚠️ هل أنت متأكد من حذف جميع البيانات؟')) return;
     if (!confirm('✅ تأكيد نهائي؟')) return;
 
@@ -994,29 +998,28 @@ function clearAllData() {
         'treasury', 'bonds', 'warehouses', 'warehouseProducts', 'permissions', 'companyData',
         'backups', 'accounts', 'auditLog', 'alerts', 'cashierHistory', 'inventoryAdjustments'
     ];
-    
-    keys.forEach(key => {
-        localStorage.removeItem('mizan_' + key);
-        if (key === 'products') window.products = [];
-        else if (key === 'customers') window.customers = [];
-        else if (key === 'suppliers') window.suppliers = [];
-        else if (key === 'purchases') window.purchases = [];
-        else if (key === 'sales') window.sales = [];
-        else if (key === 'returns') window.returns = [];
-        else if (key === 'expenses') window.expenses = [];
-        else if (key === 'treasury') window.treasury = [];
-        else if (key === 'bonds') window.bonds = [];
-        else if (key === 'warehouses') window.warehouses = [];
-        else if (key === 'warehouseProducts') window.warehouseProducts = [];
-        else if (key === 'permissions') window.permissions = [];
-        else if (key === 'companyData') window.companyData = {};
-        else if (key === 'backups') window.backups = [];
-        else if (key === 'accounts') window.accounts = [];
-        else if (key === 'auditLog') window.auditLog = [];
-        else if (key === 'alerts') window.alerts = [];
-        else if (key === 'cashierHistory') window.cashierHistory = [];
-        else if (key === 'inventoryAdjustments') window.inventoryAdjustments = [];
-    });
+    for (let i = 0; i < keys.length; i++) {
+        localStorage.removeItem('mizan_' + keys[i]);
+        if (keys[i] === 'products') window.products = [];
+        else if (keys[i] === 'customers') window.customers = [];
+        else if (keys[i] === 'suppliers') window.suppliers = [];
+        else if (keys[i] === 'purchases') window.purchases = [];
+        else if (keys[i] === 'sales') window.sales = [];
+        else if (keys[i] === 'returns') window.returns = [];
+        else if (keys[i] === 'expenses') window.expenses = [];
+        else if (keys[i] === 'treasury') window.treasury = [];
+        else if (keys[i] === 'bonds') window.bonds = [];
+        else if (keys[i] === 'warehouses') window.warehouses = [];
+        else if (keys[i] === 'warehouseProducts') window.warehouseProducts = [];
+        else if (keys[i] === 'permissions') window.permissions = [];
+        else if (keys[i] === 'companyData') window.companyData = {};
+        else if (keys[i] === 'backups') window.backups = [];
+        else if (keys[i] === 'accounts') window.accounts = [];
+        else if (keys[i] === 'auditLog') window.auditLog = [];
+        else if (keys[i] === 'alerts') window.alerts = [];
+        else if (keys[i] === 'cashierHistory') window.cashierHistory = [];
+        else if (keys[i] === 'inventoryAdjustments') window.inventoryAdjustments = [];
+    }
 
     addAuditLog('delete', 'all', 'مسح جميع البيانات');
     refreshAllPages();
@@ -1043,8 +1046,8 @@ function populateAllSelects() {
 
 function populateWarehouseSelects() {
     const ids = ['productWarehouse', 'salesWarehouse', 'purchaseWarehouse', 'returnWarehouse', 'treasuryWarehouse'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
+    for (let i = 0; i < ids.length; i++) {
+        const el = document.getElementById(ids[i]);
         if (el) {
             el.innerHTML = '<option value="">اختر مخزن...</option>';
             if (window.warehouses) {
@@ -1053,13 +1056,13 @@ function populateWarehouseSelects() {
                 });
             }
         }
-    });
+    }
 }
 
 function populateProductSelects() {
     const ids = ['salesItemProduct', 'purchaseItemProduct', 'returnItemProduct', 'permissionProduct'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
+    for (let i = 0; i < ids.length; i++) {
+        const el = document.getElementById(ids[i]);
         if (el) {
             el.innerHTML = '<option value="">اختر منتج...</option>';
             if (window.products) {
@@ -1068,13 +1071,13 @@ function populateProductSelects() {
                 });
             }
         }
-    });
+    }
 }
 
 function populateCustomerSelects() {
     const ids = ['salesCustomerSelect', 'returnCustomerSelect'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
+    for (let i = 0; i < ids.length; i++) {
+        const el = document.getElementById(ids[i]);
         if (el) {
             el.innerHTML = '<option value="">اختر عميل...</option>';
             if (window.customers) {
@@ -1083,7 +1086,7 @@ function populateCustomerSelects() {
                 });
             }
         }
-    });
+    }
 }
 
 function populateSupplierSelects() {
@@ -1100,8 +1103,8 @@ function populateSupplierSelects() {
 
 function populatePermissionSelects() {
     const ids = ['permissionFrom', 'permissionTo'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
+    for (let i = 0; i < ids.length; i++) {
+        const el = document.getElementById(ids[i]);
         if (el) {
             el.innerHTML = '<option value="">اختر مخزن...</option>';
             if (window.warehouses) {
@@ -1110,7 +1113,7 @@ function populatePermissionSelects() {
                 });
             }
         }
-    });
+    }
 }
 
 function populateCustomerStatement() {
@@ -1181,1299 +1184,43 @@ function populateAccountParents() {
 }
 
 function populateAdjustmentProducts() {
-    if (typeof window.populateAdjustmentProducts === 'function') {
-        window.populateAdjustmentProducts();
-    } else {
-        const el = document.getElementById('adjustmentProduct');
-        if (el) {
-            el.innerHTML = '<option value="">اختر منتج...</option>';
-            if (window.products && window.warehouseProducts) {
-                window.products.forEach(p => {
-                    let total = 0;
-                    window.warehouseProducts.forEach(wp => {
-                        if (wp.productId === p.id) total += wp.qty;
-                    });
-                    el.innerHTML += `<option value="${p.id}">${p.name} (${total})</option>`;
+    const el = document.getElementById('adjustmentProduct');
+    if (el) {
+        el.innerHTML = '<option value="">اختر منتج...</option>';
+        if (window.products && window.warehouseProducts) {
+            window.products.forEach(p => {
+                let total = 0;
+                window.warehouseProducts.forEach(wp => {
+                    if (wp.productId === p.id) total += wp.qty;
                 });
-            }
+                el.innerHTML += `<option value="${p.id}">${p.name} (${total})</option>`;
+            });
         }
     }
 }
 
 function populateUsersSelect() {
-    if (typeof window.populateUsersSelect === 'function') {
-        window.populateUsersSelect();
-    } else {
-        const el = document.getElementById('switchUserSelect');
-        if (el) {
-            el.innerHTML = '<option value="">اختر مستخدم...</option>';
-            if (window.users) {
-                const roles = { admin: 'مدير', manager: 'مشرف', cashier: 'كاشير', viewer: 'مشاهد' };
-                window.users.forEach(u => {
-                    el.innerHTML += `<option value="${u.id}">${u.username} (${roles[u.role] || u.role})</option>`;
-                });
-            }
-            if (currentUser) {
-                const current = window.users ? window.users.find(u => u.username === currentUser.username) : null;
-                if (current) el.value = current.id;
-            }
+    const el = document.getElementById('switchUserSelect');
+    if (el) {
+        el.innerHTML = '<option value="">اختر مستخدم...</option>';
+        if (window.users) {
+            const roles = { admin: 'مدير', manager: 'مشرف', cashier: 'كاشير', viewer: 'مشاهد' };
+            window.users.forEach(u => {
+                el.innerHTML += `<option value="${u.id}">${u.username} (${roles[u.role] || u.role})</option>`;
+            });
+        }
+        if (currentUser) {
+            const current = window.users ? window.users.find(u => u.username === currentUser.username) : null;
+            if (current) el.value = current.id;
         }
     }
 }
 
 // ================================================================
-// SAVE AND LOAD DATA
-// ================================================================
-
-function saveAllData() {
-    try {
-        const dataKeys = ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns',
-            'expenses', 'treasury', 'bonds', 'warehouses', 'warehouseProducts', 'permissions',
-            'companyData', 'backups', 'accounts', 'auditLog', 'alerts', 'cashierHistory',
-            'inventoryAdjustments', 'users'
-        ];
-        
-        dataKeys.forEach(key => {
-            if (window[key] !== undefined) {
-                localStorage.setItem('mizan_' + key, JSON.stringify(window[key]));
-            }
-        });
-        
-        localStorage.setItem('mizan_current_user', JSON.stringify(currentUser));
-        localStorage.setItem('app_password', currentPassword);
-        
-        const backupData = {};
-        dataKeys.forEach(key => {
-            if (window[key] !== undefined) {
-                backupData[key] = window[key];
-            }
-        });
-        backupData.currentUser = currentUser;
-        backupData.savedAt = Date.now();
-        localStorage.setItem('mizan_auto_restore', JSON.stringify(backupData));
-        
-    } catch (e) {
-        console.warn('⚠️ خطأ في حفظ البيانات:', e);
-    }
-}
-
-function loadAllData() {
-    try {
-        const dataKeys = ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns',
-            'expenses', 'treasury', 'bonds', 'warehouses', 'warehouseProducts', 'permissions',
-            'companyData', 'backups', 'accounts', 'auditLog', 'alerts', 'cashierHistory',
-            'inventoryAdjustments', 'users'
-        ];
-        
-        dataKeys.forEach(key => {
-            const data = localStorage.getItem('mizan_' + key);
-            if (data) {
-                try {
-                    window[key] = JSON.parse(data);
-                } catch (e) {
-                    console.warn('⚠️ خطأ في قراءة ' + key + ':', e);
-                    window[key] = Array.isArray(window[key]) ? [] : {};
-                }
-            } else {
-                if (Array.isArray(window[key]) || key === 'users' || key === 'companyData') {
-                    window[key] = Array.isArray(window[key]) ? [] : {};
-                }
-            }
-        });
-        
-        const userData = localStorage.getItem('mizan_current_user');
-        if (userData) {
-            try {
-                currentUser = JSON.parse(userData);
-            } catch (e) {
-                currentUser = { username: 'مدير', role: 'admin' };
-            }
-        }
-        
-        const pass = localStorage.getItem('app_password');
-        if (pass) {
-            currentPassword = pass;
-        }
-        
-    } catch (e) {
-        console.warn('⚠️ خطأ في تحميل البيانات:', e);
-    }
-}
-
-// ================================================================
-// INIT USERS
-// ================================================================
-
-function initUsers() {
-    let users = localStorage.getItem('mizan_users');
-    if (users) {
-        try {
-            window.users = JSON.parse(users);
-        } catch (e) {
-            window.users = getDefaultUsers();
-        }
-    } else {
-        window.users = getDefaultUsers();
-    }
-    localStorage.setItem('mizan_users', JSON.stringify(window.users));
-}
-
-function getDefaultUsers() {
-    return [
-        { id: 1, username: 'مدير', role: 'admin', password: DEFAULT_PASSWORD },
-        { id: 2, username: 'مشرف', role: 'manager', password: DEFAULT_PASSWORD },
-        { id: 3, username: 'كاشير', role: 'cashier', password: DEFAULT_PASSWORD },
-        { id: 4, username: 'مشاهد', role: 'viewer', password: DEFAULT_PASSWORD }
-    ];
-}
-
-// ================================================================
-// SEED DATA
-// ================================================================
-
-function seedData() {
-    loadAllData();
-    
-    const hasData = localStorage.getItem('mizan_products') && 
-                   JSON.parse(localStorage.getItem('mizan_products') || '[]').length > 0;
-    
-    if (hasData) {
-        console.log('📦 البيانات موجودة مسبقاً');
-        return;
-    }
-
-    console.log('🔄 تهيئة البيانات التجريبية...');
-
-    if (typeof window.products === 'undefined') window.products = [];
-    if (typeof window.customers === 'undefined') window.customers = [];
-    if (typeof window.suppliers === 'undefined') window.suppliers = [];
-    if (typeof window.purchases === 'undefined') window.purchases = [];
-    if (typeof window.sales === 'undefined') window.sales = [];
-    if (typeof window.returns === 'undefined') window.returns = [];
-    if (typeof window.expenses === 'undefined') window.expenses = [];
-    if (typeof window.treasury === 'undefined') window.treasury = [];
-    if (typeof window.bonds === 'undefined') window.bonds = [];
-    if (typeof window.warehouses === 'undefined') window.warehouses = [];
-    if (typeof window.warehouseProducts === 'undefined') window.warehouseProducts = [];
-    if (typeof window.permissions === 'undefined') window.permissions = [];
-    if (typeof window.backups === 'undefined') window.backups = [];
-    if (typeof window.accounts === 'undefined') window.accounts = [];
-    if (typeof window.auditLog === 'undefined') window.auditLog = [];
-    if (typeof window.alerts === 'undefined') window.alerts = [];
-    if (typeof window.cashierHistory === 'undefined') window.cashierHistory = [];
-    if (typeof window.inventoryAdjustments === 'undefined') window.inventoryAdjustments = [];
-    if (typeof window.companyData === 'undefined') window.companyData = {};
-    if (typeof window.users === 'undefined') window.users = getDefaultUsers();
-
-    // ===== منتجات =====
-    window.products = [
-        { id: 1, name: 'هاتف ذكي X100', buyPrice: 8000, sellPrice: 10000, min: 5, barcode: '1234567890123' },
-        { id: 2, name: 'سماعة لاسلكية', buyPrice: 500, sellPrice: 750, min: 10, barcode: '1234567890124' },
-        { id: 3, name: 'شاحن سريع 65W', buyPrice: 300, sellPrice: 450, min: 15, barcode: '1234567890125' },
-        { id: 4, name: 'حافظة هاتف', buyPrice: 50, sellPrice: 100, min: 20, barcode: '1234567890126' },
-        { id: 5, name: 'كابل USB-C', buyPrice: 80, sellPrice: 150, min: 25, barcode: '1234567890127' },
-        { id: 6, name: 'بطارية خارجية', buyPrice: 400, sellPrice: 600, min: 8, barcode: '1234567890128' }
-    ];
-
-    // ===== مخازن =====
-    window.warehouses = [
-        { id: 1, name: 'المخزن الرئيسي', type: 'رئيسي', address: 'القاهرة' },
-        { id: 2, name: 'مخزن المحل', type: 'محل', address: 'الإسكندرية' },
-        { id: 3, name: 'مخزن التوزيع', type: 'فرعي', address: 'الجيزة' }
-    ];
-
-    // ===== كميات المنتجات =====
-    window.warehouseProducts = [
-        { warehouseId: 1, productId: 1, qty: 30 },
-        { warehouseId: 1, productId: 2, qty: 50 },
-        { warehouseId: 1, productId: 3, qty: 40 },
-        { warehouseId: 1, productId: 4, qty: 60 },
-        { warehouseId: 1, productId: 5, qty: 80 },
-        { warehouseId: 1, productId: 6, qty: 25 },
-        { warehouseId: 2, productId: 1, qty: 10 },
-        { warehouseId: 2, productId: 2, qty: 20 },
-        { warehouseId: 2, productId: 3, qty: 15 },
-        { warehouseId: 3, productId: 4, qty: 30 },
-        { warehouseId: 3, productId: 5, qty: 40 }
-    ];
-
-    // ===== عملاء =====
-    window.customers = [
-        { id: 1, name: 'أحمد محمد', phone: '01234567890', whatsapp: '01011993799', email: 'ahmed@test.com', address: 'القاهرة', active: true },
-        { id: 2, name: 'سارة علي', phone: '01123456789', whatsapp: '01158767633', email: 'sara@test.com', address: 'الإسكندرية', active: true },
-        { id: 3, name: 'محمد إبراهيم', phone: '01098765432', whatsapp: '01098765432', email: 'mohamed@test.com', address: 'الجيزة', active: true }
-    ];
-
-    // ===== موردين =====
-    window.suppliers = [
-        { id: 1, name: 'شركة الاتصالات المصرية', phone: '0234567890', whatsapp: '01158767633', email: 'info@telecom.com', address: 'القاهرة', active: true },
-        { id: 2, name: 'مستورد الإلكترونيات', phone: '0223456789', whatsapp: '01234567890', email: 'info@electronics.com', address: 'الإسكندرية', active: true }
-    ];
-
-    // ===== حسابات محاسبية =====
-    window.accounts = [
-        { id: 1, name: 'أصول', type: 'assets', parentId: null },
-        { id: 2, name: 'خصوم', type: 'liabilities', parentId: null },
-        { id: 3, name: 'حقوق ملكية', type: 'equity', parentId: null },
-        { id: 4, name: 'إيرادات', type: 'revenue', parentId: null },
-        { id: 5, name: 'مصروفات', type: 'expenses', parentId: null }
-    ];
-
-    // ===== بيانات الشركة =====
-    window.companyData = {
-        name: 'شركة الميزان للتجارة',
-        phone: '0234567890',
-        mobile: '01000000000',
-        address: 'القاهرة، مصر',
-        taxNumber: '123-456-789',
-        commercialRegister: '12345',
-        email: 'info@mizan.com',
-        vodafone: '01011993799',
-        instapay: 'rashedrabia@instapay',
-        bankAccount: '2021300000275818',
-        cash: '01080591108',
-        paymentEmail: 'payment@mizan.com',
-        logo: null
-    };
-
-    // ===== فاتورة بيع تجريبية =====
-    window.sales = [{
-        id: Date.now(),
-        number: 1,
-        customer: 'أحمد محمد',
-        customerId: 1,
-        items: [
-            { productId: 1, productName: 'هاتف ذكي X100', qty: 2, price: 10000, total: 20000 },
-            { productId: 2, productName: 'سماعة لاسلكية', qty: 3, price: 750, total: 2250 }
-        ],
-        total: 22250,
-        totalWithTax: 22250,
-        date: getTodayDate(),
-        paymentMethod: 'نقدي',
-        invoiceType: 'simple',
-        status: 'paid',
-        warehouseId: 1
-    }];
-
-    // ===== فاتورة شراء تجريبية =====
-    window.purchases = [{
-        id: Date.now() + 1,
-        number: 2,
-        supplier: 'شركة الاتصالات المصرية',
-        supplierId: 1,
-        items: [
-            { productId: 1, productName: 'هاتف ذكي X100', qty: 10, price: 8000, total: 80000 },
-            { productId: 2, productName: 'سماعة لاسلكية', qty: 20, price: 500, total: 10000 }
-        ],
-        total: 90000,
-        totalWithTax: 90000,
-        date: getTodayDate(),
-        paymentMethod: 'نقدي',
-        invoiceType: 'simple',
-        status: 'paid',
-        warehouseId: 1
-    }];
-
-    // ===== مصروف تجريبي =====
-    window.expenses = [{
-        id: Date.now() + 2,
-        note: 'فاتورة كهرباء المحل',
-        amount: 500,
-        date: getTodayDate(),
-        method: 'نقدي'
-    }];
-
-    saveAllData();
-    console.log('✅ تم تهيئة البيانات التجريبية بنجاح');
-}
-
-// ================================================================
-// ===== دوال الصفحات الرئيسية (مع التحقق من وجود الدوال) =====
-// ================================================================
-
-// ===== دوال الكاشف =====
-function renderCashier() {
-    if (typeof window.renderCashier === 'function' && window.renderCashier !== renderCashier) {
-        window.renderCashier();
-    } else if (typeof window.cashierRender === 'function') {
-        window.cashierRender();
-    } else {
-        console.warn('⚠️ دالة renderCashier غير موجودة في remaining.js');
-        const container = document.getElementById('cashierTodayTransactions');
-        if (container) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-receipt"></i><span>افتح اليوم لبدء تسجيل الحركات</span></div>`;
-        }
-        const badge = document.getElementById('cashierStatusBadge');
-        if (badge) {
-            badge.textContent = '🔴 مغلق';
-            badge.style.background = '#E06060';
-        }
-    }
-}
-
-function addCashierTransaction(type, amount, method, note) {
-    if (typeof window.addCashierTransaction === 'function') {
-        window.addCashierTransaction(type, amount, method, note);
-    }
-}
-
-function cashierOpenDay() {
-    if (typeof window.cashierOpenDay === 'function') {
-        window.cashierOpenDay();
-    } else {
-        showToast('⚠️ دالة فتح اليوم غير موجودة', 'error');
-    }
-}
-
-function cashierCloseDay() {
-    if (typeof window.cashierCloseDay === 'function') {
-        window.cashierCloseDay();
-    } else {
-        showToast('⚠️ دالة إغلاق اليوم غير موجودة', 'error');
-    }
-}
-
-function cashierPrintReport() {
-    if (typeof window.cashierPrintReport === 'function') {
-        window.cashierPrintReport();
-    } else {
-        showToast('⚠️ دالة طباعة التقرير غير موجودة', 'error');
-    }
-}
-
-// ===== دوال السندات =====
-function renderBonds() {
-    if (typeof window.renderBonds === 'function' && window.renderBonds !== renderBonds) {
-        window.renderBonds();
-    } else if (typeof window.bondsRender === 'function') {
-        window.bondsRender();
-    } else {
-        console.warn('⚠️ دالة renderBonds غير موجودة');
-    }
-}
-
-function addBond() {
-    if (typeof window.addBond === 'function') {
-        window.addBond();
-    } else {
-        showToast('⚠️ دالة إضافة سند غير موجودة', 'error');
-    }
-}
-
-// ===== دوال المصروفات =====
-function renderExpenses() {
-    if (typeof window.renderExpenses === 'function' && window.renderExpenses !== renderExpenses) {
-        window.renderExpenses();
-    } else if (typeof window.expensesRender === 'function') {
-        window.expensesRender();
-    } else {
-        console.warn('⚠️ دالة renderExpenses غير موجودة');
-    }
-}
-
-function addExpense() {
-    if (typeof window.addExpense === 'function') {
-        window.addExpense();
-    } else {
-        showToast('⚠️ دالة إضافة مصروف غير موجودة', 'error');
-    }
-}
-
-// ===== دوال العملاء =====
-function renderCustomers() {
-    if (typeof window.renderCustomers === 'function' && window.renderCustomers !== renderCustomers) {
-        window.renderCustomers();
-    } else if (typeof window.customersRender === 'function') {
-        window.customersRender();
-    } else {
-        console.warn('⚠️ دالة renderCustomers غير موجودة');
-    }
-}
-
-function addCustomer() {
-    if (typeof window.addCustomer === 'function') {
-        window.addCustomer();
-    } else {
-        showToast('⚠️ دالة إضافة عميل غير موجودة', 'error');
-    }
-}
-
-// ===== دوال الموردين =====
-function renderSuppliers() {
-    if (typeof window.renderSuppliers === 'function' && window.renderSuppliers !== renderSuppliers) {
-        window.renderSuppliers();
-    } else if (typeof window.suppliersRender === 'function') {
-        window.suppliersRender();
-    } else {
-        console.warn('⚠️ دالة renderSuppliers غير موجودة');
-    }
-}
-
-function addSupplier() {
-    if (typeof window.addSupplier === 'function') {
-        window.addSupplier();
-    } else {
-        showToast('⚠️ دالة إضافة مورد غير موجودة', 'error');
-    }
-}
-
-// ===== دوال المنتجات =====
-function renderProducts() {
-    if (typeof window.renderProducts === 'function' && window.renderProducts !== renderProducts) {
-        window.renderProducts();
-    } else if (typeof window.productsRender === 'function') {
-        window.productsRender();
-    } else {
-        console.warn('⚠️ دالة renderProducts غير موجودة');
-        const container = document.getElementById('productList');
-        if (container) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-box-open"></i><span>لا توجد منتجات</span></div>`;
-        }
-    }
-}
-
-function addProduct() {
-    if (typeof window.addProduct === 'function') {
-        window.addProduct();
-    } else {
-        showToast('⚠️ دالة إضافة منتج غير موجودة', 'error');
-    }
-}
-
-// ===== دوال التدقيق =====
-function renderAudit() {
-    if (typeof window.renderAudit === 'function' && window.renderAudit !== renderAudit) {
-        window.renderAudit();
-    } else if (typeof window.auditRender === 'function') {
-        window.auditRender();
-    } else {
-        console.warn('⚠️ دالة renderAudit غير موجودة');
-    }
-}
-
-// ===== دوال الخزنة =====
-function renderTreasury() {
-    if (typeof window.renderTreasury === 'function' && window.renderTreasury !== renderTreasury) {
-        window.renderTreasury();
-    } else if (typeof window.treasuryRender === 'function') {
-        window.treasuryRender();
-    } else {
-        console.warn('⚠️ دالة renderTreasury غير موجودة');
-    }
-}
-
-function addTreasuryTransaction() {
-    if (typeof window.addTreasuryTransaction === 'function') {
-        window.addTreasuryTransaction();
-    } else {
-        showToast('⚠️ دالة إضافة حركة خزنة غير موجودة', 'error');
-    }
-}
-
-// ===== دوال تسوية المخزون =====
-// ملاحظة: المتغير inventoryAdjustmentItems يُعرّف في inventory_adjustment.js
-function populateAdjustmentProducts() {
-    if (typeof window.populateAdjustmentProducts === 'function') {
-        window.populateAdjustmentProducts();
-    }
-}
-
-function renderAdjustmentHistory() {
-    if (typeof window.renderAdjustmentHistory === 'function') {
-        window.renderAdjustmentHistory();
-    }
-}
-
-function updateAdjustmentDateTime() {
-    if (typeof window.updateAdjustmentDateTime === 'function') {
-        window.updateAdjustmentDateTime();
-    }
-}
-
-// ===== دوال الشركة =====
-function loadCompanyData() {
-    if (typeof window.loadCompanyData === 'function' && window.loadCompanyData !== loadCompanyData) {
-        window.loadCompanyData();
-    } else if (typeof window.companyLoad === 'function') {
-        window.companyLoad();
-    } else {
-        console.warn('⚠️ دالة loadCompanyData غير موجودة');
-    }
-}
-
-function saveCompanyData() {
-    if (typeof window.saveCompanyData === 'function') {
-        window.saveCompanyData();
-    } else {
-        showToast('⚠️ دالة حفظ بيانات الشركة غير موجودة', 'error');
-    }
-}
-
-function uploadLogo(event) {
-    if (typeof window.uploadLogo === 'function') {
-        window.uploadLogo(event);
-    } else {
-        showToast('⚠️ دالة رفع الشعار غير موجودة', 'error');
-    }
-}
-
-// ===== دوال المحاسبات =====
-function updateAccounting() {
-    if (typeof window.updateAccounting === 'function' && window.updateAccounting !== updateAccounting) {
-        window.updateAccounting();
-    } else {
-        const totalSales = (window.sales || []).reduce((s, inv) => s + (inv.total || 0), 0);
-        const totalPurchases = (window.purchases || []).reduce((s, inv) => s + (inv.total || 0), 0);
-        safeSetText('accountingSales', totalSales.toFixed(2));
-        safeSetText('accountingPurchases', totalPurchases.toFixed(2));
-        safeSetText('accountingProfit', (totalSales - totalPurchases).toFixed(2));
-    }
-}
-
-function showLedger() {
-    if (typeof window.showLedger === 'function') {
-        window.showLedger();
-    } else {
-        const result = document.getElementById('accountingResult');
-        if (result) {
-            const totalSales = (window.sales || []).reduce((s, i) => s + (i.total || 0), 0);
-            const totalPurchases = (window.purchases || []).reduce((s, i) => s + (i.total || 0), 0);
-            result.innerHTML = `<div class="accounting-detail-content">
-                <h4 style="color:#C9A94E;">📒 دفتر الأستاذ</h4>
-                <div class="detail-row"><span class="detail-label">إجمالي المبيعات</span><span class="detail-value">${totalSales.toFixed(2)}</span></div>
-                <div class="detail-row"><span class="detail-label">إجمالي المشتريات</span><span class="detail-value">${totalPurchases.toFixed(2)}</span></div>
-                <div class="detail-row"><span class="detail-label">صافي الربح</span><span class="detail-value">${(totalSales - totalPurchases).toFixed(2)}</span></div>
-            </div>`;
-        }
-    }
-}
-
-function showAudit() { showLedger(); }
-function showTrialBalance() { showLedger(); }
-function showIncomeStatement() { showLedger(); }
-function showBalanceSheet() { showLedger(); }
-function showCashFlow() { showLedger(); }
-
-// ===== دوال التقارير =====
-function generateReport(type) {
-    if (typeof window.generateReport === 'function' && window.generateReport !== generateReport) {
-        window.generateReport(type);
-    } else {
-        const result = document.getElementById('reportResult');
-        if (!result) return;
-        
-        let html = `<div class="accounting-detail-content">`;
-        
-        if (type === 'sales') {
-            const total = (window.sales || []).reduce((s, inv) => s + (inv.total || 0), 0);
-            html += `<h4 style="color:#2D8F5E;">📊 تقرير المبيعات</h4>
-                <div class="detail-row"><span class="detail-label">إجمالي المبيعات</span><span class="detail-value">${total.toFixed(2)}</span></div>
-                <div class="detail-row"><span class="detail-label">عدد الفواتير</span><span class="detail-value">${(window.sales || []).length}</span></div>`;
-        } else if (type === 'purchases') {
-            const total = (window.purchases || []).reduce((s, inv) => s + (inv.total || 0), 0);
-            html += `<h4 style="color:#E06060;">📊 تقرير المشتريات</h4>
-                <div class="detail-row"><span class="detail-label">إجمالي المشتريات</span><span class="detail-value">${total.toFixed(2)}</span></div>
-                <div class="detail-row"><span class="detail-label">عدد الفواتير</span><span class="detail-value">${(window.purchases || []).length}</span></div>`;
-        } else if (type === 'profit') {
-            const sales = (window.sales || []).reduce((s, inv) => s + (inv.total || 0), 0);
-            const purchases = (window.purchases || []).reduce((s, inv) => s + (inv.total || 0), 0);
-            html += `<h4 style="color:#C9A94E;">📊 تقرير الأرباح</h4>
-                <div class="detail-row"><span class="detail-label">إجمالي المبيعات</span><span class="detail-value">${sales.toFixed(2)}</span></div>
-                <div class="detail-row"><span class="detail-label">إجمالي المشتريات</span><span class="detail-value">${purchases.toFixed(2)}</span></div>
-                <div class="detail-row"><span class="detail-label">صافي الربح</span><span class="detail-value">${(sales - purchases).toFixed(2)}</span></div>`;
-        } else {
-            html += `<h4 style="color:#C9A94E;">📊 تقرير</h4>
-                <div class="detail-row"><span class="detail-label">البيانات</span><span class="detail-value">تم اختيار تقرير ${type}</span></div>`;
-        }
-        
-        html += `</div>`;
-        result.innerHTML = html;
-    }
-}
-
-function generateProfitAnalysis() {
-    if (typeof window.generateProfitAnalysis === 'function') {
-        window.generateProfitAnalysis();
-    } else {
-        const container = document.getElementById('profitAnalysisResult');
-        if (!container) return;
-        container.innerHTML = `<div class="accounting-detail-content">
-            <h4 style="color:#C9A94E;">📊 تحليل الأرباح</h4>
-            <div class="detail-row"><span class="detail-label">عدد المنتجات</span><span class="detail-value">${(window.products || []).length}</span></div>
-            <div class="detail-row"><span class="detail-label">إجمالي الربح</span><span class="detail-value">${(window.products || []).reduce((s, p) => s + ((p.sellPrice || 0) - (p.buyPrice || 0)) * ((window.warehouseProducts || []).filter(wp => wp.productId === p.id).reduce((sum, wp) => sum + wp.qty, 0)), 0).toFixed(2)}</span></div>
-        </div>`;
-    }
-}
-
-// ===== دوال كشوفات العملاء والموردين =====
-function generateCustomerStatement() {
-    if (typeof window.generateCustomerStatement === 'function') {
-        window.generateCustomerStatement();
-    } else {
-        showToast('⚠️ دالة كشف حساب العميل غير موجودة', 'error');
-    }
-}
-
-function generateCustomerDetailedStatement() {
-    if (typeof window.generateCustomerDetailedStatement === 'function') {
-        window.generateCustomerDetailedStatement();
-    } else {
-        generateCustomerStatement();
-    }
-}
-
-function generateSupplierStatement() {
-    if (typeof window.generateSupplierStatement === 'function') {
-        window.generateSupplierStatement();
-    } else {
-        showToast('⚠️ دالة كشف حساب المورد غير موجودة', 'error');
-    }
-}
-
-function generateSupplierDetailedStatement() {
-    if (typeof window.generateSupplierDetailedStatement === 'function') {
-        window.generateSupplierDetailedStatement();
-    } else {
-        generateSupplierStatement();
-    }
-}
-
-// ===== دوال الحسابات =====
-function renderAccounts() {
-    if (typeof window.renderAccounts === 'function' && window.renderAccounts !== renderAccounts) {
-        window.renderAccounts();
-    } else {
-        console.warn('⚠️ دالة renderAccounts غير موجودة');
-        const container = document.getElementById('accountList');
-        if (container) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-sitemap"></i><span>لا توجد حسابات</span></div>`;
-        }
-    }
-}
-
-function addAccount() {
-    if (typeof window.addAccount === 'function') {
-        window.addAccount();
-    } else {
-        showToast('⚠️ دالة إضافة حساب غير موجودة', 'error');
-    }
-}
-
-function populateAccountParents() {
-    if (typeof window.populateAccountParents === 'function') {
-        window.populateAccountParents();
-    }
-}
-
-// ===== دوال المخازن =====
-function renderWarehouses() {
-    if (typeof window.renderWarehouses === 'function' && window.renderWarehouses !== renderWarehouses) {
-        window.renderWarehouses();
-    } else {
-        console.warn('⚠️ دالة renderWarehouses غير موجودة');
-        safeSetText('warehousesCount', (window.warehouses || []).length);
-        const totalProducts = (window.warehouseProducts || []).reduce((s, wp) => s + wp.qty, 0);
-        safeSetText('warehouseProductsCount', totalProducts);
-        const container = document.getElementById('warehouseList');
-        if (container) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-warehouse"></i><span>لا توجد مخازن</span></div>`;
-        }
-    }
-}
-
-function addWarehouse() {
-    if (typeof window.addWarehouse === 'function') {
-        window.addWarehouse();
-    } else {
-        showToast('⚠️ دالة إضافة مخزن غير موجودة', 'error');
-    }
-}
-
-function editWarehouse(id) {
-    if (typeof window.editWarehouse === 'function') {
-        window.editWarehouse(id);
-    } else {
-        showToast('⚠️ دالة تعديل مخزن غير موجودة', 'error');
-    }
-}
-
-function deleteWarehouse(id) {
-    if (typeof window.deleteWarehouse === 'function') {
-        window.deleteWarehouse(id);
-    } else {
-        showToast('⚠️ دالة حذف مخزن غير موجودة', 'error');
-    }
-}
-
-// ===== دوال المستخدمين =====
-function renderUsers() {
-    if (typeof window.renderUsers === 'function' && window.renderUsers !== renderUsers) {
-        window.renderUsers();
-    } else {
-        console.warn('⚠️ دالة renderUsers غير موجودة');
-        const container = document.getElementById('userList');
-        if (container) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><span>لا توجد مستخدمين</span></div>`;
-        }
-    }
-}
-
-function addUser() {
-    if (typeof window.addUser === 'function') {
-        window.addUser();
-    } else {
-        showToast('⚠️ دالة إضافة مستخدم غير موجودة', 'error');
-    }
-}
-
-function deleteUser(id) {
-    if (typeof window.deleteUser === 'function') {
-        window.deleteUser(id);
-    } else {
-        showToast('⚠️ دالة حذف مستخدم غير موجودة', 'error');
-    }
-}
-
-function editUser(id) {
-    if (typeof window.editUser === 'function') {
-        window.editUser(id);
-    } else {
-        showToast('⚠️ دالة تعديل مستخدم غير موجودة', 'error');
-    }
-}
-
-function switchUser() {
-    if (typeof window.switchUser === 'function') {
-        window.switchUser();
-    } else {
-        showToast('⚠️ دالة تبديل مستخدم غير موجودة', 'error');
-    }
-}
-
-function changeUserPassword() {
-    if (typeof window.changeUserPassword === 'function') {
-        window.changeUserPassword();
-    } else {
-        showToast('⚠️ دالة تغيير كلمة المرور غير موجودة', 'error');
-    }
-}
-
-// ===== دوال النسخ الاحتياطي =====
-function createBackup() {
-    if (typeof window.createBackup === 'function') {
-        window.createBackup();
-    } else {
-        showToast('⚠️ دالة إنشاء نسخة احتياطية غير موجودة', 'error');
-    }
-}
-
-function renderBackups() {
-    if (typeof window.renderBackups === 'function' && window.renderBackups !== renderBackups) {
-        window.renderBackups();
-    } else {
-        console.warn('⚠️ دالة renderBackups غير موجودة');
-        const container = document.getElementById('backupList');
-        if (container) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-cloud-upload-alt"></i><span>لا توجد نسخ</span></div>`;
-        }
-    }
-}
-
-function restoreBackup(event) {
-    if (typeof window.restoreBackup === 'function') {
-        window.restoreBackup(event);
-    } else {
-        showToast('⚠️ دالة استعادة النسخة غير موجودة', 'error');
-    }
-}
-
-// ===== دوال الباركود =====
-function generateQRCode() {
-    if (typeof window.generateQRCode === 'function') {
-        window.generateQRCode();
-    } else {
-        showToast('⚠️ دالة توليد QR غير موجودة', 'error');
-    }
-}
-
-function startQRScanner() {
-    if (typeof window.startQRScanner === 'function') {
-        window.startQRScanner();
-    } else {
-        showToast('⚠️ دالة مسح QR غير موجودة', 'error');
-    }
-}
-
-function showQRShareText() {
-    if (typeof window.showQRShareText === 'function') {
-        window.showQRShareText();
-    } else {
-        showToast('⚠️ دالة مشاركة النص غير موجودة', 'error');
-    }
-}
-
-// ===== دوال الإذونات =====
-function renderPermissions() {
-    if (typeof window.renderPermissions === 'function') {
-        window.renderPermissions();
-    } else {
-        console.warn('⚠️ دالة renderPermissions غير موجودة');
-        const container = document.getElementById('permissionList');
-        if (container) {
-            container.innerHTML = `<div class="empty-state"><i class="fas fa-exchange-alt"></i><span>لا توجد إذونات</span></div>`;
-        }
-    }
-}
-
-function addPermission() {
-    if (typeof window.addPermission === 'function') {
-        window.addPermission();
-    } else {
-        showToast('⚠️ دالة إضافة إذن غير موجودة', 'error');
-    }
-}
-
-function executePermission(id) {
-    if (typeof window.executePermission === 'function') {
-        window.executePermission(id);
-    } else {
-        showToast('⚠️ دالة تنفيذ إذن غير موجودة', 'error');
-    }
-}
-
-function deletePermission(id) {
-    if (typeof window.deletePermission === 'function') {
-        window.deletePermission(id);
-    } else {
-        showToast('⚠️ دالة حذف إذن غير موجودة', 'error');
-    }
-}
-
-function filterPermissions(filter) {
-    if (typeof window.filterPermissions === 'function') {
-        window.filterPermissions(filter);
-    }
-}
-
-// ===== دوال الفواتير =====
-function renderSales() {
-    if (typeof window.renderSales === 'function' && window.renderSales !== renderSales) {
-        window.renderSales();
-    } else {
-        console.warn('⚠️ دالة renderSales غير موجودة');
-    }
-}
-
-function renderAllPurchases() {
-    if (typeof window.renderAllPurchases === 'function' && window.renderAllPurchases !== renderAllPurchases) {
-        window.renderAllPurchases();
-    } else {
-        console.warn('⚠️ دالة renderAllPurchases غير موجودة');
-    }
-}
-
-function renderAllReturns() {
-    if (typeof window.renderAllReturns === 'function' && window.renderAllReturns !== renderAllReturns) {
-        window.renderAllReturns();
-    } else {
-        console.warn('⚠️ دالة renderAllReturns غير موجودة');
-    }
-}
-
-function renderAllInvoices() {
-    if (typeof window.renderAllInvoices === 'function' && window.renderAllInvoices !== renderAllInvoices) {
-        window.renderAllInvoices();
-    } else {
-        console.warn('⚠️ دالة renderAllInvoices غير موجودة');
-    }
-}
-
-// ===== دوال تحديث لوحة التحكم =====
-function updateDashboard() {
-    if (typeof window.updateDashboard === 'function' && window.updateDashboard !== updateDashboard) {
-        window.updateDashboard();
-    } else if (typeof window.dashboardUpdate === 'function') {
-        window.dashboardUpdate();
-    } else {
-        console.warn('⚠️ دالة updateDashboard غير موجودة');
-        const totalSales = (window.sales || []).reduce((s, inv) => s + (inv.total || 0), 0);
-        const totalPurchases = (window.purchases || []).reduce((s, inv) => s + (inv.total || 0), 0);
-        const totalReturns = (window.returns || []).reduce((s, r) => s + (r.total || 0), 0);
-        safeSetText('dashTotalSales', totalSales.toFixed(2));
-        safeSetText('dashTotalPurchases', totalPurchases.toFixed(2));
-        safeSetText('dashTotalReturns', totalReturns.toFixed(2));
-        safeSetText('dashTotalProducts', (window.products || []).length);
-        safeSetText('dashTotalCustomers', (window.customers || []).length);
-        const profit = totalSales - totalPurchases - totalReturns;
-        safeSetText('dashNetProfit', profit.toFixed(2));
-    }
-}
-
-function refreshDashboard() {
-    if (typeof window.refreshDashboard === 'function') {
-        window.refreshDashboard();
-    } else {
-        updateDashboard();
-    }
-}
-
-function updateDashboardDetails() {
-    if (typeof window.updateDashboardDetails === 'function') {
-        window.updateDashboardDetails();
-    }
-}
-
-// ================================================================
-// ===== دوال التنبيهات =====
-// ================================================================
-
-function addAlert(title, desc, type = 'info') {
-    if (!window.alerts) window.alerts = [];
-    window.alerts.unshift({
-        id: Date.now(),
-        title: title,
-        desc: desc,
-        type: type,
-        date: new Date().toISOString(),
-        read: false
-    });
-    if (window.alerts.length > 100) window.alerts = window.alerts.slice(0, 100);
-    saveAllData();
-    if (typeof updateAlertsUI === 'function') updateAlertsUI();
-}
-
-function updateAlertsUI() {
-    if (typeof window.updateAlertsUI === 'function' && window.updateAlertsUI !== updateAlertsUI) {
-        window.updateAlertsUI();
-    } else {
-        if (!window.alerts) window.alerts = [];
-        const unread = window.alerts.filter(a => !a.read).length;
-        safeSetText('alertCount', unread);
-        safeSetText('alertBadge', unread);
-    }
-}
-
-function clearAllAlerts() {
-    if (typeof window.clearAllAlerts === 'function') {
-        window.clearAllAlerts();
-    } else {
-        if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-        if (!confirm('⚠️ تحديد جميع التنبيهات كمقروءة؟')) return;
-        (window.alerts || []).forEach(a => a.read = true);
-        saveAllData();
-        updateAlertsUI();
-        showToast('✅ تم تحديد الكل مقروء', 'success');
-    }
-}
-
-function markAlertRead(id) {
-    if (typeof window.markAlertRead === 'function') {
-        window.markAlertRead(id);
-    } else {
-        const alert = (window.alerts || []).find(a => a.id === id);
-        if (alert) { alert.read = true; saveAllData(); updateAlertsUI(); }
-    }
-}
-
-// ================================================================
-// ===== دوال السحابة (Firebase) =====
-// ================================================================
-
-function syncToFirebase() {
-    const badge = document.getElementById('headerBadge');
-    if (!badge) return;
-
-    if (!navigator.onLine) {
-        showToast('⚠️ لا يوجد اتصال بالإنترنت، سيتم المزامنة لاحقاً', 'warning');
-        badge.textContent = '📴 غير متصل';
-        badge.className = 'badge';
-        saveAllData();
-        return;
-    }
-
-    badge.textContent = '⏳ جاري...';
-    badge.className = 'badge syncing';
-
-    try {
-        saveAllData();
-
-        if (typeof firebase !== 'undefined' && firebase.database) {
-            const data = getSyncData();
-            firebase.database().ref('mizan_app_data').set(data)
-                .then(() => {
-                    badge.textContent = '☁️ تم المزامنة';
-                    badge.className = 'badge synced';
-                    showToast('☁️ تم رفع البيانات للسحابة', 'success');
-                    localStorage.setItem('mizan_last_sync', Date.now().toString());
-                    setTimeout(() => {
-                        badge.textContent = '☁️ مزامنة';
-                        badge.className = 'badge';
-                    }, 3000);
-                })
-                .catch((error) => {
-                    console.error('Firebase sync error:', error);
-                    badge.textContent = '❌ فشل';
-                    badge.className = 'badge';
-                    showToast('❌ فشل رفع البيانات: ' + error.message, 'error');
-                    setTimeout(() => {
-                        badge.textContent = '☁️ مزامنة';
-                        badge.className = 'badge';
-                    }, 3000);
-                });
-        } else {
-            badge.textContent = '💾 محلي';
-            badge.className = 'badge';
-            showToast('💾 تم حفظ البيانات محلياً', 'success');
-            setTimeout(() => {
-                badge.textContent = '☁️ مزامنة';
-                badge.className = 'badge';
-            }, 3000);
-        }
-    } catch (e) {
-        console.error('Sync error:', e);
-        badge.textContent = '❌ خطأ';
-        badge.className = 'badge';
-        setTimeout(() => {
-            badge.textContent = '☁️ مزامنة';
-            badge.className = 'badge';
-        }, 3000);
-    }
-}
-
-function syncFromFirebase() {
-    const badge = document.getElementById('headerBadge');
-    if (!badge) return;
-
-    if (!navigator.onLine) {
-        showToast('⚠️ لا يوجد اتصال بالإنترنت، جاري استخدام البيانات المحلية', 'warning');
-        loadAllData();
-        refreshAllPages();
-        return;
-    }
-
-    badge.textContent = '⏳ جلب...';
-    badge.className = 'badge syncing';
-
-    try {
-        if (typeof firebase !== 'undefined' && firebase.database) {
-            firebase.database().ref('mizan_app_data').get()
-                .then((snapshot) => {
-                    if (snapshot.exists()) {
-                        const data = snapshot.val();
-                        if (data && typeof data === 'object') {
-                            applySyncData(data);
-                            badge.textContent = '☁️ تم الجلب';
-                            badge.className = 'badge synced';
-                            showToast('📥 تم جلب البيانات من السحابة', 'success');
-                            localStorage.setItem('mizan_last_sync', Date.now().toString());
-                            setTimeout(() => {
-                                badge.textContent = '☁️ مزامنة';
-                                badge.className = 'badge';
-                            }, 3000);
-                        } else {
-                            showToast('⚠️ بيانات غير مكتملة', 'warning');
-                            badge.textContent = '⚠️ غير مكتملة';
-                            badge.className = 'badge';
-                            setTimeout(() => {
-                                badge.textContent = '☁️ مزامنة';
-                                badge.className = 'badge';
-                            }, 3000);
-                        }
-                    } else {
-                        showToast('⚠️ لا توجد بيانات في السحابة', 'warning');
-                        badge.textContent = '⚠️ لا توجد';
-                        badge.className = 'badge';
-                        setTimeout(() => {
-                            badge.textContent = '☁️ مزامنة';
-                            badge.className = 'badge';
-                        }, 3000);
-                    }
-                })
-                .catch((error) => {
-                    console.error('Firebase get error:', error);
-                    badge.textContent = '❌ فشل';
-                    badge.className = 'badge';
-                    showToast('❌ فشل جلب البيانات: ' + error.message, 'error');
-                    setTimeout(() => {
-                        badge.textContent = '☁️ مزامنة';
-                        badge.className = 'badge';
-                    }, 3000);
-                });
-        } else {
-            loadAllData();
-            refreshAllPages();
-            badge.textContent = '💾 محلي';
-            badge.className = 'badge';
-            showToast('💾 تم تحميل البيانات محلياً', 'success');
-            setTimeout(() => {
-                badge.textContent = '☁️ مزامنة';
-                badge.className = 'badge';
-            }, 3000);
-        }
-    } catch (e) {
-        console.error('Sync from Firebase error:', e);
-        badge.textContent = '❌ خطأ';
-        badge.className = 'badge';
-        setTimeout(() => {
-            badge.textContent = '☁️ مزامنة';
-            badge.className = 'badge';
-        }, 3000);
-    }
-}
-
-function getSyncData() {
-    return {
-        products: window.products || [],
-        customers: window.customers || [],
-        suppliers: window.suppliers || [],
-        purchases: window.purchases || [],
-        sales: window.sales || [],
-        returns: window.returns || [],
-        expenses: window.expenses || [],
-        treasury: window.treasury || [],
-        bonds: window.bonds || [],
-        warehouses: window.warehouses || [],
-        warehouseProducts: window.warehouseProducts || [],
-        permissions: window.permissions || [],
-        companyData: window.companyData || {},
-        backups: window.backups || [],
-        accounts: window.accounts || [],
-        auditLog: window.auditLog || [],
-        alerts: window.alerts || [],
-        cashierHistory: window.cashierHistory || [],
-        inventoryAdjustments: window.inventoryAdjustments || [],
-        users: window.users || [],
-        currentUser: currentUser,
-        updatedAt: new Date().toISOString()
-    };
-}
-
-function applySyncData(data) {
-    if (!data) return;
-    
-    const keys = ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns', 'expenses',
-        'treasury', 'bonds', 'warehouses', 'warehouseProducts', 'permissions', 'companyData',
-        'backups', 'accounts', 'auditLog', 'alerts', 'cashierHistory', 'inventoryAdjustments', 'users'
-    ];
-    
-    keys.forEach(k => {
-        if (data[k] !== undefined) {
-            window[k] = data[k];
-            localStorage.setItem('mizan_' + k, JSON.stringify(data[k]));
-        }
-    });
-    
-    if (data.currentUser) {
-        currentUser = data.currentUser;
-        localStorage.setItem('mizan_current_user', JSON.stringify(currentUser));
-    }
-    
-    refreshAllPages();
-}
-
-// مراقبة حالة الاتصال بالإنترنت
-window.addEventListener('online', function() {
-    showToast('🌐 تم استعادة الاتصال بالإنترنت، جاري المزامنة...', 'success');
-    setTimeout(() => {
-        syncToFirebase();
-    }, 1000);
-});
-
-window.addEventListener('offline', function() {
-    showToast('📴 تم قطع الاتصال بالإنترنت، جاري حفظ البيانات محلياً', 'warning');
-    saveAllData();
-});
-
-// محاولة المزامنة عند تحميل الصفحة
-setTimeout(() => {
-    if (navigator.onLine) {
-        syncFromFirebase();
-    } else {
-        loadAllData();
-        refreshAllPages();
-    }
-}, 500);
-
-// ================================================================
-// ===== دوال النسخ الاحتياطي =====
-// ================================================================
-
-function getBackupData() {
-    return getSyncData();
-}
-
-function restoreBackupData(data) {
-    applySyncData(data);
-    showToast('✅ تم استعادة البيانات بنجاح', 'success');
-}
-
-function createAutoBackup() {
-    if (typeof window.createAutoBackup === 'function') {
-        window.createAutoBackup();
-    } else {
-        const data = getBackupData();
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        if (!window.backups) window.backups = [];
-        window.backups = window.backups.filter(b => !b.auto);
-        window.backups.push({
-            id: Date.now(),
-            name: `auto_${new Date().toISOString().split('T')[0]}`,
-            date: new Date().toISOString().split('T')[0],
-            size: blob.size,
-            auto: true
-        });
-        if (window.backups.length > 15) {
-            window.backups.sort((a, b) => b.id - a.id);
-            window.backups = window.backups.slice(0, 15);
-        }
-        saveAllData();
-        renderBackups();
-    }
-}
-
-// ================================================================
-// ===== تهيئة التطبيق =====
+// DOM READY
 // ================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 بدء تشغيل الميزان v3.0.0');
-
-    initUsers();
-
-    if (typeof activateDemoLicense === 'function') {
-        activateDemoLicense();
-    }
-
-    loadAllData();
-
-    if (typeof seedData === 'function') {
-        seedData();
-    }
-
-    if (typeof refreshAllPages === 'function') {
-        refreshAllPages();
-    }
-
-    if (typeof startAutoBackup === 'function') {
-        startAutoBackup();
-    }
-
-    updateClock();
-    updateUIByPermissions();
-
-    if (localStorage.getItem('app_unlocked') === 'true') {
-        const loginContainer = document.getElementById('loginContainer');
-        const appContent = document.getElementById('appContent');
-        if (loginContainer) loginContainer.classList.add('hidden');
-        if (appContent) appContent.style.display = 'block';
-
-        setTimeout(() => {
-            if (navigator.onLine && typeof syncFromFirebase === 'function') {
-                syncFromFirebase();
-            }
-        }, 1000);
-    }
-
     document.querySelectorAll('.payment-methods').forEach(group => {
         group.querySelectorAll('label').forEach(label => {
             label.addEventListener('click', function() {
@@ -2488,10 +1235,27 @@ document.addEventListener('DOMContentLoaded', function() {
         if (input && !input.value) input.value = today;
     });
 
-    console.log('✅ الميزان جاهز للاستخدام');
+    if (typeof seedData === 'function') seedData();
+    if (typeof refreshAllPages === 'function') refreshAllPages();
+
+    if (localStorage.getItem('app_unlocked') === 'true') {
+        const loginContainer = document.getElementById('loginContainer');
+        const appContent = document.getElementById('appContent');
+        if (loginContainer) loginContainer.classList.add('hidden');
+        if (appContent) appContent.style.display = 'block';
+
+        setTimeout(() => {
+            if (typeof populateAllSelects === 'function') populateAllSelects();
+            if (typeof refreshAllPages === 'function') refreshAllPages();
+            if (typeof startAutoBackup === 'function') startAutoBackup();
+            if (typeof syncFromFirebase === 'function') syncFromFirebase();
+            updateUIByPermissions();
+            updateClock();
+        }, 300);
+    }
+
+    console.log('✅ الميزان v3.0.0 - نظام محاسبة متكامل');
     console.log('🔒 كلمة المرور: 123456');
+    console.log('📱 تم تقسيم الكود إلى موديولات منفصلة');
     console.log('🔑 اضغط 5 مرات على رقم الإصدار في الإعدادات لتفعيل زر توليد المفاتيح');
 });
-
-console.log('📦 app.js - النسخة النهائية المستقرة v3.0.0');
-console.log('📅 التاريخ:', new Date().toLocaleDateString('ar-EG'));

@@ -3,21 +3,10 @@
 // ================================================================
 
 // ================================================================
-// INIT BONDS
-// ================================================================
-function initBonds() {
-    if (!window.bonds || !Array.isArray(window.bonds)) {
-        window.bonds = [];
-        setData('bonds', window.bonds);
-    }
-}
-
-// ================================================================
 // ADD BOND
 // ================================================================
 function addBond() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    initBonds();
     
     const type = document.getElementById('bondType')?.value;
     const amount = parseFloat(document.getElementById('bondAmount')?.value);
@@ -35,10 +24,10 @@ function addBond() {
     if (customerId) {
         if (customerId.startsWith('s_')) {
             const supplierId = parseInt(customerId.replace('s_', ''));
-            const supplier = window.suppliers?.find(s => s.id === supplierId);
+            const supplier = window.suppliers.find(s => s.id === supplierId);
             if (supplier) customerName = supplier.name + ' (مورد)';
         } else {
-            const customer = window.customers?.find(c => c.id == customerId);
+            const customer = window.customers.find(c => c.id == customerId);
             if (customer) customerName = customer.name;
         }
     }
@@ -87,23 +76,10 @@ function renderBonds() {
     const container = document.getElementById('bondList');
     if (!container) return;
 
-    initBonds();
-
     if (window.bonds.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-file-signature"></i><span>لا توجد سندات</span></div>`;
         return;
     }
-
-    // تحديث حالة السندات المتأخرة
-    const today = new Date();
-    window.bonds.forEach(b => {
-        if (b.status === 'pending' && b.dueDate) {
-            const due = new Date(b.dueDate);
-            if (due < today) {
-                b.status = 'overdue';
-            }
-        }
-    });
 
     const canEditBonds = canEdit();
     const canDeleteBonds = canDelete();
@@ -116,6 +92,11 @@ function renderBonds() {
         const typeColor = b.type === 'تحصيل عميل' ? '#2D8F5E' : b.type === 'سداد مورد' ? '#E06060' : '#E6A830';
         const statusColor = b.status === 'paid' ? '#2D8F5E' : b.status === 'overdue' ? '#E06060' : '#E6A830';
         const statusText = b.status === 'paid' ? '✅ مدفوع' : b.status === 'overdue' ? '⏰ متأخر' : '⏳ معلق';
+        
+        if (b.status === 'pending' && b.dueDate && new Date(b.dueDate) < new Date()) {
+            b.status = 'overdue';
+            saveAll();
+        }
 
         html += `
             <div class="table-row" style="grid-template-columns:0.7fr 1.2fr 1fr 1fr 0.8fr 0.6fr 0.6fr;font-size:11px;">
@@ -141,31 +122,29 @@ function renderBonds() {
     });
 
     container.innerHTML = html;
-    renderBondStats();
+    updateBondStats();
 }
 
 // ================================================================
-// RENDER BOND STATS
+// UPDATE BOND STATS
 // ================================================================
-function renderBondStats() {
-    const container = document.getElementById('bondStats');
-    if (!container) return;
-    
-    initBonds();
-    
+function updateBondStats() {
     const totalPending = window.bonds.filter(b => b.status === 'pending').reduce((s, b) => s + b.amount, 0);
     const totalOverdue = window.bonds.filter(b => b.status === 'overdue').reduce((s, b) => s + b.amount, 0);
     const totalPaid = window.bonds.filter(b => b.status === 'paid').reduce((s, b) => s + b.amount, 0);
     const totalAll = window.bonds.reduce((s, b) => s + b.amount, 0);
     
-    container.innerHTML = `
-        <div class="stats-row">
-            <div class="stat-card"><div class="number" style="color:#E6A830;">${totalPending.toFixed(2)}</div><div class="label">⏳ معلق</div></div>
-            <div class="stat-card"><div class="number" style="color:#E06060;">${totalOverdue.toFixed(2)}</div><div class="label">⏰ متأخر</div></div>
-            <div class="stat-card"><div class="number" style="color:#2D8F5E;">${totalPaid.toFixed(2)}</div><div class="label">✅ مدفوع</div></div>
-            <div class="stat-card"><div class="number" style="color:#C9A94E;">${totalAll.toFixed(2)}</div><div class="label">📊 الإجمالي</div></div>
-        </div>
-    `;
+    const statsContainer = document.getElementById('bondStats');
+    if (statsContainer) {
+        statsContainer.innerHTML = `
+            <div class="stats-row" style="margin-bottom:12px;">
+                <div class="stat-card"><div class="number" style="color:#E6A830;">${totalPending.toFixed(2)}</div><div class="label">⏳ معلق</div></div>
+                <div class="stat-card"><div class="number" style="color:#E06060;">${totalOverdue.toFixed(2)}</div><div class="label">⏰ متأخر</div></div>
+                <div class="stat-card"><div class="number" style="color:#2D8F5E;">${totalPaid.toFixed(2)}</div><div class="label">✅ مدفوع</div></div>
+                <div class="stat-card"><div class="number" style="color:#C9A94E;">${totalAll.toFixed(2)}</div><div class="label">📊 الإجمالي</div></div>
+            </div>
+        `;
+    }
 }
 
 // ================================================================
@@ -173,7 +152,6 @@ function renderBondStats() {
 // ================================================================
 function editBond(id) {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    initBonds();
     const b = window.bonds.find(bond => bond.id === id);
     if (!b) { showToast('⚠️ السند غير موجود', 'error'); return; }
 
@@ -191,8 +169,8 @@ function editBond(id) {
         <div class="form-group"><label>العميل / المورد</label>
             <select id="editBondCustomer">
                 <option value="">اختر...</option>
-                ${window.customers ? window.customers.map(c => `<option value="${c.id}" ${c.id == b.customerId ? 'selected' : ''}>${c.name}</option>`).join('') : ''}
-                ${window.suppliers ? window.suppliers.map(s => `<option value="s_${s.id}" ${'s_'+s.id == b.customerId ? 'selected' : ''}>${s.name} (مورد)</option>`).join('') : ''}
+                ${window.customers.map(c => `<option value="${c.id}" ${c.id == b.customerId ? 'selected' : ''}>${c.name}</option>`).join('')}
+                ${window.suppliers.map(s => `<option value="s_${s.id}" ${'s_'+s.id == b.customerId ? 'selected' : ''}>${s.name} (مورد)</option>`).join('')}
             </select>
         </div>
         <div class="form-row">
@@ -208,12 +186,8 @@ function editBond(id) {
     openModal('✏️ تعديل السند', html);
 }
 
-// ================================================================
-// SAVE BOND EDIT
-// ================================================================
 function saveBondEdit(id) {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    initBonds();
     const b = window.bonds.find(bond => bond.id === id);
     if (!b) return;
 
@@ -230,10 +204,10 @@ function saveBondEdit(id) {
     if (customerId) {
         if (customerId.startsWith('s_')) {
             const supplierId = parseInt(customerId.replace('s_', ''));
-            const supplier = window.suppliers?.find(s => s.id === supplierId);
+            const supplier = window.suppliers.find(s => s.id === supplierId);
             if (supplier) customerName = supplier.name + ' (مورد)';
         } else {
-            const customer = window.customers?.find(c => c.id == customerId);
+            const customer = window.customers.find(c => c.id == customerId);
             if (customer) customerName = customer.name;
         }
     }
@@ -258,7 +232,6 @@ function saveBondEdit(id) {
 // ================================================================
 function markBondPaid(id) {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    initBonds();
     const b = window.bonds.find(bond => bond.id === id);
     if (!b) { showToast('⚠️ السند غير موجود', 'error'); return; }
     
@@ -272,7 +245,6 @@ function markBondPaid(id) {
     b.status = 'paid';
     b.paidAt = new Date().toISOString();
     
-    if (!window.treasury) window.treasury = [];
     window.treasury.push({
         id: Date.now(),
         type: b.type === 'تحصيل عميل' ? 'deposit' : 'withdraw',
@@ -301,12 +273,11 @@ function deleteBond(id) {
     if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (!confirm('⚠️ حذف السند؟')) return;
 
-    initBonds();
     const b = window.bonds.find(bond => bond.id === id);
     if (!b) { showToast('⚠️ السند غير موجود', 'error'); return; }
     
     if (b.status === 'paid') {
-        const treasuryIdx = window.treasury?.findIndex(t => t.bondId === id) || -1;
+        const treasuryIdx = window.treasury.findIndex(t => t.bondId === id);
         if (treasuryIdx > -1) {
             window.treasury.splice(treasuryIdx, 1);
         }
@@ -320,3 +291,48 @@ function deleteBond(id) {
     showToast('🗑️ تم حذف السند', 'info');
     closeModal();
 }
+
+// ================================================================
+// FILTER BONDS
+// ================================================================
+let bondFilter = 'all';
+
+function filterBonds(filter) {
+    bondFilter = filter;
+    renderBonds();
+    
+    document.querySelectorAll('.filter-chips .filter-chip').forEach(chip => {
+        chip.classList.toggle('active', chip.textContent === (filter === 'all' ? 'الكل' : filter === 'pending' ? '⏳ معلق' : filter === 'paid' ? '✅ مدفوع' : '⏰ متأخر'));
+    });
+}
+
+// ================================================================
+// CHECK OVERDUE BONDS
+// ================================================================
+function checkOverdueBonds() {
+    const today = new Date();
+    let updated = false;
+    
+    window.bonds.forEach(b => {
+        if (b.status === 'pending' && b.dueDate) {
+            const dueDate = new Date(b.dueDate);
+            if (dueDate < today) {
+                b.status = 'overdue';
+                updated = true;
+                addAlert(
+                    `⏰ سند متأخر`,
+                    `${b.type} - ${b.amount.toFixed(2)} للعميل ${b.customerName} - استحق في ${b.dueDate}`,
+                    'danger'
+                );
+            }
+        }
+    });
+    
+    if (updated) {
+        saveAll();
+        renderBonds();
+    }
+}
+
+// تشغيل الفحص كل ساعة
+setInterval(checkOverdueBonds, 60 * 60 * 1000);

@@ -19,16 +19,7 @@ function addSupplier() {
         return;
     }
 
-    window.suppliers.push({ 
-        id: Date.now(), 
-        name: name, 
-        phone: phone, 
-        whatsapp: whatsapp, 
-        email: email, 
-        address: address, 
-        active: true,
-        createdAt: new Date().toISOString()
-    });
+    window.suppliers.push({ id: Date.now(), name: name, phone: phone, whatsapp: whatsapp, email: email, address: address, active: true });
     saveAll();
     addAuditLog('add', 'supplier', `إضافة مورد: ${name} - واتساب: ${whatsapp || 'لا يوجد'}`);
     renderSuppliers();
@@ -98,13 +89,6 @@ function editSupplier(id) {
             <div class="form-group"><label>البريد</label><input type="email" id="editSupplierEmail" value="${s.email || ''}" /></div>
             <div class="form-group"><label>العنوان</label><input type="text" id="editSupplierAddress" value="${s.address || ''}" /></div>
         </div>
-        <div class="form-group">
-            <label>الحالة</label>
-            <select id="editSupplierStatus">
-                <option value="true" ${s.active !== false ? 'selected' : ''}>نشط</option>
-                <option value="false" ${s.active === false ? 'selected' : ''}>غير نشط</option>
-            </select>
-        </div>
         <button class="btn btn-primary btn-block" onclick="saveSupplierEdit(${s.id})"><i class="fas fa-save"></i> حفظ</button>
         ${canDelete() ? `<button class="btn btn-danger btn-block" onclick="deleteSupplier(${s.id})" style="margin-top:6px;"><i class="fas fa-trash"></i> حذف</button>` : ''}
     `;
@@ -121,7 +105,6 @@ function saveSupplierEdit(id) {
     const whatsapp = document.getElementById('editSupplierWhatsapp')?.value?.trim() || '';
     const email = document.getElementById('editSupplierEmail')?.value?.trim();
     const address = document.getElementById('editSupplierAddress')?.value?.trim();
-    const active = document.getElementById('editSupplierStatus')?.value === 'true';
 
     if (!name) { showToast('⚠️ أدخل الاسم', 'error'); return; }
 
@@ -130,7 +113,6 @@ function saveSupplierEdit(id) {
     s.whatsapp = whatsapp;
     s.email = email;
     s.address = address;
-    s.active = active;
 
     saveAll();
     addAuditLog('edit', 'supplier', `تعديل مورد: ${name} - واتساب: ${whatsapp || 'لا يوجد'}`);
@@ -190,16 +172,7 @@ function saveQuickSupplier() {
         return;
     }
 
-    window.suppliers.push({ 
-        id: Date.now(), 
-        name: name, 
-        phone: phone, 
-        whatsapp: whatsapp, 
-        email: '', 
-        address: '', 
-        active: true,
-        createdAt: new Date().toISOString()
-    });
+    window.suppliers.push({ id: Date.now(), name: name, phone: phone, whatsapp: whatsapp, email: '', address: '', active: true });
     saveAll();
     addAuditLog('add', 'supplier', `إضافة مورد سريع: ${name}`);
     renderSuppliers();

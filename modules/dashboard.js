@@ -1,45 +1,30 @@
 // ================================================================
-// dashboard.js - لوحة التحكم
+// dashboard.js - لوحة التحكم المتطورة (الملف الكامل)
 // ================================================================
 
 // ================================================================
-// REFRESH DASHBOARD
-// ================================================================
-function refreshDashboard() {
-    if (typeof updateDashboard === 'function') {
-        updateDashboard();
-    }
-    if (typeof updateDashboardDetails === 'function') {
-        updateDashboardDetails();
-    }
-}
-
-// ================================================================
-// UPDATE DASHBOARD
+// UPDATE DASHBOARD - تحديث لوحة التحكم بالكامل
 // ================================================================
 function updateDashboard() {
-    // التأكد من وجود البيانات
-    if (!window.products) window.products = [];
-    if (!window.customers) window.customers = [];
-    if (!window.suppliers) window.suppliers = [];
-    if (!window.sales) window.sales = [];
-    if (!window.purchases) window.purchases = [];
-    if (!window.returns) window.returns = [];
-    if (!window.treasury) window.treasury = [];
-    if (!window.warehouseProducts) window.warehouseProducts = [];
-    if (!window.warehouses) window.warehouses = [];
-    
+    // 1. تحديث الإحصائيات الرئيسية
     updateStats();
+    
+    // 2. تحديث الرسم البياني للمبيعات الشهرية
     renderSalesChart();
+    
+    // 3. تحديث التنبيهات
     updateAlertsUI();
     checkLowStockAlert();
+    
+    // 4. تحديث سجل النشاطات
     renderActivityLog();
+    
+    // 5. تحديث المخزون المنخفض
     renderLowStockList();
-    updateDashboardDetails();
 }
 
 // ================================================================
-// UPDATE STATS
+// UPDATE STATS - تحديث الإحصائيات
 // ================================================================
 function updateStats() {
     // ===== إجمالي المبيعات =====
@@ -133,7 +118,7 @@ function updateStats() {
                 if (wp.productId === p.id) qty += wp.qty;
             });
             totalQty += qty;
-            totalValue += (p.sellPrice || 0) * qty;
+            totalValue += p.sellPrice * qty;
         });
     }
     safeSetText('dashInventoryQty', totalQty);
@@ -184,7 +169,7 @@ function updateStats() {
 }
 
 // ================================================================
-// RENDER SALES CHART
+// RENDER SALES CHART - رسم بياني للمبيعات والمشتريات الشهرية
 // ================================================================
 function renderSalesChart() {
     const chart = document.getElementById('salesChart');
@@ -193,9 +178,11 @@ function renderSalesChart() {
     const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 
                     'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
     
+    // تهيئة المصفوفة
     let monthSales = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     let monthPurchases = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     
+    // حساب المبيعات الشهرية
     if (window.sales) {
         window.sales.forEach(s => {
             try {
@@ -205,10 +192,11 @@ function renderSalesChart() {
                 } else {
                     monthSales[m] += (s.total || 0);
                 }
-            } catch(e) {}
+            } catch(e) { /* تجاهل التواريخ غير الصالحة */ }
         });
     }
     
+    // حساب المشتريات الشهرية
     if (window.purchases) {
         window.purchases.forEach(p => {
             try {
@@ -218,12 +206,14 @@ function renderSalesChart() {
                 } else {
                     monthPurchases[m] += (p.total || 0);
                 }
-            } catch(e) {}
+            } catch(e) { /* تجاهل التواريخ غير الصالحة */ }
         });
     }
 
+    // حساب القيمة القصوى
     const maxValue = Math.max(...monthSales, ...monthPurchases, 1);
     
+    // إنشاء الرسم البياني
     chart.innerHTML = '';
     
     months.forEach((month, i) => {
@@ -231,16 +221,16 @@ function renderSalesChart() {
         const purchasesHeight = (monthPurchases[i] / maxValue) * 100;
         
         chart.innerHTML += `
-            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:30px;">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
                 <div style="display:flex;align-items:flex-end;gap:2px;width:100%;height:100px;">
-                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;position:relative;">
-                        <div class="bar sales-bar" style="height:${Math.max(salesHeight, 4)}px;width:100%;background:linear-gradient(180deg, #2D8F5E, #1A5A3E);border-radius:4px 4px 0 0;position:relative;min-height:4px;">
-                            ${monthSales[i] > 0 ? `<span class="bar-value" style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;color:#2D8F5E;white-space:nowrap;">${monthSales[i].toFixed(0)}</span>` : ''}
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;">
+                        <div class="bar sales-bar" style="height:${Math.max(salesHeight, 4)}px;width:100%;background:linear-gradient(180deg, #2D8F5E, #1A5A3E);border-radius:4px 4px 0 0;position:relative;transition:height 0.5s;">
+                            <span class="bar-value" style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;color:#2D8F5E;">${monthSales[i].toFixed(0)}</span>
                         </div>
                     </div>
-                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;position:relative;">
-                        <div class="bar purchases-bar" style="height:${Math.max(purchasesHeight, 4)}px;width:100%;background:linear-gradient(180deg, #E06060, #A04040);border-radius:4px 4px 0 0;position:relative;min-height:4px;">
-                            ${monthPurchases[i] > 0 ? `<span class="bar-value" style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;color:#E06060;white-space:nowrap;">${monthPurchases[i].toFixed(0)}</span>` : ''}
+                    <div style="flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;">
+                        <div class="bar purchases-bar" style="height:${Math.max(purchasesHeight, 4)}px;width:100%;background:linear-gradient(180deg, #E06060, #A04040);border-radius:4px 4px 0 0;position:relative;transition:height 0.5s;">
+                            <span class="bar-value" style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;color:#E06060;">${monthPurchases[i].toFixed(0)}</span>
                         </div>
                     </div>
                 </div>
@@ -249,8 +239,9 @@ function renderSalesChart() {
         `;
     });
     
+    // إضافة وسيلة إيضاح
     const legend = document.createElement('div');
-    legend.style.cssText = 'display:flex;justify-content:center;gap:16px;margin-top:8px;font-size:11px;color:#F5E6C8;flex-wrap:wrap;';
+    legend.style.cssText = 'display:flex;justify-content:center;gap:16px;margin-top:8px;font-size:11px;color:#F5E6C8;';
     legend.innerHTML = `
         <div><span style="display:inline-block;width:12px;height:12px;background:#2D8F5E;border-radius:3px;vertical-align:middle;margin-left:4px;"></span> المبيعات</div>
         <div><span style="display:inline-block;width:12px;height:12px;background:#E06060;border-radius:3px;vertical-align:middle;margin-left:4px;"></span> المشتريات</div>
@@ -259,20 +250,20 @@ function renderSalesChart() {
 }
 
 // ================================================================
-// RENDER ACTIVITY LOG
+// RENDER ACTIVITY LOG - سجل النشاطات التفصيلي
 // ================================================================
 function renderActivityLog() {
     const container = document.getElementById('activityLog');
     if (!container) return;
 
+    // جمع جميع الأحداث من مصادر مختلفة
     let activities = [];
 
-    // فواتير البيع
+    // 1. فواتير البيع
     if (window.sales) {
         window.sales.forEach(s => {
             const total = s.totalWithTax || s.total || 0;
             const type = s.invoiceType === 'tax' ? 'ضريبية' : 'عادية';
-            const itemsCount = s.items ? s.items.length : 0;
             activities.push({
                 date: s.date,
                 time: s.time || '--:--',
@@ -280,18 +271,17 @@ function renderActivityLog() {
                 action: 'إضافة',
                 icon: 'fa-receipt',
                 color: '#2D8F5E',
-                details: `🧾 فاتورة بيع ${type} - العميل: ${s.customer} - ${itemsCount} صنف - الإجمالي: ${total.toFixed(2)} 🇪🇬`,
+                details: `فاتورة بيع ${type} - ${s.customer} - ${total.toFixed(2)} 🇪🇬`,
                 id: s.id
             });
         });
     }
 
-    // فواتير الشراء
+    // 2. فواتير الشراء
     if (window.purchases) {
         window.purchases.forEach(p => {
             const total = p.totalWithTax || p.total || 0;
             const type = p.invoiceType === 'tax' ? 'ضريبية' : 'عادية';
-            const itemsCount = p.items ? p.items.length : 0;
             activities.push({
                 date: p.date,
                 time: p.time || '--:--',
@@ -299,17 +289,16 @@ function renderActivityLog() {
                 action: 'إضافة',
                 icon: 'fa-shopping-cart',
                 color: '#E06060',
-                details: `🛒 فاتورة شراء ${type} - المورد: ${p.supplier} - ${itemsCount} صنف - الإجمالي: ${total.toFixed(2)} 🇪🇬`,
+                details: `فاتورة شراء ${type} - ${p.supplier} - ${total.toFixed(2)} 🇪🇬`,
                 id: p.id
             });
         });
     }
 
-    // المرتجعات
+    // 3. المرتجعات
     if (window.returns) {
         window.returns.forEach(r => {
             const total = r.items ? r.items.reduce((sum, item) => sum + (item.total || 0), 0) : (r.total || 0);
-            const itemsCount = r.items ? r.items.length : 0;
             activities.push({
                 date: r.date,
                 time: r.time || '--:--',
@@ -317,13 +306,13 @@ function renderActivityLog() {
                 action: 'إضافة',
                 icon: 'fa-undo-alt',
                 color: '#E6A830',
-                details: `🔄 مرتجع - العميل: ${r.customer} - ${itemsCount} صنف - الإجمالي: ${total.toFixed(2)} 🇪🇬`,
+                details: `مرتجع - ${r.customer} - ${total.toFixed(2)} 🇪🇬`,
                 id: r.id
             });
         });
     }
 
-    // الخزنة
+    // 4. الخزنة
     if (window.treasury) {
         window.treasury.forEach(t => {
             const typeName = t.type === 'deposit' ? 'إيداع' : 'سحب';
@@ -336,13 +325,13 @@ function renderActivityLog() {
                 action: typeName,
                 icon: icon,
                 color: color,
-                details: `🏦 ${typeName} - ${t.note || 'حركة خزنة'} - ${t.amount.toFixed(2)} 🇪🇬`,
+                details: `${typeName} - ${t.note || 'حركة خزنة'} - ${t.amount.toFixed(2)} 🇪🇬`,
                 id: t.id
             });
         });
     }
 
-    // سجل التدقيق
+    // 5. سجل التدقيق (التعديلات والحذف)
     if (window.auditLog) {
         window.auditLog.forEach(a => {
             const actionMap = {
@@ -353,9 +342,10 @@ function renderActivityLog() {
                 'purchase': { icon: 'fa-shopping-cart', color: '#E06060', label: 'شراء' },
                 'return': { icon: 'fa-undo-alt', color: '#E6A830', label: 'مرتجع' },
                 'sync': { icon: 'fa-sync', color: '#4A8AB5', label: 'مزامنة' },
-                'backup': { icon: 'fa-cloud-upload-alt', color: '#4A8AB5', label: 'نسخ' },
+                'backup': { icon: 'fa-cloud-upload-alt', color: '#4A8AB5', label: 'نسخ احتياطي' },
                 'cashier': { icon: 'fa-cash-register', color: '#C9A94E', label: 'كاشف' },
                 'adjustment': { icon: 'fa-balance-scale', color: '#C9A94E', label: 'تسوية' },
+                'license': { icon: 'fa-key', color: '#C9A94E', label: 'ترخيص' },
                 'treasury': { icon: 'fa-vault', color: '#4A8AB5', label: 'خزنة' },
                 'permission': { icon: 'fa-exchange-alt', color: '#4A8AB5', label: 'إذن' },
                 'warehouse': { icon: 'fa-warehouse', color: '#4A8AB5', label: 'مخزن' },
@@ -363,31 +353,102 @@ function renderActivityLog() {
                 'customer': { icon: 'fa-user', color: '#2D8F5E', label: 'عميل' },
                 'supplier': { icon: 'fa-truck', color: '#E06060', label: 'مورد' },
                 'expense': { icon: 'fa-money-bill-wave', color: '#E06060', label: 'مصروف' },
-                'bond': { icon: 'fa-file-signature', color: '#C9A94E', label: 'سند' }
+                'bond': { icon: 'fa-file-signature', color: '#C9A94E', label: 'سند' },
+                'account': { icon: 'fa-sitemap', color: '#4A8AB5', label: 'حساب' },
+                'report': { icon: 'fa-chart-pie', color: '#4A8AB5', label: 'تقرير' },
+                'invoice': { icon: 'fa-file-invoice', color: '#4A8AB5', label: 'فاتورة' },
+                'user': { icon: 'fa-user-cog', color: '#C9A94E', label: 'مستخدم' },
+                'company': { icon: 'fa-building', color: '#4A8AB5', label: 'شركة' }
             };
-            const info = actionMap[a.action] || { icon: 'fa-circle', color: '#A89070', label: a.action };
+            const actionInfo = actionMap[a.action] || { icon: 'fa-circle', color: '#A89070', label: a.action };
+            
+            // تحديد النوع
+            let typeLabel = 'audit';
+            let typeColor = '#C9A94E';
+            if (a.type === 'invoice' || a.type === 'sale' || a.type === 'purchase' || a.type === 'return') {
+                typeLabel = 'فاتورة';
+                typeColor = '#4A8AB5';
+            } else if (a.type === 'product') {
+                typeLabel = 'منتج';
+                typeColor = '#2D8F5E';
+            } else if (a.type === 'customer') {
+                typeLabel = 'عميل';
+                typeColor = '#2D8F5E';
+            } else if (a.type === 'supplier') {
+                typeLabel = 'مورد';
+                typeColor = '#E06060';
+            } else if (a.type === 'expense') {
+                typeLabel = 'مصروف';
+                typeColor = '#E06060';
+            } else if (a.type === 'treasury') {
+                typeLabel = 'خزنة';
+                typeColor = '#4A8AB5';
+            } else if (a.type === 'bond') {
+                typeLabel = 'سند';
+                typeColor = '#C9A94E';
+            } else if (a.type === 'permission') {
+                typeLabel = 'إذن';
+                typeColor = '#4A8AB5';
+            } else if (a.type === 'warehouse') {
+                typeLabel = 'مخزن';
+                typeColor = '#4A8AB5';
+            } else if (a.type === 'adjustment') {
+                typeLabel = 'تسوية';
+                typeColor = '#C9A94E';
+            } else if (a.type === 'account') {
+                typeLabel = 'حساب';
+                typeColor = '#4A8AB5';
+            } else if (a.type === 'user') {
+                typeLabel = 'مستخدم';
+                typeColor = '#C9A94E';
+            } else if (a.type === 'backup') {
+                typeLabel = 'نسخ';
+                typeColor = '#4A8AB5';
+            } else if (a.type === 'sync') {
+                typeLabel = 'مزامنة';
+                typeColor = '#4A8AB5';
+            } else if (a.type === 'company') {
+                typeLabel = 'شركة';
+                typeColor = '#4A8AB5';
+            } else if (a.type === 'license') {
+                typeLabel = 'ترخيص';
+                typeColor = '#C9A94E';
+            } else if (a.type === 'cashier') {
+                typeLabel = 'كاشف';
+                typeColor = '#C9A94E';
+            } else if (a.type === 'report') {
+                typeLabel = 'تقرير';
+                typeColor = '#4A8AB5';
+            }
             
             activities.push({
                 date: a.date ? a.date.split('T')[0] : getTodayDate(),
                 time: a.date ? new Date(a.date).toLocaleTimeString('ar') : '--:--',
-                type: a.type || 'نشاط',
-                action: info.label,
-                icon: info.icon,
-                color: info.color,
-                details: a.details || '',
+                type: typeLabel,
+                typeColor: typeColor,
+                action: actionInfo.label,
+                icon: actionInfo.icon,
+                color: actionInfo.color,
+                details: `${a.details || ''}`,
                 user: a.user || 'admin',
                 id: a.id
             });
         });
     }
 
-    // ترتيب حسب التاريخ (الأحدث أولاً)
+    // ترتيب الأنشطة حسب التاريخ (الأحدث أولاً)
     activities.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time));
 
+    // عرض آخر 50 نشاط
     const displayActivities = activities.slice(0, 50);
 
     if (displayActivities.length === 0) {
-        container.innerHTML = `<div class="empty-state" style="padding:30px 0;"><i class="fas fa-clock" style="font-size:36px;color:#3D3D3D;"></i><span style="font-size:14px;color:#A89070;">لا توجد نشاطات حتى الآن</span></div>`;
+        container.innerHTML = `
+            <div class="empty-state" style="padding:30px 0;">
+                <i class="fas fa-clock" style="font-size:36px;color:#3D3D3D;"></i>
+                <span style="font-size:14px;color:#A89070;">لا توجد نشاطات حتى الآن</span>
+            </div>
+        `;
         return;
     }
 
@@ -403,14 +464,19 @@ function renderActivityLog() {
     `;
 
     displayActivities.forEach((activity, index) => {
-        const bgColor = index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+        const isEven = index % 2 === 0;
+        const bgColor = isEven ? 'rgba(255,255,255,0.02)' : 'transparent';
         
+        // تحديد نوع النشاط
+        const typeLabel = activity.type;
+        const typeColor = activity.typeColor || activity.color || '#A89070';
+
         html += `
             <div style="display:grid;grid-template-columns:0.8fr 1fr 2.8fr 0.6fr;gap:4px;padding:5px 6px;border-bottom:1px solid #2D2D2D;font-size:11px;background:${bgColor};border-radius:4px;align-items:center;">
                 <span style="font-size:9px;color:#A89070;">${activity.date} ${activity.time}</span>
                 <div style="display:flex;align-items:center;gap:4px;">
                     <i class="fas ${activity.icon}" style="color:${activity.color};font-size:12px;width:16px;text-align:center;"></i>
-                    <span style="color:${activity.color};font-weight:700;font-size:10px;">${activity.type}</span>
+                    <span style="color:${typeColor};font-weight:700;font-size:10px;">${typeLabel}</span>
                     <span style="color:#A89070;font-size:9px;">${activity.action}</span>
                 </div>
                 <span style="color:#F5E6C8;font-size:10px;line-height:1.3;">${activity.details}</span>
@@ -424,7 +490,7 @@ function renderActivityLog() {
 }
 
 // ================================================================
-// RENDER LOW STOCK LIST
+// RENDER LOW STOCK LIST - عرض المنتجات منخفضة المخزون
 // ================================================================
 function renderLowStockList() {
     const container = document.getElementById('lowStockList');
@@ -500,9 +566,87 @@ function renderLowStockList() {
 }
 
 // ================================================================
-// UPDATE DASHBOARD DETAILS
+// CHECK LOW STOCK ALERT - التحقق من المخزون المنخفض وإنشاء تنبيهات
+// ================================================================
+function checkLowStockAlert() {
+    if (!window.products || !window.warehouseProducts) return;
+    
+    window.products.forEach(p => {
+        const total = window.warehouseProducts.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0);
+        if (total <= p.min) {
+            const exists = window.alerts ? window.alerts.some(a => a.title.includes(p.name) && !a.read) : false;
+            if (!exists) {
+                addAlert(`⚠️ مخزون منخفض: ${p.name}`, `الكمية: ${total} (الحد الأدنى: ${p.min})`, 'danger');
+            }
+        }
+    });
+}
+
+// ================================================================
+// UPDATE ALERTS UI - تحديث واجهة التنبيهات
+// ================================================================
+function updateAlertsUI() {
+    if (!window.alerts) window.alerts = [];
+    
+    const unread = window.alerts.filter(a => !a.read).length;
+    safeSetText('alertCount', unread);
+    safeSetText('alertBadge', unread);
+
+    const container = document.getElementById('alertsList');
+    if (!container) return;
+
+    const recent = window.alerts.slice(0, 3);
+    if (recent.length === 0) {
+        container.innerHTML = `
+            <div class="alert-item info">
+                <div class="icon"><i class="fas fa-info-circle"></i></div>
+                <div class="content">
+                    <div class="title">لا توجد تنبيهات</div>
+                    <div class="desc">كل شيء على ما يرام</div>
+                </div>
+            </div>
+        `;
+    } else {
+        container.innerHTML = recent.map(a => `
+            <div class="alert-item ${a.type}">
+                <div class="icon"><i class="fas ${a.type === 'danger' ? 'fa-exclamation-triangle' : a.type === 'success' ? 'fa-check-circle' : 'fa-info-circle'}"></i></div>
+                <div class="content">
+                    <div class="title">${a.title}</div>
+                    <div class="desc">${a.desc}</div>
+                </div>
+                <div class="time">${new Date(a.date).toLocaleDateString('ar')}</div>
+            </div>
+        `).join('');
+    }
+}
+
+// ================================================================
+// ADD ALERT - إضافة تنبيه جديد
+// ================================================================
+function addAlert(title, desc, type = 'info') {
+    if (!window.alerts) window.alerts = [];
+    window.alerts.unshift({
+        id: Date.now(),
+        title: title,
+        desc: desc,
+        type: type,
+        date: new Date().toISOString(),
+        read: false
+    });
+    if (window.alerts.length > 100) window.alerts = window.alerts.slice(0, 100);
+    if (typeof setData === 'function') {
+        setData('alerts', window.alerts);
+    } else {
+        localStorage.setItem('mizan_alerts', JSON.stringify(window.alerts));
+    }
+    updateAlertsUI();
+}
+
+// ================================================================
+// UPDATE DASHBOARD DETAILS - تحديث التفاصيل الإضافية
 // ================================================================
 function updateDashboardDetails() {
+    // ===== المبيعات اليومية =====
     const today = getTodayDate();
     let todaySales = 0;
     let todayPurchases = 0;
@@ -539,6 +683,7 @@ function updateDashboardDetails() {
     safeSetText('dashTodayPurchases', todayPurchases.toFixed(2));
     safeSetText('dashTodayReturns', todayReturns.toFixed(2));
     
+    // ===== تفاصيل المخزون =====
     let totalQty = 0;
     let totalValue = 0;
     if (window.products && window.warehouseProducts) {
@@ -548,9 +693,21 @@ function updateDashboardDetails() {
                 if (wp.productId === p.id) qty += wp.qty;
             });
             totalQty += qty;
-            totalValue += (p.sellPrice || 0) * qty;
+            totalValue += p.sellPrice * qty;
         });
     }
     safeSetText('dashInventoryQty', totalQty);
     safeSetText('dashInventoryValue', totalValue.toFixed(2));
+}
+
+// ================================================================
+// REFRESH DASHBOARD - تحديث لوحة التحكم بالكامل
+// ================================================================
+function refreshDashboard() {
+    if (typeof updateDashboard === 'function') {
+        updateDashboard();
+    }
+    if (typeof updateDashboardDetails === 'function') {
+        updateDashboardDetails();
+    }
 }

@@ -3,36 +3,10 @@
 // ================================================================
 
 // ================================================================
-// INIT COMPANY DATA
-// ================================================================
-function initCompanyData() {
-    if (!window.companyData || typeof window.companyData !== 'object') {
-        window.companyData = {
-            name: 'شركة الميزان',
-            phone: '0234567890',
-            mobile: '01000000000',
-            address: 'القاهرة، مصر',
-            taxNumber: '123-456-789',
-            commercialRegister: '12345',
-            email: 'info@mizan.com',
-            vodafone: '01011993799',
-            instapay: 'rashedrabia@instapay',
-            bankAccount: '2021300000275818',
-            cash: '01080591108',
-            paymentEmail: 'payment@mizan.com',
-            logo: null
-        };
-        setData('companyData', window.companyData);
-    }
-}
-
-// ================================================================
 // LOAD COMPANY DATA
 // ================================================================
 function loadCompanyData() {
-    initCompanyData();
-    const data = window.companyData;
-    
+    const data = window.companyData || {};
     safeSetValue('companyName', data.name || '');
     safeSetValue('companyPhone', data.phone || '');
     safeSetValue('companyMobile', data.mobile || '');
@@ -92,7 +66,6 @@ function loadCompanyData() {
 // ================================================================
 function saveCompanyData() {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    
     const data = {
         name: document.getElementById('companyName')?.value?.trim() || '',
         phone: document.getElementById('companyPhone')?.value?.trim() || '',
@@ -106,9 +79,8 @@ function saveCompanyData() {
         bankAccount: document.getElementById('companyBankAccount')?.value?.trim() || '',
         cash: document.getElementById('companyCash')?.value?.trim() || '',
         paymentEmail: document.getElementById('companyPaymentEmail')?.value?.trim() || '',
-        logo: window.companyData?.logo || null
+        logo: window.companyData.logo || null
     };
-    
     window.companyData = data;
     setData('companyData', data);
     loadCompanyData();
@@ -124,16 +96,8 @@ function uploadLogo(event) {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const file = event.target.files[0];
     if (!file) return;
-    
-    if (file.size > 2 * 1024 * 1024) {
-        showToast('⚠️ حجم الصورة كبير جداً (حد أقصى 2 ميجابايت)', 'error');
-        event.target.value = '';
-        return;
-    }
-    
     const reader = new FileReader();
     reader.onload = function(e) {
-        if (!window.companyData) window.companyData = {};
         window.companyData.logo = e.target.result;
         setData('companyData', window.companyData);
         loadCompanyData();

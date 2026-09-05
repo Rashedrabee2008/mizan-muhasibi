@@ -1,9 +1,9 @@
 /* ================================================================
    الميزان - نظام محاسبة ونقاط بيع
-   جميع الأنماط - النسخة الكاملة النهائية
+   جميع الأنماط
    ================================================================ */
 
-/* ===== Reset & Base ===== */
+/* Reset & Base */
 * {
     margin: 0;
     padding: 0;
@@ -25,11 +25,7 @@ body {
     position: relative;
 }
 
-/* ================================================================
-   RESPONSIVE - التوافق مع جميع الشاشات
-   ================================================================ */
-
-/* ===== شاشات متوسطة (تابلت) ===== */
+/* ===== Responsive ===== */
 @media (min-width: 768px) {
     body {
         max-width: 100%;
@@ -113,207 +109,70 @@ body {
     .dashboard-stats {
         grid-template-columns: repeat(4, 1fr) !important;
     }
-    .dashboard-card {
-        padding: 16px !important;
-    }
-    .dashboard-card .number {
-        font-size: 24px !important;
-    }
 }
 
-/* ===== شاشات كبيرة (كمبيوتر) ===== */
-@media (min-width: 1024px) {
-    body {
-        padding: 20px 40px 85px;
-        max-width: 1200px;
-    }
-    .bottom-nav {
-        max-width: 1000px !important;
-        border-radius: 20px !important;
-    }
-    .grid-container {
-        grid-template-columns: repeat(6, 1fr) !important;
-        gap: 12px !important;
-    }
-    .grid-item {
-        padding: 16px 8px 14px !important;
-    }
-    .grid-item i {
-        font-size: 28px !important;
-    }
-    .grid-item span {
-        font-size: 14px !important;
-    }
-    .dashboard-stats {
-        grid-template-columns: repeat(4, 1fr) !important;
-        gap: 14px !important;
-    }
-    .report-grid {
-        grid-template-columns: repeat(4, 1fr) !important;
-    }
-    .page-content {
-        padding: 20px 24px !important;
-    }
-    .form-row {
-        grid-template-columns: 1fr 1fr 1fr !important;
-        gap: 14px !important;
-    }
-    .table-header, .table-row {
-        font-size: 14px !important;
-        grid-template-columns: 1.2fr 1.2fr 2.5fr 0.8fr !important;
-    }
-    .dashboard-card {
-        padding: 18px !important;
-    }
-    .dashboard-card .number {
-        font-size: 28px !important;
-    }
-    .modal-box {
-        max-width: 600px !important;
-        padding: 24px !important;
-    }
-    .top-header {
-        padding: 14px 20px !important;
-    }
-    .top-header .header-text h1 {
-        font-size: 24px !important;
-    }
-    .stats-row {
-        grid-template-columns: repeat(4, 1fr) !important;
-        gap: 14px !important;
-    }
-    .stat-card .number {
-        font-size: 24px !important;
-    }
-    .balance-details {
-        grid-template-columns: repeat(5, 1fr) !important;
-        gap: 8px !important;
-    }
-    .payment-methods {
-        grid-template-columns: repeat(5, 1fr) !important;
-    }
-    .invoice-header, .invoice-row {
-        font-size: 13px !important;
-        grid-template-columns: 1fr 1.2fr 0.8fr 0.8fr 1fr 0.8fr 0.8fr !important;
-    }
-}
-
-/* ===== شاشات صغيرة (موبايل) ===== */
 @media (max-width: 480px) {
     body {
         padding: 8px 8px 65px;
-        max-width: 100%;
-    }
-    .bottom-nav {
-        max-width: 100% !important;
-        border-radius: 0 !important;
-        padding: 6px 0 12px !important;
-    }
-    .nav-item {
-        font-size: 9px !important;
-        min-width: 30px !important;
-    }
-    .nav-item i {
-        font-size: 16px !important;
-    }
-    .dashboard-stats {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 6px !important;
-    }
-    .dashboard-card {
-        padding: 10px !important;
-    }
-    .dashboard-card .number {
-        font-size: 16px !important;
-    }
-    .grid-container {
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 6px !important;
-    }
-    .grid-item {
-        padding: 6px 2px !important;
-    }
-    .grid-item i {
-        font-size: 16px !important;
-    }
-    .grid-item span {
-        font-size: 9px !important;
-    }
-    .table-header, .table-row {
-        font-size: 10px !important;
-        grid-template-columns: 1fr 0.8fr 1.5fr 0.6fr !important;
-    }
-    .modal-box {
-        max-width: 95% !important;
-        padding: 12px !important;
     }
     .top-header {
-        flex-wrap: wrap;
-        padding: 8px 10px !important;
+        padding: 8px 10px;
+        gap: 6px;
+        border-radius: 14px;
     }
-    .top-header .header-actions {
-        gap: 4px !important;
+    .top-header .logo-icon {
+        font-size: 18px;
     }
-    .top-header .header-actions .clock {
-        font-size: 9px !important;
-        padding: 2px 6px !important;
+    .top-header .header-text h1 {
+        font-size: 17px !important;
     }
-    .top-header .header-actions .badge {
-        font-size: 8px !important;
-        padding: 2px 6px !important;
+    .top-header .header-text .sub-title {
+        font-size: 10px !important;
     }
-    .chart-bar {
-        height: 80px !important;
+    .grid-item {
+        padding: 8px 2px 6px !important;
+        border-radius: 10px !important;
     }
-    .chart-bar .bar {
-        min-height: 4px !important;
+    .grid-item i {
+        font-size: 18px !important;
     }
-    .chart-bar .bar-value {
-        font-size: 7px !important;
-        top: -14px !important;
+    .grid-item span {
+        font-size: 10px !important;
     }
-    .stats-row {
-        grid-template-columns: 1fr 1fr !important;
-        gap: 6px !important;
+    .main-card {
+        padding: 10px 12px !important;
+        border-radius: 12px !important;
     }
-    .stat-card .number {
+    .card-content h2 {
+        font-size: 14px !important;
+    }
+    .card-content p {
+        font-size: 11px !important;
+    }
+    .page-content {
+        padding: 10px 8px !important;
+        border-radius: 12px !important;
+    }
+    .page-content h2 {
         font-size: 16px !important;
     }
-    .payment-methods {
-        grid-template-columns: 1fr 1fr !important;
+    .form-row {
+        grid-template-columns: 1fr;
     }
-    .invoice-header, .invoice-row {
-        font-size: 9px !important;
-        grid-template-columns: 0.6fr 0.8fr 0.5fr 0.6fr 0.5fr 0.4fr 0.5fr !important;
+    .stats-row {
+        grid-template-columns: 1fr 1fr;
     }
     .balance-details {
-        grid-template-columns: 1fr 1fr 1fr !important;
+        grid-template-columns: 1fr 1fr 1fr;
     }
-    .accounting-grid {
-        grid-template-columns: 1fr 1fr 1fr !important;
-        gap: 4px !important;
+    .payment-methods {
+        grid-template-columns: 1fr 1fr;
     }
-    .accounting-card {
-        padding: 6px 2px !important;
+    .search-box {
+        flex-direction: column;
     }
-    .report-grid {
-        grid-template-columns: 1fr 1fr !important;
-    }
-    .toast {
-        font-size: 12px !important;
-        padding: 10px 16px !important;
-        bottom: 65px !important;
-    }
-    .btn-sm {
-        min-height: 24px !important;
-        min-width: 24px !important;
-        padding: 2px 6px !important;
-        font-size: 10px !important;
-    }
-    .filter-chip {
-        padding: 4px 10px !important;
-        font-size: 10px !important;
-        min-height: 26px !important;
+    .more-grid {
+        gap: 6px;
     }
     .more-item {
         padding: 8px 2px 6px !important;
@@ -327,33 +186,91 @@ body {
     .login-box h1 {
         font-size: 22px !important;
     }
-    .main-card {
-        padding: 10px 12px !important;
-        border-radius: 12px !important;
+    .accounting-grid {
+        grid-template-columns: 1fr 1fr 1fr !important;
+        gap: 4px !important;
     }
-    .card-content h2 {
-        font-size: 14px !important;
+    .accounting-card {
+        padding: 6px 2px !important;
     }
-    .card-content p {
+    .dashboard-stats {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    .dashboard-card {
+        padding: 10px !important;
+    }
+    .dashboard-card .number {
+        font-size: 16px !important;
+    }
+    .chart-bar {
+        height: 80px !important;
+    }
+    .balance-card .amount {
+        font-size: 20px !important;
+    }
+    .toast {
+        font-size: 12px !important;
+        padding: 10px 16px !important;
+        bottom: 65px !important;
+    }
+    .btn-sm {
+        min-height: 24px !important;
+        min-width: 24px !important;
+        padding: 2px 6px !important;
+        font-size: 10px !important;
+    }
+    .report-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    .report-card {
+        padding: 8px 4px !important;
+    }
+    .report-card i {
+        font-size: 18px !important;
+    }
+    .report-card h4 {
         font-size: 11px !important;
+    }
+    .invoice-header,
+    .invoice-row {
+        font-size: 10px !important;
+        gap: 4px !important;
+        grid-template-columns: 0.8fr 1fr 0.6fr 0.7fr 0.6fr 0.5fr 0.7fr !important;
+    }
+    .table-header,
+    .table-row {
+        font-size: 11px !important;
+        gap: 4px !important;
+        grid-template-columns: 1.2fr 1.2fr 0.8fr 0.8fr 0.6fr !important;
+    }
+    .bottom-nav {
+        padding: 6px 0 10px !important;
+        border-radius: 16px 16px 0 0 !important;
+    }
+    .nav-item {
+        font-size: 9px !important;
+        min-width: 36px !important;
+    }
+    .nav-item i {
+        font-size: 16px !important;
+    }
+    .filter-chip {
+        padding: 4px 10px !important;
+        font-size: 10px !important;
+        min-height: 26px !important;
     }
 }
 
-/* ================================================================
-   TYPOGRAPHY
-   ================================================================ */
+/* ===== Typography ===== */
 h1 { font-size: 22px; font-weight: 800; color: #F5E6C8; }
 h2 { font-size: 20px; font-weight: 700; color: #F5E6C8; }
 h3 { font-size: 18px; font-weight: 700; color: #F5E6C8; }
 h4 { font-size: 16px; font-weight: 600; color: #F5E6C8; }
-body, p, span, div, input, select, button, textarea, label {
-    font-size: 14px;
-    color: #F5E6C8;
-}
+body, p, span, div, input, select, button, textarea, label { font-size: 14px; color: #F5E6C8; }
 
-/* ================================================================
-   PAGE CONTENT
-   ================================================================ */
+/* ===== Page Content ===== */
 .page-content h2 {
     font-size: 20px;
     font-weight: 800;
@@ -368,9 +285,7 @@ body, p, span, div, input, select, button, textarea, label {
     font-size: 20px;
 }
 
-/* ================================================================
-   FORM ELEMENTS
-   ================================================================ */
+/* ===== Form Elements ===== */
 .form-group label {
     font-size: 13px;
     font-weight: 700;
@@ -401,15 +316,8 @@ body, p, span, div, input, select, button, textarea, label {
 .form-group textarea::placeholder {
     color: #6B5B4B;
 }
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-}
 
-/* ================================================================
-   TABLES
-   ================================================================ */
+/* ===== Tables ===== */
 .table-header {
     font-size: 12px;
     font-weight: 800;
@@ -458,22 +366,7 @@ body, p, span, div, input, select, button, textarea, label {
     padding-right: 6px;
 }
 
-/* ================================================================
-   STATS
-   ================================================================ */
-.stats-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 12px;
-}
-.stat-card {
-    background: #0D0D0D;
-    border-radius: 10px;
-    padding: 10px 6px;
-    text-align: center;
-    border: 1px solid #2D2D2D;
-}
+/* ===== Stats ===== */
 .stats-row .number {
     font-size: 22px;
     font-weight: 900;
@@ -486,9 +379,7 @@ body, p, span, div, input, select, button, textarea, label {
     font-weight: 600;
 }
 
-/* ================================================================
-   BUTTONS
-   ================================================================ */
+/* ===== Buttons ===== */
 .btn {
     font-size: 14px;
     font-weight: 800;
@@ -517,7 +408,6 @@ body, p, span, div, input, select, button, textarea, label {
 .btn-block {
     width: 100%;
 }
-
 .btn-primary { background: #C9A94E; color: #0D0D0D; }
 .btn-primary:hover { background: #B8953A; }
 .btn-success { background: #2D8F5E; color: #fff; }
@@ -533,9 +423,7 @@ body, p, span, div, input, select, button, textarea, label {
 .whatsapp-btn { background: #25D366; color: #fff; }
 .whatsapp-btn:hover { background: #1DA851; }
 
-/* ================================================================
-   HEADER
-   ================================================================ */
+/* ===== Header ===== */
 .top-header {
     background: #1C1C1C;
     border-radius: 16px;
@@ -546,7 +434,6 @@ body, p, span, div, input, select, button, textarea, label {
     align-items: center;
     gap: 8px;
     border: 1px solid #3D3D3D;
-    flex-wrap: wrap;
 }
 .top-header .logo-icon {
     font-size: 22px;
@@ -569,7 +456,6 @@ body, p, span, div, input, select, button, textarea, label {
     align-items: center;
     gap: 6px;
     margin-right: auto;
-    flex-wrap: wrap;
 }
 .top-header .header-actions .badge {
     background: #C9A94E;
@@ -580,7 +466,6 @@ body, p, span, div, input, select, button, textarea, label {
     font-weight: 800;
     cursor: pointer;
     transition: 0.2s;
-    border: none;
 }
 .top-header .header-actions .badge:hover {
     background: #B8953A;
@@ -594,16 +479,11 @@ body, p, span, div, input, select, button, textarea, label {
     color: #0D0D0D;
     animation: pulse 1s infinite;
 }
-.top-header .header-actions .badge.online {
-    background: #4A8AB5;
-    color: #fff;
-}
 @keyframes pulse {
     0% { opacity: 1; }
     50% { opacity: 0.5; }
     100% { opacity: 1; }
 }
-
 .top-header .header-actions .lock-btn,
 .top-header .header-actions .logout-btn {
     background: none;
@@ -626,7 +506,6 @@ body, p, span, div, input, select, button, textarea, label {
 .top-header .header-actions .logout-btn:hover {
     background: #2A1A1A;
 }
-
 .notification-badge {
     background: #E06060;
     color: #fff;
@@ -648,9 +527,7 @@ body, p, span, div, input, select, button, textarea, label {
     font-family: 'Courier New', monospace;
 }
 
-/* ================================================================
-   CARDS
-   ================================================================ */
+/* ===== Cards ===== */
 .main-card {
     background: #1C1C1C;
     border-radius: 14px;
@@ -692,9 +569,7 @@ body, p, span, div, input, select, button, textarea, label {
     font-size: 14px;
 }
 
-/* ================================================================
-   GRID
-   ================================================================ */
+/* ===== Grid ===== */
 .grid-container {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -730,9 +605,7 @@ body, p, span, div, input, select, button, textarea, label {
     border-color: #C9A94E;
 }
 
-/* ================================================================
-   PAGE CONTENT CONTAINER
-   ================================================================ */
+/* ===== Page Content Container ===== */
 .page-content {
     background: #1C1C1C;
     border-radius: 14px;
@@ -743,9 +616,7 @@ body, p, span, div, input, select, button, textarea, label {
     border: 1px solid #2D2D2D;
 }
 
-/* ================================================================
-   BOTTOM NAVIGATION
-   ================================================================ */
+/* ===== Bottom Navigation ===== */
 .bottom-nav {
     position: fixed;
     bottom: 0;
@@ -801,9 +672,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #C9A94E;
 }
 
-/* ================================================================
-   MODAL
-   ================================================================ */
+/* ===== Modal ===== */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -853,9 +722,7 @@ body, p, span, div, input, select, button, textarea, label {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ================================================================
-   TOAST
-   ================================================================ */
+/* ===== Toast ===== */
 .toast {
     position: fixed;
     bottom: 75px;
@@ -884,9 +751,7 @@ body, p, span, div, input, select, button, textarea, label {
 .toast.warning { background: #E6A830; color: #0D0D0D; }
 .toast.info { background: #C9A94E; color: #0D0D0D; }
 
-/* ================================================================
-   LOGIN
-   ================================================================ */
+/* ===== Login ===== */
 .login-container {
     position: fixed;
     top: 0;
@@ -965,9 +830,7 @@ body, p, span, div, input, select, button, textarea, label {
     margin-top: 10px;
 }
 
-/* ================================================================
-   EMPTY STATE
-   ================================================================ */
+/* ===== Empty State ===== */
 .empty-state {
     text-align: center;
     padding: 24px 0;
@@ -985,9 +848,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #A89070;
 }
 
-/* ================================================================
-   FILTER CHIPS
-   ================================================================ */
+/* ===== Filter Chips ===== */
 .filter-chips {
     display: flex;
     gap: 6px;
@@ -1015,9 +876,7 @@ body, p, span, div, input, select, button, textarea, label {
     border-color: #C9A94E;
 }
 
-/* ================================================================
-   PAYMENT METHODS
-   ================================================================ */
+/* ===== Payment Methods ===== */
 .payment-methods {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -1051,9 +910,7 @@ body, p, span, div, input, select, button, textarea, label {
     background: #2A2A2A;
 }
 
-/* ================================================================
-   ITEMS CONTAINER
-   ================================================================ */
+/* ===== Items Container ===== */
 .items-container {
     background: #0D0D0D;
     border-radius: 10px;
@@ -1079,9 +936,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #F5E6C8;
 }
 
-/* ================================================================
-   INVOICE ITEMS TABLE
-   ================================================================ */
+/* ===== Invoice Items Table ===== */
 .invoice-items-table {
     width: 100%;
     border-collapse: collapse;
@@ -1118,121 +973,22 @@ body, p, span, div, input, select, button, textarea, label {
     font-size: 18px;
 }
 
-/* ================================================================
-   INVOICE DETAILS - تحسين تنسيق الفاتورة
-   ================================================================ */
-
-/* تنسيق جدول الفاتورة في المودال */
-.invoice-details-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-    margin: 8px 0;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.invoice-details-table th {
-    background: #2D2D2D;
-    padding: 8px 6px;
-    text-align: center;
-    font-weight: 800;
-    color: #C9A94E;
-    border: 1px solid #3D3D3D;
-    font-size: 11px;
-}
-
-.invoice-details-table td {
-    padding: 8px 6px;
-    text-align: center;
-    border: 1px solid #3D3D3D;
-    color: #F5E6C8;
-    font-size: 12px;
-}
-
-.invoice-details-table tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.02);
-}
-
-.invoice-details-table tr:hover {
-    background: rgba(201, 169, 78, 0.05);
-}
-
-/* تحسين عرض الفاتورة في المودال */
-.modal-box .invoice-print-boxed {
-    background: #1C1C1C;
-    border: 2px solid #C9A94E;
-    border-radius: 12px;
-    padding: 16px;
-}
-
-.modal-box .items-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-}
-
-.modal-box .items-table th {
-    background: #2D2D2D;
-    padding: 6px 4px;
-    text-align: center;
-    font-weight: 800;
-    color: #C9A94E;
-    border: 1px solid #3D3D3D;
-}
-
-.modal-box .items-table td {
-    padding: 6px 4px;
-    text-align: center;
-    border: 1px solid #3D3D3D;
-    color: #F5E6C8;
-}
-
-.modal-box .items-table tr:nth-child(even) {
-    background: rgba(255, 255, 255, 0.02);
-}
-
-/* تنسيق تفاصيل الفاتورة - الأعمدة مضبوطة */
-.invoice-detail-row {
+/* ===== Stats Row ===== */
+.stats-row {
     display: grid;
-    grid-template-columns: 1fr 0.8fr 0.8fr 1fr 0.6fr;
-    gap: 4px;
-    padding: 6px 0;
-    border-bottom: 1px solid #2D2D2D;
-    font-size: 12px;
-    color: #F5E6C8;
-    align-items: center;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
 }
-
-.invoice-detail-row.header {
-    font-weight: 800;
-    color: #C9A94E;
-    border-bottom: 2px solid #C9A94E;
-    font-size: 11px;
-}
-
-.invoice-detail-row .col-product {
-    text-align: right;
-    font-weight: 600;
-}
-
-.invoice-detail-row .col-qty {
+.stat-card {
+    background: #0D0D0D;
+    border-radius: 10px;
+    padding: 10px 6px;
     text-align: center;
+    border: 1px solid #2D2D2D;
 }
 
-.invoice-detail-row .col-price {
-    text-align: center;
-}
-
-.invoice-detail-row .col-total {
-    text-align: center;
-    font-weight: 700;
-    color: #C9A94E;
-}
-
-/* ================================================================
-   BALANCE DETAILS
-   ================================================================ */
+/* ===== Balance Details ===== */
 .balance-details {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
@@ -1257,9 +1013,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #F5E6C8;
 }
 
-/* ================================================================
-   ACCOUNTING GRID
-   ================================================================ */
+/* ===== Accounting Grid ===== */
 .accounting-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -1297,9 +1051,7 @@ body, p, span, div, input, select, button, textarea, label {
     font-weight: 500;
 }
 
-/* ================================================================
-   ACCOUNTING DETAIL
-   ================================================================ */
+/* ===== Accounting Detail ===== */
 .accounting-detail-content {
     background: #0D0D0D;
     border-radius: 8px;
@@ -1327,9 +1079,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #F5E6C8;
 }
 
-/* ================================================================
-   DASHBOARD STATS
-   ================================================================ */
+/* ===== Dashboard Stats ===== */
 .dashboard-stats {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1350,21 +1100,6 @@ body, p, span, div, input, select, button, textarea, label {
     transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(201, 169, 78, 0.10);
 }
-.dashboard-card .icon {
-    font-size: 28px;
-    color: #C9A94E;
-    margin-bottom: 6px;
-}
-.dashboard-card .number {
-    font-size: 22px;
-    font-weight: 900;
-    color: #F5E6C8;
-}
-.dashboard-card .label {
-    font-size: 12px;
-    color: #A89070;
-    font-weight: 600;
-}
 .dashboard-card .change {
     font-size: 12px;
     font-weight: 700;
@@ -1377,9 +1112,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #E06060;
 }
 
-/* ================================================================
-   CHART
-   ================================================================ */
+/* ===== Chart ===== */
 .chart-container {
     background: #1C1C1C;
     border-radius: 12px;
@@ -1424,9 +1157,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #C9A94E;
 }
 
-/* ================================================================
-   ALERTS
-   ================================================================ */
+/* ===== Alerts ===== */
 .alert-item {
     display: flex;
     align-items: center;
@@ -1483,9 +1214,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #4A8AB5;
 }
 
-/* ================================================================
-   SETTINGS
-   ================================================================ */
+/* ===== Settings ===== */
 .settings-section {
     background: #0D0D0D;
     border-radius: 12px;
@@ -1518,9 +1247,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #F5E6C8;
 }
 
-/* ================================================================
-   CLEAR DATA BUTTON
-   ================================================================ */
+/* ===== Clear Data Button ===== */
 .clear-data-btn {
     background: #E06060;
     color: #fff;
@@ -1543,9 +1270,7 @@ body, p, span, div, input, select, button, textarea, label {
     transform: scale(1.02);
 }
 
-/* ================================================================
-   BALANCE CARD
-   ================================================================ */
+/* ===== Balance Card ===== */
 .balance-card {
     background: linear-gradient(135deg, #C9A94E, #8B7A3A);
     color: #0D0D0D;
@@ -1561,9 +1286,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #3D3D3D;
 }
 
-/* ================================================================
-   COMPANY
-   ================================================================ */
+/* ===== Company ===== */
 .company-logo {
     width: 64px;
     height: 64px;
@@ -1610,9 +1333,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #C9A94E;
 }
 
-/* ================================================================
-   BACKUP
-   ================================================================ */
+/* ===== Backup ===== */
 .backup-item {
     display: flex;
     justify-content: space-between;
@@ -1636,9 +1357,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #A89070;
 }
 
-/* ================================================================
-   CASHIER
-   ================================================================ */
+/* ===== Cashier ===== */
 .cashier-card {
     background: #1C1C1C;
     border-radius: 10px;
@@ -1681,9 +1400,7 @@ body, p, span, div, input, select, button, textarea, label {
     min-height: 36px;
 }
 
-/* ================================================================
-   STATUS BADGE
-   ================================================================ */
+/* ===== Status Badge ===== */
 .status-badge {
     display: inline-block;
     padding: 2px 8px;
@@ -1700,9 +1417,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #fff;
 }
 
-/* ================================================================
-   INVOICE TYPE SELECTOR
-   ================================================================ */
+/* ===== Invoice Type Selector ===== */
 .invoice-type-selector {
     display: flex;
     gap: 8px;
@@ -1737,9 +1452,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #A89070;
 }
 
-/* ================================================================
-   LICENSE
-   ================================================================ */
+/* ===== License ===== */
 .license-key-input {
     font-family: monospace;
     font-size: 12px;
@@ -1747,9 +1460,7 @@ body, p, span, div, input, select, button, textarea, label {
     text-align: center;
 }
 
-/* ================================================================
-   REPORTS
-   ================================================================ */
+/* ===== Reports ===== */
 .report-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1787,9 +1498,7 @@ body, p, span, div, input, select, button, textarea, label {
     font-weight: 500;
 }
 
-/* ================================================================
-   MORE PANEL
-   ================================================================ */
+/* ===== More Panel ===== */
 .more-panel {
     position: fixed;
     bottom: 0;
@@ -1884,9 +1593,7 @@ body, p, span, div, input, select, button, textarea, label {
     visibility: visible;
 }
 
-/* ================================================================
-   PAGE CONTAINER
-   ================================================================ */
+/* ===== Page Container ===== */
 .page-container {
     display: none !important;
     animation: fadeIn 0.3s;
@@ -1895,9 +1602,7 @@ body, p, span, div, input, select, button, textarea, label {
     display: block !important;
 }
 
-/* ================================================================
-   CASHIER TRANSACTIONS
-   ================================================================ */
+/* ===== Cashier Transactions ===== */
 .cashier-transactions-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -1939,9 +1644,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #A89070;
 }
 
-/* ================================================================
-   SCROLLBAR
-   ================================================================ */
+/* ===== Scrollbar ===== */
 ::-webkit-scrollbar {
     width: 4px;
     height: 4px;
@@ -1957,9 +1660,7 @@ body, p, span, div, input, select, button, textarea, label {
     background: #B8953A;
 }
 
-/* ================================================================
-   INVOICE PRINT
-   ================================================================ */
+/* ===== Invoice Print ===== */
 .invoice-print-boxed {
     direction: rtl;
     text-align: center;
@@ -2080,9 +1781,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #F5E6C8;
 }
 
-/* ================================================================
-   PRINT STYLES
-   ================================================================ */
+/* ===== Print Styles ===== */
 @media print {
     body {
         padding: 0;
@@ -2161,9 +1860,7 @@ body, p, span, div, input, select, button, textarea, label {
     }
 }
 
-/* ================================================================
-   WHATSAPP INVOICE
-   ================================================================ */
+/* ===== WhatsApp Invoice ===== */
 .whatsapp-invoice {
     font-family: 'Courier New', monospace;
     direction: rtl;
@@ -2248,9 +1945,7 @@ body, p, span, div, input, select, button, textarea, label {
     color: #5D5D5D;
 }
 
-/* ================================================================
-   QR CODE SCANNER
-   ================================================================ */
+/* ===== QR Code Scanner ===== */
 #qrScanner {
     width: 100%;
     max-width: 400px;
@@ -2299,339 +1994,4 @@ body, p, span, div, input, select, button, textarea, label {
 .qr-result.error {
     border-color: #E06060;
     color: #E06060;
-}
-
-/* ================================================================
-   SYNC STATUS
-   ================================================================ */
-.sync-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background: #2D2D2D;
-}
-.sync-status.online {
-    background: #2D8F5E;
-    color: #fff;
-}
-.sync-status.offline {
-    background: #E06060;
-    color: #fff;
-}
-.sync-status .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    display: inline-block;
-}
-.sync-status.online .dot {
-    background: #5FEF7F;
-}
-.sync-status.offline .dot {
-    background: #FF6B6B;
-}
-.sync-status .pulse {
-    animation: pulse-dot 1.5s ease-in-out infinite;
-}
-@keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-}
-
-/* ================================================================
-   SEARCH BOX
-   ================================================================ */
-.search-box {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 10px;
-}
-.search-box input {
-    flex: 1;
-    padding: 8px 12px;
-    border-radius: 10px;
-    border: 2px solid #3D3D3D;
-    background: #1C1C1C;
-    color: #F5E6C8;
-    font-size: 14px;
-}
-.search-box input:focus {
-    outline: none;
-    border-color: #C9A94E;
-}
-.search-box input::placeholder {
-    color: #6B5B4B;
-}
-
-/* ================================================================
-   BARCODE SCANNER
-   ================================================================ */
-.barcode-scanner {
-    background: #0D0D0D;
-    border-radius: 10px;
-    padding: 10px;
-    border: 1px solid #2D2D2D;
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.barcode-scanner video {
-    width: 100%;
-    max-height: 300px;
-    border-radius: 8px;
-    background: #000;
-}
-.barcode-result {
-    margin-top: 8px;
-    padding: 10px;
-    background: #1C1C1C;
-    border-radius: 8px;
-    border: 1px solid #2D2D2D;
-    text-align: center;
-    min-height: 50px;
-}
-.barcode-result.success {
-    border-color: #2D8F5E;
-}
-.barcode-result.error {
-    border-color: #E06060;
-}
-
-/* ================================================================
-   BOND STATS
-   ================================================================ */
-#bondStats .stats-row {
-    margin-bottom: 12px;
-}
-#bondStats .stat-card .number {
-    font-size: 18px;
-}
-
-/* ================================================================
-   TABLE ACTIONS
-   ================================================================ */
-.actions {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-}
-.actions .btn-sm {
-    min-width: 24px;
-    min-height: 24px;
-    padding: 0 4px;
-    font-size: 10px;
-}
-
-/* ================================================================
-   ANIMATIONS
-   ================================================================ */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-.fade-in-up {
-    animation: fadeInUp 0.4s ease;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-.slide-down {
-    animation: slideDown 0.3s ease;
-}
-
-/* ================================================================
-   UTILITIES
-   ================================================================ */
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.text-left { text-align: left; }
-.text-gold { color: #C9A94E; }
-.text-green { color: #2D8F5E; }
-.text-red { color: #E06060; }
-.text-muted { color: #A89070; }
-.text-small { font-size: 11px; }
-.text-large { font-size: 18px; }
-.font-bold { font-weight: 700; }
-.font-black { font-weight: 900; }
-
-.mt-1 { margin-top: 4px; }
-.mt-2 { margin-top: 8px; }
-.mt-3 { margin-top: 12px; }
-.mb-1 { margin-bottom: 4px; }
-.mb-2 { margin-bottom: 8px; }
-.mb-3 { margin-bottom: 12px; }
-
-.p-1 { padding: 4px; }
-.p-2 { padding: 8px; }
-.p-3 { padding: 12px; }
-
-.flex { display: flex; }
-.flex-center { display: flex; align-items: center; justify-content: center; }
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
-.flex-wrap { flex-wrap: wrap; }
-.gap-1 { gap: 4px; }
-.gap-2 { gap: 8px; }
-.gap-3 { gap: 12px; }
-
-/* ================================================================
-   DARK THEME OVERRIDES
-   ================================================================ */
-input[type="date"],
-input[type="datetime-local"],
-input[type="time"] {
-    color-scheme: dark;
-}
-input[type="file"] {
-    color: #F5E6C8;
-}
-input[type="file"]::file-selector-button {
-    background: #C9A94E;
-    color: #0D0D0D;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 700;
-    cursor: pointer;
-}
-input[type="file"]::file-selector-button:hover {
-    background: #B8953A;
-}
-
-/* ================================================================
-   INVOICE DETAILS ROW - تنسيق محسن لعرض الأصناف في الفاتورة
-   ================================================================ */
-.invoice-detail-grid {
-    display: grid;
-    grid-template-columns: 1.5fr 0.8fr 0.8fr 1fr 0.6fr;
-    gap: 6px;
-    padding: 6px 8px;
-    border-bottom: 1px solid #2D2D2D;
-    font-size: 12px;
-    color: #F5E6C8;
-    align-items: center;
-}
-
-.invoice-detail-grid.header {
-    font-weight: 800;
-    color: #C9A94E;
-    border-bottom: 2px solid #C9A94E;
-    font-size: 11px;
-    background: #1C1C1C;
-    border-radius: 4px;
-}
-
-.invoice-detail-grid .product-name {
-    text-align: right;
-    font-weight: 600;
-}
-
-.invoice-detail-grid .qty {
-    text-align: center;
-}
-
-.invoice-detail-grid .price {
-    text-align: center;
-}
-
-.invoice-detail-grid .total {
-    text-align: center;
-    font-weight: 700;
-    color: #C9A94E;
-}
-
-.invoice-detail-grid .remove-btn {
-    text-align: center;
-}
-
-/* تنسيق الفاتورة في المودال */
-.modal-invoice-container {
-    background: #0D0D0D;
-    border-radius: 10px;
-    padding: 12px;
-    border: 1px solid #2D2D2D;
-}
-
-.modal-invoice-container .invoice-header {
-    border-bottom: 2px solid #C9A94E;
-    padding-bottom: 8px;
-    margin-bottom: 8px;
-    text-align: center;
-}
-
-.modal-invoice-container .invoice-header h2 {
-    color: #C9A94E;
-    font-size: 18px;
-    margin: 0;
-}
-
-.modal-invoice-container .invoice-header .sub {
-    color: #A89070;
-    font-size: 11px;
-}
-
-.modal-invoice-container .invoice-info-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-    font-size: 12px;
-    padding: 4px 0;
-    border-bottom: 1px solid #3D3D3D;
-    margin-bottom: 6px;
-}
-
-.modal-invoice-container .invoice-info-grid .label {
-    color: #A89070;
-    font-weight: 600;
-}
-
-.modal-invoice-container .invoice-info-grid .value {
-    color: #F5E6C8;
-    font-weight: 700;
-}
-
-.modal-invoice-container .invoice-total {
-    border-top: 2px solid #C9A94E;
-    padding: 8px 0;
-    margin-top: 6px;
-    font-weight: 700;
-    font-size: 14px;
-    text-align: center;
-}
-
-.modal-invoice-container .invoice-total .amount {
-    color: #C9A94E;
-    font-size: 18px;
-}
-
-.modal-invoice-container .invoice-footer {
-    text-align: center;
-    border-top: 2px solid #C9A94E;
-    padding-top: 6px;
-    margin-top: 6px;
-    font-size: 11px;
-    color: #A89070;
-}
-
-.modal-invoice-container .invoice-footer .thanks {
-    font-size: 14px;
-    color: #F5E6C8;
-    font-weight: 700;
 }

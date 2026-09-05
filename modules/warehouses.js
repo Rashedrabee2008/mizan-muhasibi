@@ -17,13 +17,7 @@ function addWarehouse() {
         return;
     }
 
-    window.warehouses.push({ 
-        id: Date.now(), 
-        name: name, 
-        type: type, 
-        address: address,
-        createdAt: new Date().toISOString()
-    });
+    window.warehouses.push({ id: Date.now(), name: name, type: type, address: address });
     saveAll();
     addAuditLog('add', 'warehouse', `إضافة مخزن: ${name}`);
     renderWarehouses();
@@ -38,7 +32,7 @@ function addWarehouse() {
 // ================================================================
 function renderWarehouses() {
     safeSetText('warehousesCount', window.warehouses.length);
-    const totalProducts = window.warehouseProducts?.reduce((s, wp) => s + wp.qty, 0) || 0;
+    const totalProducts = window.warehouseProducts.reduce((s, wp) => s + wp.qty, 0);
     safeSetText('warehouseProductsCount', totalProducts);
 
     const container = document.getElementById('warehouseList');
@@ -55,7 +49,7 @@ function renderWarehouses() {
     let html = `<div class="table-header" style="grid-template-columns:1.5fr 0.8fr 1fr 0.8fr 0.6fr;"><span>اسم المخزن</span><span>النوع</span><span>العنوان</span><span>المنتجات</span><span></span></div>`;
 
     window.warehouses.forEach(w => {
-        const count = window.warehouseProducts?.filter(wp => wp.warehouseId === w.id).reduce((s, wp) => s + wp.qty, 0) || 0;
+        const count = window.warehouseProducts.filter(wp => wp.warehouseId === w.id).reduce((s, wp) => s + wp.qty, 0);
         const typeColor = w.type === 'رئيسي' ? '#2D8F5E' : w.type === 'محل' ? '#E6A830' : '#4A8AB5';
 
         html += `
@@ -131,8 +125,7 @@ function deleteWarehouse(id) {
 
     const mainWarehouse = window.warehouses.find(w => w.type === 'رئيسي');
     if (mainWarehouse && mainWarehouse.id !== id) {
-        const productsToMove = window.warehouseProducts?.filter(wp => wp.warehouseId === id) || [];
-        productsToMove.forEach(wp => {
+        window.warehouseProducts.filter(wp => wp.warehouseId === id).forEach(wp => {
             let target = window.warehouseProducts.find(w => w.warehouseId === mainWarehouse.id && w.productId === wp.productId);
             if (!target) {
                 target = { warehouseId: mainWarehouse.id, productId: wp.productId, qty: 0 };
@@ -144,7 +137,7 @@ function deleteWarehouse(id) {
 
     const w = window.warehouses.find(wh => wh.id === id);
     window.warehouses = window.warehouses.filter(wh => wh.id !== id);
-    window.warehouseProducts = window.warehouseProducts?.filter(wp => wp.warehouseId !== id) || [];
+    window.warehouseProducts = window.warehouseProducts.filter(wp => wp.warehouseId !== id);
 
     saveAll();
     if (w) addAuditLog('delete', 'warehouse', `حذف مخزن: ${w.name}`);
