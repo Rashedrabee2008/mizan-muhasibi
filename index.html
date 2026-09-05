@@ -914,7 +914,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 بدء تشغيل الميزان v3.0.0');
             
-            // تهيئة المستخدمين أولاً
             if (typeof initUsers === 'function') { 
                 initUsers(); 
                 console.log('✅ تم تهيئة المستخدمين');
@@ -946,6 +945,14 @@
             
             if (typeof updateSecurityButton === 'function') { 
                 updateSecurityButton(); 
+            }
+            
+            // التحقق من حالة الدخول
+            if (localStorage.getItem('app_unlocked') === 'true') {
+                const loginContainer = document.getElementById('loginContainer');
+                const appContent = document.getElementById('appContent');
+                if (loginContainer) loginContainer.classList.add('hidden');
+                if (appContent) appContent.style.display = 'block';
             }
             
             console.log('✅ الميزان جاهز للاستخدام');
