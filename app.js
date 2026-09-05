@@ -14,8 +14,6 @@ let currentPassword = localStorage.getItem('app_password') || DEFAULT_PASSWORD;
 let backupInterval = null;
 let versionClickCount = 0;
 let currentUser = JSON.parse(localStorage.getItem('mizan_current_user')) || { username: 'مدير', role: 'admin' };
-
-// عداد الفواتير
 let invoiceCounter = parseInt(localStorage.getItem('mizan_invoice_counter')) || 1;
 
 function getNextInvoiceNumber() {
@@ -2497,7 +2495,6 @@ function createAutoBackup() {
 // دوال فاتورة البيع - إضافة الأصناف
 // ================================================================
 
-// متغيرات الأصناف
 window.salesItems = [];
 window.purchaseItems = [];
 window.returnItems = [];
