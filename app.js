@@ -38,15 +38,13 @@ function showToast(msg, type = 'info') {
     t._timer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-function safeSetText(id, value, warnIfMissing = false) {
+function safeSetText(id, value) {
     const el = document.getElementById(id);
     if (el) {
         el.textContent = value;
         return true;
     } else {
-        if (warnIfMissing) {
-            console.warn('⚠️ عنصر غير موجود، تم تخطيه:', id);
-        }
+        console.warn('⚠️ عنصر غير موجود، تم تخطيه:', id);
         return false;
     }
 }
@@ -186,7 +184,7 @@ function updateUIByPermissions() {
 }
 
 // ================================================================
-// UPDATE SECURITY BUTTON
+// UPDATE SECURITY BUTTON - إظهار زر الأمن الخاص للمدير فقط
 // ================================================================
 
 function updateSecurityButton() {
@@ -349,12 +347,10 @@ function refreshPage(pageId) {
     if (pageId === 'sales') {
         if (typeof updateCustomerWhatsApp === 'function') updateCustomerWhatsApp();
         if (typeof updateCustomerWhatsAppManual === 'function') updateCustomerWhatsAppManual();
-        if (typeof updateCustomerBalanceDisplay === 'function') updateCustomerBalanceDisplay();
     }
     if (pageId === 'purchase') {
         if (typeof updateSupplierWhatsApp === 'function') updateSupplierWhatsApp();
         if (typeof updateSupplierWhatsAppManual === 'function') updateSupplierWhatsAppManual();
-        if (typeof updateSupplierBalanceDisplay === 'function') updateSupplierBalanceDisplay();
     }
     if (pageId === 'inventory_adjustment') {
         if (typeof populateAdjustmentProducts === 'function') populateAdjustmentProducts();
@@ -421,8 +417,6 @@ function refreshAllPages() {
     setTimeout(() => {
         if (typeof updateCustomerWhatsApp === 'function') updateCustomerWhatsApp();
         if (typeof updateSupplierWhatsApp === 'function') updateSupplierWhatsApp();
-        if (typeof updateCustomerBalanceDisplay === 'function') updateCustomerBalanceDisplay();
-        if (typeof updateSupplierBalanceDisplay === 'function') updateSupplierBalanceDisplay();
     }, 200);
 }
 
@@ -872,13 +866,6 @@ function updateCustomerWhatsApp() {
     } else {
         group.style.display = 'none';
     }
-    
-    // تحديث رصيد العميل
-    setTimeout(() => {
-        if (typeof updateCustomerBalanceDisplay === 'function') {
-            updateCustomerBalanceDisplay();
-        }
-    }, 100);
 }
 
 function updateCustomerWhatsAppManual() {
@@ -907,13 +894,6 @@ function updateSupplierWhatsApp() {
     } else {
         group.style.display = 'none';
     }
-    
-    // تحديث رصيد المورد
-    setTimeout(() => {
-        if (typeof updateSupplierBalanceDisplay === 'function') {
-            updateSupplierBalanceDisplay();
-        }
-    }, 100);
 }
 
 function updateSupplierWhatsAppManual() {
@@ -921,246 +901,7 @@ function updateSupplierWhatsAppManual() {
 }
 
 // ================================================================
-// CUSTOMER BALANCE - حساب رصيد العميل
-// ================================================================
-
-function getCustomerBalance(customerName) {
-    let totalSales = 0;      // إجمالي المبيعات للعميل
-    let totalReturns = 0;    // إجمالي مرتجعات العميل
-    let totalPaid = 0;       // إجمالي المدفوعات (سندات تحصيل مدفوعة)
-    let totalBonds = 0;      // إجمالي السندات المعلقة (تحصيل عميل)
-    
-    // حساب المبيعات
-    if (window.sales) {
-        window.sales.forEach(s => {
-            if (s.customer === customerName) {
-                const amount = s.totalWithTax || s.total || 0;
-                totalSales += amount;
-            }
-        });
-    }
-    
-    // حساب المرتجعات
-    if (window.returns) {
-        window.returns.forEach(r => {
-            if (r.customer === customerName) {
-                const amount = r.total || 0;
-                totalReturns += amount;
-            }
-        });
-    }
-    
-    // حساب سندات التحصيل (المدفوعات)
-    if (window.bonds) {
-        window.bonds.forEach(b => {
-            if (b.customerName === customerName && b.type === 'تحصيل عميل' && b.status === 'paid') {
-                totalPaid += b.amount;
-            }
-        });
-    }
-    
-    // حساب سندات التحصيل المعلقة
-    if (window.bonds) {
-        window.bonds.forEach(b => {
-            if (b.customerName === customerName && b.type === 'تحصيل عميل' && b.status === 'pending') {
-                totalBonds += b.amount;
-            }
-        });
-    }
-    
-    // صافي الرصيد = (المبيعات - المرتجعات) - (المدفوعات + السندات المعلقة)
-    const netBalance = (totalSales - totalReturns) - (totalPaid + totalBonds);
-    
-    return {
-        totalSales: totalSales,
-        totalReturns: totalReturns,
-        totalPaid: totalPaid,
-        totalBonds: totalBonds,
-        netBalance: netBalance,
-        status: netBalance > 0 ? 'عليه فلوس' : netBalance < 0 ? 'له فلوس' : 'مستقر'
-    };
-}
-
-// ================================================================
-// SUPPLIER BALANCE - حساب رصيد المورد
-// ================================================================
-
-function getSupplierBalance(supplierName) {
-    let totalPurchases = 0;    // إجمالي المشتريات من المورد
-    let totalReturns = 0;      // إجمالي مرتجعات المورد
-    let totalPaid = 0;         // إجمالي المدفوعات (سندات سداد مدفوعة)
-    let totalBonds = 0;        // إجمالي السندات المعلقة (سداد مورد)
-    
-    // حساب المشتريات
-    if (window.purchases) {
-        window.purchases.forEach(p => {
-            if (p.supplier === supplierName) {
-                const amount = p.totalWithTax || p.total || 0;
-                totalPurchases += amount;
-            }
-        });
-    }
-    
-    // حساب مرتجعات المشتريات
-    if (window.returns) {
-        window.returns.forEach(r => {
-            if (r.supplier === supplierName) {
-                const amount = r.total || 0;
-                totalReturns += amount;
-            }
-        });
-    }
-    
-    // حساب سندات السداد (المدفوعات)
-    if (window.bonds) {
-        window.bonds.forEach(b => {
-            if (b.customerName === supplierName && b.type === 'سداد مورد' && b.status === 'paid') {
-                totalPaid += b.amount;
-            }
-        });
-    }
-    
-    // حساب سندات السداد المعلقة
-    if (window.bonds) {
-        window.bonds.forEach(b => {
-            if (b.customerName === supplierName && b.type === 'سداد مورد' && b.status === 'pending') {
-                totalBonds += b.amount;
-            }
-        });
-    }
-    
-    // صافي الرصيد = (المشتريات - المرتجعات) - (المدفوعات + السندات المعلقة)
-    const netBalance = (totalPurchases - totalReturns) - (totalPaid + totalBonds);
-    
-    return {
-        totalPurchases: totalPurchases,
-        totalReturns: totalReturns,
-        totalPaid: totalPaid,
-        totalBonds: totalBonds,
-        netBalance: netBalance,
-        status: netBalance > 0 ? 'له فلوس' : netBalance < 0 ? 'عليه فلوس' : 'مستقر'
-    };
-}
-
-// ================================================================
-// UPDATE CUSTOMER BALANCE DISPLAY - عرض رصيد العميل
-// ================================================================
-
-function updateCustomerBalanceDisplay() {
-    const select = document.getElementById('salesCustomerSelect');
-    const input = document.getElementById('salesCustomer');
-    const customerName = select?.value || input?.value;
-    
-    const balanceDisplay = document.getElementById('customerBalanceDisplay');
-    if (!balanceDisplay) return;
-    
-    if (!customerName) {
-        balanceDisplay.innerHTML = '';
-        balanceDisplay.style.display = 'none';
-        return;
-    }
-    
-    const balance = getCustomerBalance(customerName);
-    const color = balance.netBalance > 0 ? '#E06060' : balance.netBalance < 0 ? '#2D8F5E' : '#A89070';
-    const icon = balance.netBalance > 0 ? '🔴' : balance.netBalance < 0 ? '🟢' : '⚪';
-    
-    balanceDisplay.style.display = 'block';
-    balanceDisplay.innerHTML = `
-        <div style="background:#0D0D0D;border-radius:8px;padding:8px;border:1px solid ${color};margin-top:4px;">
-            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:12px;">
-                <span>${icon} <strong>${customerName}</strong></span>
-                <span style="color:${color};font-weight:700;">${balance.status}: ${Math.abs(balance.netBalance).toFixed(2)} 🇪🇬</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:2px;font-size:10px;color:#A89070;margin-top:2px;">
-                <span>💰 مبيعات: ${balance.totalSales.toFixed(2)}</span>
-                <span>🔄 مرتجعات: ${balance.totalReturns.toFixed(2)}</span>
-                <span>💳 مدفوع: ${balance.totalPaid.toFixed(2)}</span>
-                <span>📋 سندات: ${balance.totalBonds.toFixed(2)}</span>
-            </div>
-        </div>
-    `;
-}
-
-// ================================================================
-// UPDATE SUPPLIER BALANCE DISPLAY - عرض رصيد المورد
-// ================================================================
-
-function updateSupplierBalanceDisplay() {
-    const select = document.getElementById('purchaseSupplierSelect');
-    const input = document.getElementById('purchaseSupplier');
-    const supplierName = select?.value || input?.value;
-    
-    const balanceDisplay = document.getElementById('supplierBalanceDisplay');
-    if (!balanceDisplay) return;
-    
-    if (!supplierName) {
-        balanceDisplay.innerHTML = '';
-        balanceDisplay.style.display = 'none';
-        return;
-    }
-    
-    const balance = getSupplierBalance(supplierName);
-    const color = balance.netBalance > 0 ? '#2D8F5E' : balance.netBalance < 0 ? '#E06060' : '#A89070';
-    const icon = balance.netBalance > 0 ? '🟢' : balance.netBalance < 0 ? '🔴' : '⚪';
-    
-    balanceDisplay.style.display = 'block';
-    balanceDisplay.innerHTML = `
-        <div style="background:#0D0D0D;border-radius:8px;padding:8px;border:1px solid ${color};margin-top:4px;">
-            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:12px;">
-                <span>${icon} <strong>${supplierName}</strong></span>
-                <span style="color:${color};font-weight:700;">${balance.status}: ${Math.abs(balance.netBalance).toFixed(2)} 🇪🇬</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:2px;font-size:10px;color:#A89070;margin-top:2px;">
-                <span>🛒 مشتريات: ${balance.totalPurchases.toFixed(2)}</span>
-                <span>🔄 مرتجعات: ${balance.totalReturns.toFixed(2)}</span>
-                <span>💳 مدفوع: ${balance.totalPaid.toFixed(2)}</span>
-                <span>📋 سندات: ${balance.totalBonds.toFixed(2)}</span>
-            </div>
-        </div>
-    `;
-}
-
-// ================================================================
-// UPDATE RETURN CUSTOMER BALANCE - عرض رصيد العميل في المرتجع
-// ================================================================
-
-function updateReturnCustomerBalance() {
-    const select = document.getElementById('returnCustomerSelect');
-    const input = document.getElementById('returnCustomer');
-    const customerName = select?.value || input?.value;
-    
-    const balanceDisplay = document.getElementById('returnCustomerBalanceDisplay');
-    if (!balanceDisplay) return;
-    
-    if (!customerName) {
-        balanceDisplay.innerHTML = '';
-        balanceDisplay.style.display = 'none';
-        return;
-    }
-    
-    const balance = getCustomerBalance(customerName);
-    const color = balance.netBalance > 0 ? '#E06060' : balance.netBalance < 0 ? '#2D8F5E' : '#A89070';
-    const icon = balance.netBalance > 0 ? '🔴' : balance.netBalance < 0 ? '🟢' : '⚪';
-    
-    balanceDisplay.style.display = 'block';
-    balanceDisplay.innerHTML = `
-        <div style="background:#0D0D0D;border-radius:8px;padding:8px;border:1px solid ${color};margin-top:4px;">
-            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;font-size:12px;">
-                <span>${icon} <strong>${customerName}</strong></span>
-                <span style="color:${color};font-weight:700;">${balance.status}: ${Math.abs(balance.netBalance).toFixed(2)} 🇪🇬</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:2px;font-size:10px;color:#A89070;margin-top:2px;">
-                <span>💰 مبيعات: ${balance.totalSales.toFixed(2)}</span>
-                <span>🔄 مرتجعات: ${balance.totalReturns.toFixed(2)}</span>
-                <span>💳 مدفوع: ${balance.totalPaid.toFixed(2)}</span>
-                <span>📋 سندات: ${balance.totalBonds.toFixed(2)}</span>
-            </div>
-        </div>
-    `;
-}
-
-// ================================================================
-// WHATSAPP SEND
+// WHATSAPP SEND - إرسال فاتورة عبر واتساب (معدل)
 // ================================================================
 
 function sendWhatsApp() {
@@ -1298,7 +1039,7 @@ function sendWhatsApp() {
 }
 
 // ================================================================
-// WHATSAPP FROM MODAL
+// WHATSAPP FROM MODAL - إرسال الفاتورة من النافذة المنبثقة
 // ================================================================
 
 function sendInvoiceWhatsAppFromModal() {
@@ -1666,7 +1407,7 @@ function printInvoiceModal() {
 }
 
 // ================================================================
-// SHOW INVOICE DETAILS
+// SHOW INVOICE DETAILS - عرض تفاصيل الفاتورة (معدل)
 // ================================================================
 
 function showInvoiceDetails(id, type) {
@@ -2189,64 +1930,7 @@ function updateStats() {
 }
 
 // ================================================================
-// UPDATE DASHBOARD DETAILS
-// ================================================================
-
-function updateDashboardDetails() {
-    const today = getTodayDate();
-    let todaySales = 0;
-    let todayPurchases = 0;
-    let todayReturns = 0;
-    
-    if (window.sales) {
-        window.sales.forEach(s => {
-            if (s.date === today) {
-                const total = s.totalWithTax || s.total || 0;
-                todaySales += total;
-            }
-        });
-    }
-    
-    if (window.purchases) {
-        window.purchases.forEach(p => {
-            if (p.date === today) {
-                const total = p.totalWithTax || p.total || 0;
-                todayPurchases += total;
-            }
-        });
-    }
-    
-    if (window.returns) {
-        window.returns.forEach(r => {
-            if (r.date === today) {
-                const total = r.items ? r.items.reduce((sum, item) => sum + (item.total || 0), 0) : (r.total || 0);
-                todayReturns += total;
-            }
-        });
-    }
-    
-    safeSetText('dashTodaySales', todaySales.toFixed(2));
-    safeSetText('dashTodayPurchases', todayPurchases.toFixed(2));
-    safeSetText('dashTodayReturns', todayReturns.toFixed(2), false);
-    
-    let totalQty = 0;
-    let totalValue = 0;
-    if (window.products && window.warehouseProducts) {
-        window.products.forEach(p => {
-            let qty = 0;
-            window.warehouseProducts.forEach(wp => {
-                if (wp.productId === p.id) qty += wp.qty;
-            });
-            totalQty += qty;
-            totalValue += (p.sellPrice || 0) * qty;
-        });
-    }
-    safeSetText('dashInventoryQty', totalQty);
-    safeSetText('dashInventoryValue', totalValue.toFixed(2));
-}
-
-// ================================================================
-// ACCOUNTING FUNCTIONS - دوال المحاسبات
+// ACCOUNTING FUNCTIONS - دوال المحاسبات (المعدلة بالكامل)
 // ================================================================
 
 function updateAccounting() {
@@ -3071,7 +2755,6 @@ function removeSalesItem(index) {
     renderSalesItems();
 }
 
-// ===== saveSaleInvoice - مع تسجيل الديون =====
 function saveSaleInvoice() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
 
@@ -3110,14 +2793,12 @@ function saveSaleInvoice() {
         total: total,
         taxAmount: taxAmount,
         totalWithTax: totalWithTax,
-        createdAt: new Date().toISOString(),
-        status: payment === 'آجل' ? 'pending' : 'paid'
+        createdAt: new Date().toISOString()
     };
 
     if (!window.sales) window.sales = [];
     window.sales.push(invoice);
 
-    // تحديث المخزون
     items.forEach(item => {
         const wp = window.warehouseProducts?.find(w => w.warehouseId === warehouseId && w.productId === item.productId);
         if (wp) {
@@ -3125,45 +2806,23 @@ function saveSaleInvoice() {
         }
     });
 
-    // ===== إذا كان الدفع آجل، نضيف سند =====
-    if (payment === 'آجل') {
-        window.bonds.push({
-            id: Date.now(),
-            type: 'تحصيل عميل',
-            amount: totalWithTax,
-            customerId: null,
-            customerName: customer,
-            date: date,
-            dueDate: '',
-            note: `فاتورة بيع #${invoice.invoiceNumber} - آجل`,
-            status: 'pending',
-            invoiceId: invoice.id,
-            createdAt: new Date().toISOString()
-        });
-        showToast(`📋 تم تسجيل فاتورة آجل للعميل ${customer} - ${totalWithTax.toFixed(2)}`, 'info');
-    }
-
-    // إضافة حركة للخزنة (إذا كان الدفع نقدي أو غير آجل)
-    if (payment !== 'آجل') {
-        window.treasury.push({
-            id: Date.now() + 1,
-            type: 'deposit',
-            amount: totalWithTax,
-            method: payment,
-            note: `فاتورة بيع #${invoice.invoiceNumber} - ${customer}`,
-            date: date,
-            time: getCurrentTime(),
-            invoiceId: invoice.id
-        });
-    }
+    window.treasury.push({
+        id: Date.now() + 1,
+        type: 'deposit',
+        amount: totalWithTax,
+        method: payment,
+        note: `فاتورة بيع #${invoice.invoiceNumber} - ${customer}`,
+        date: date,
+        time: getCurrentTime(),
+        invoiceId: invoice.id
+    });
 
     window.salesItems = [];
     saveAll();
-    addAuditLog('add', 'sale', `إضافة فاتورة بيع #${invoice.invoiceNumber} - ${customer} - ${totalWithTax.toFixed(2)} - ${payment}`);
+    addAuditLog('add', 'sale', `إضافة فاتورة بيع #${invoice.invoiceNumber} - ${customer} - ${totalWithTax.toFixed(2)}`);
     renderSalesItems();
     renderSales();
     populateAllSelects();
-    updateCustomerBalanceDisplay();
     showToast(`✅ تم حفظ فاتورة البيع #${invoice.invoiceNumber}`, 'success');
     updateDashboard();
 }
@@ -3246,7 +2905,6 @@ function removePurchaseItem(index) {
     renderPurchaseItems();
 }
 
-// ===== savePurchaseInvoice - مع تسجيل الديون =====
 function savePurchaseInvoice() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
 
@@ -3285,14 +2943,12 @@ function savePurchaseInvoice() {
         total: total,
         taxAmount: taxAmount,
         totalWithTax: totalWithTax,
-        createdAt: new Date().toISOString(),
-        status: payment === 'آجل' ? 'pending' : 'paid'
+        createdAt: new Date().toISOString()
     };
 
     if (!window.purchases) window.purchases = [];
     window.purchases.push(invoice);
 
-    // تحديث المخزون
     items.forEach(item => {
         const existing = window.warehouseProducts?.find(w => w.warehouseId === warehouseId && w.productId === item.productId);
         if (existing) {
@@ -3307,45 +2963,23 @@ function savePurchaseInvoice() {
         }
     });
 
-    // ===== إذا كان الدفع آجل، نضيف سند =====
-    if (payment === 'آجل') {
-        window.bonds.push({
-            id: Date.now(),
-            type: 'سداد مورد',
-            amount: totalWithTax,
-            customerId: null,
-            customerName: supplier,
-            date: date,
-            dueDate: '',
-            note: `فاتورة شراء #${invoice.invoiceNumber} - آجل`,
-            status: 'pending',
-            invoiceId: invoice.id,
-            createdAt: new Date().toISOString()
-        });
-        showToast(`📋 تم تسجيل فاتورة آجل للمورد ${supplier} - ${totalWithTax.toFixed(2)}`, 'info');
-    }
-
-    // إضافة حركة للخزنة (إذا كان الدفع نقدي أو غير آجل)
-    if (payment !== 'آجل') {
-        window.treasury.push({
-            id: Date.now() + 1,
-            type: 'withdraw',
-            amount: totalWithTax,
-            method: payment,
-            note: `فاتورة شراء #${invoice.invoiceNumber} - ${supplier}`,
-            date: date,
-            time: getCurrentTime(),
-            invoiceId: invoice.id
-        });
-    }
+    window.treasury.push({
+        id: Date.now() + 1,
+        type: 'withdraw',
+        amount: totalWithTax,
+        method: payment,
+        note: `فاتورة شراء #${invoice.invoiceNumber} - ${supplier}`,
+        date: date,
+        time: getCurrentTime(),
+        invoiceId: invoice.id
+    });
 
     window.purchaseItems = [];
     saveAll();
-    addAuditLog('add', 'purchase', `إضافة فاتورة شراء #${invoice.invoiceNumber} - ${supplier} - ${totalWithTax.toFixed(2)} - ${payment}`);
+    addAuditLog('add', 'purchase', `إضافة فاتورة شراء #${invoice.invoiceNumber} - ${supplier} - ${totalWithTax.toFixed(2)}`);
     renderPurchaseItems();
     renderAllPurchases();
     populateAllSelects();
-    updateSupplierBalanceDisplay();
     showToast(`✅ تم حفظ فاتورة الشراء #${invoice.invoiceNumber}`, 'success');
     updateDashboard();
 }
@@ -3453,7 +3087,6 @@ function saveReturnInvoice() {
     if (!window.returns) window.returns = [];
     window.returns.push(invoice);
 
-    // تحديث المخزون (إرجاع للمخزون)
     items.forEach(item => {
         const wp = window.warehouseProducts?.find(w => w.warehouseId === warehouseId && w.productId === item.productId);
         if (wp) {
@@ -4036,360 +3669,6 @@ function cashierPrintReport() {
         win.document.close();
     } else {
         showToast('⚠️ تم حظر النافذة المنبثقة', 'error');
-    }
-}
-
-// ================================================================
-// GENERATE CUSTOMER STATEMENT - كشف حساب العميل (معدل)
-// ================================================================
-
-function generateCustomerStatement() {
-    const container = document.getElementById('customerStatementResult');
-    if (!container) return;
-
-    const customerId = parseInt(document.getElementById('statementCustomerSelect')?.value);
-    const fromDate = document.getElementById('statementFrom')?.value;
-    const toDate = document.getElementById('statementTo')?.value;
-
-    if (!customerId) {
-        showToast('⚠️ اختر عميلاً', 'error');
-        return;
-    }
-
-    const customer = window.customers?.find(c => c.id === customerId);
-    if (!customer) {
-        showToast('⚠️ العميل غير موجود', 'error');
-        return;
-    }
-
-    // ===== جلب جميع الحركات =====
-    let transactions = [];
-    let runningBalance = 0;
-
-    // المبيعات
-    if (window.sales) {
-        window.sales.forEach(s => {
-            if (s.customer === customer.name && (!fromDate || s.date >= fromDate) && (!toDate || s.date <= toDate)) {
-                const amount = s.totalWithTax || s.total || 0;
-                transactions.push({
-                    date: s.date,
-                    type: 'بيع',
-                    description: `فاتورة #${s.invoiceNumber || s.id}`,
-                    debit: amount,
-                    credit: 0,
-                    balance: 0,
-                    payment: s.payment || 'نقدي'
-                });
-            }
-        });
-    }
-
-    // المرتجعات
-    if (window.returns) {
-        window.returns.forEach(r => {
-            if (r.customer === customer.name && (!fromDate || r.date >= fromDate) && (!toDate || r.date <= toDate)) {
-                const amount = r.total || 0;
-                transactions.push({
-                    date: r.date,
-                    type: 'مرتجع',
-                    description: `مرتجع #${r.invoiceNumber || r.id}`,
-                    debit: 0,
-                    credit: amount,
-                    balance: 0,
-                    reason: r.reason || ''
-                });
-            }
-        });
-    }
-
-    // سندات التحصيل
-    if (window.bonds) {
-        window.bonds.forEach(b => {
-            if (b.customerName === customer.name && b.type === 'تحصيل عميل' && (!fromDate || b.date >= fromDate) && (!toDate || b.date <= toDate)) {
-                const amount = b.amount || 0;
-                transactions.push({
-                    date: b.date,
-                    type: b.status === 'paid' ? 'تحصيل (مدفوع)' : 'تحصيل (معلق)',
-                    description: b.note || 'سند تحصيل',
-                    debit: 0,
-                    credit: amount,
-                    balance: 0,
-                    status: b.status
-                });
-            }
-        });
-    }
-
-    // ترتيب حسب التاريخ
-    transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // حساب الرصيد التراكمي
-    transactions.forEach(t => {
-        runningBalance += t.debit - t.credit;
-        t.balance = runningBalance;
-    });
-
-    let totalDebit = transactions.reduce((s, t) => s + t.debit, 0);
-    let totalCredit = transactions.reduce((s, t) => s + t.credit, 0);
-    let finalBalance = totalDebit - totalCredit;
-
-    // ===== عرض الكشف =====
-    let html = `
-        <div class="accounting-detail-content">
-            <h4 style="color:#C9A94E;font-size:16px;margin-bottom:6px;">📋 كشف حساب العميل: ${customer.name}</h4>
-            <div style="font-size:12px;color:#A89070;margin-bottom:6px;">
-                📅 من ${fromDate || 'بداية'} إلى ${toDate || 'اليوم'} | 📱 ${customer.phone || 'لا يوجد هاتف'}
-            </div>
-            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px;padding:8px;background:#0D0D0D;border-radius:6px;border:1px solid #2D2D2D;">
-                <div><span style="color:#A89070;">💰 إجمالي المبيعات:</span> <span style="color:#E06060;font-weight:700;">${totalDebit.toFixed(2)}</span></div>
-                <div><span style="color:#A89070;">🔄 إجمالي المرتجعات والمدفوعات:</span> <span style="color:#2D8F5E;font-weight:700;">${totalCredit.toFixed(2)}</span></div>
-                <div><span style="color:#A89070;font-weight:700;">📊 الرصيد:</span> <span style="color:${finalBalance > 0 ? '#E06060' : finalBalance < 0 ? '#2D8F5E' : '#A89070'};font-weight:900;font-size:14px;">
-                    ${finalBalance > 0 ? '🔴 عليه' : finalBalance < 0 ? '🟢 له' : '⚪ مستقر'} ${Math.abs(finalBalance).toFixed(2)}
-                </span></div>
-            </div>
-    `;
-
-    if (transactions.length === 0) {
-        html += `<div class="empty-state" style="padding:16px 0;"><i class="fas fa-receipt" style="font-size:28px;"></i><span>لا توجد حركات للعميل في هذه الفترة</span></div>`;
-    } else {
-        html += `
-            <div style="max-height:400px;overflow-y:auto;font-size:12px;">
-                <div style="display:grid;grid-template-columns:1fr 0.8fr 1.2fr 0.8fr 0.8fr 0.8fr;gap:4px;padding:4px 0;font-weight:800;border-bottom:2px solid #C9A94E;color:#F5E6C8;">
-                    <span>التاريخ</span><span>النوع</span><span>البيان</span><span>مدين</span><span>دائن</span><span>الرصيد</span>
-                </div>
-        `;
-
-        transactions.forEach(t => {
-            const debitColor = t.debit > 0 ? '#E06060' : '#A89070';
-            const creditColor = t.credit > 0 ? '#2D8F5E' : '#A89070';
-            const balanceColor = t.balance > 0 ? '#E06060' : t.balance < 0 ? '#2D8F5E' : '#A89070';
-            html += `
-                <div style="display:grid;grid-template-columns:1fr 0.8fr 1.2fr 0.8fr 0.8fr 0.8fr;gap:4px;padding:4px 0;border-bottom:1px solid #2D2D2D;color:#F5E6C8;font-size:11px;">
-                    <span>${t.date}</span>
-                    <span style="color:${t.type.includes('مرتجع') ? '#E6A830' : t.type.includes('تحصيل') ? '#4A8AB5' : '#C9A94E'};">${t.type}</span>
-                    <span>${t.description}</span>
-                    <span style="color:${debitColor};font-weight:700;">${t.debit > 0 ? t.debit.toFixed(2) : '-'}</span>
-                    <span style="color:${creditColor};font-weight:700;">${t.credit > 0 ? t.credit.toFixed(2) : '-'}</span>
-                    <span style="color:${balanceColor};font-weight:700;">${t.balance.toFixed(2)}</span>
-                </div>
-            `;
-        });
-
-        html += `
-            </div>
-            <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;border:2px solid ${finalBalance > 0 ? '#E06060' : finalBalance < 0 ? '#2D8F5E' : '#A89070'};text-align:center;">
-                <div style="font-weight:800;font-size:14px;color:${finalBalance > 0 ? '#E06060' : finalBalance < 0 ? '#2D8F5E' : '#A89070'};">
-                    ${finalBalance > 0 ? '🔴 العميل عليه' : finalBalance < 0 ? '🟢 العميل له' : '⚪ العميل مستقر'} ${Math.abs(finalBalance).toFixed(2)} 🇪🇬
-                </div>
-            </div>
-        `;
-    }
-
-    html += `
-        <div style="margin-top:8px;display:flex;gap:6px;">
-            <button class="btn btn-primary btn-block" onclick="printStatement()"><i class="fas fa-print"></i> طباعة</button>
-            <button class="btn btn-secondary btn-block" onclick="closeModal()"><i class="fas fa-times"></i> إغلاق</button>
-        </div>
-    </div>`;
-
-    container.innerHTML = html;
-    addAuditLog('add', 'report', `كشف حساب العميل: ${customer.name}`);
-}
-
-function generateCustomerDetailedStatement() {
-    generateCustomerStatement();
-    showToast('📋 تم عرض الكشف التفصيلي', 'info');
-}
-
-// ================================================================
-// GENERATE SUPPLIER STATEMENT - كشف حساب المورد
-// ================================================================
-
-function generateSupplierStatement() {
-    const container = document.getElementById('supplierStatementResult');
-    if (!container) return;
-
-    const supplierId = parseInt(document.getElementById('statementSupplierSelect')?.value);
-    const fromDate = document.getElementById('statementSupplierFrom')?.value;
-    const toDate = document.getElementById('statementSupplierTo')?.value;
-
-    if (!supplierId) {
-        showToast('⚠️ اختر مورداً', 'error');
-        return;
-    }
-
-    const supplier = window.suppliers?.find(s => s.id === supplierId);
-    if (!supplier) {
-        showToast('⚠️ المورد غير موجود', 'error');
-        return;
-    }
-
-    // ===== جلب جميع الحركات =====
-    let transactions = [];
-    let runningBalance = 0;
-
-    // المشتريات
-    if (window.purchases) {
-        window.purchases.forEach(p => {
-            if (p.supplier === supplier.name && (!fromDate || p.date >= fromDate) && (!toDate || p.date <= toDate)) {
-                const amount = p.totalWithTax || p.total || 0;
-                transactions.push({
-                    date: p.date,
-                    type: 'شراء',
-                    description: `فاتورة #${p.invoiceNumber || p.id}`,
-                    debit: amount,
-                    credit: 0,
-                    balance: 0,
-                    payment: p.payment || 'نقدي'
-                });
-            }
-        });
-    }
-
-    // مرتجعات المشتريات
-    if (window.returns) {
-        window.returns.forEach(r => {
-            if (r.supplier === supplier.name && (!fromDate || r.date >= fromDate) && (!toDate || r.date <= toDate)) {
-                const amount = r.total || 0;
-                transactions.push({
-                    date: r.date,
-                    type: 'مرتجع شراء',
-                    description: `مرتجع #${r.invoiceNumber || r.id}`,
-                    debit: 0,
-                    credit: amount,
-                    balance: 0,
-                    reason: r.reason || ''
-                });
-            }
-        });
-    }
-
-    // سندات السداد
-    if (window.bonds) {
-        window.bonds.forEach(b => {
-            if (b.customerName === supplier.name && b.type === 'سداد مورد' && (!fromDate || b.date >= fromDate) && (!toDate || b.date <= toDate)) {
-                const amount = b.amount || 0;
-                transactions.push({
-                    date: b.date,
-                    type: b.status === 'paid' ? 'سداد (مدفوع)' : 'سداد (معلق)',
-                    description: b.note || 'سند سداد',
-                    debit: 0,
-                    credit: amount,
-                    balance: 0,
-                    status: b.status
-                });
-            }
-        });
-    }
-
-    // ترتيب حسب التاريخ
-    transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // حساب الرصيد التراكمي
-    transactions.forEach(t => {
-        runningBalance += t.debit - t.credit;
-        t.balance = runningBalance;
-    });
-
-    let totalDebit = transactions.reduce((s, t) => s + t.debit, 0);
-    let totalCredit = transactions.reduce((s, t) => s + t.credit, 0);
-    let finalBalance = totalDebit - totalCredit;
-
-    let html = `
-        <div class="accounting-detail-content">
-            <h4 style="color:#C9A94E;font-size:16px;margin-bottom:6px;">📋 كشف حساب المورد: ${supplier.name}</h4>
-            <div style="font-size:12px;color:#A89070;margin-bottom:6px;">
-                📅 من ${fromDate || 'بداية'} إلى ${toDate || 'اليوم'} | 📱 ${supplier.phone || 'لا يوجد هاتف'}
-            </div>
-            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:8px;padding:8px;background:#0D0D0D;border-radius:6px;border:1px solid #2D2D2D;">
-                <div><span style="color:#A89070;">🛒 إجمالي المشتريات:</span> <span style="color:#E06060;font-weight:700;">${totalDebit.toFixed(2)}</span></div>
-                <div><span style="color:#A89070;">🔄 إجمالي المرتجعات والمدفوعات:</span> <span style="color:#2D8F5E;font-weight:700;">${totalCredit.toFixed(2)}</span></div>
-                <div><span style="color:#A89070;font-weight:700;">📊 الرصيد:</span> <span style="color:${finalBalance > 0 ? '#2D8F5E' : finalBalance < 0 ? '#E06060' : '#A89070'};font-weight:900;font-size:14px;">
-                    ${finalBalance > 0 ? '🟢 له' : finalBalance < 0 ? '🔴 عليه' : '⚪ مستقر'} ${Math.abs(finalBalance).toFixed(2)}
-                </span></div>
-            </div>
-    `;
-
-    if (transactions.length === 0) {
-        html += `<div class="empty-state" style="padding:16px 0;"><i class="fas fa-shopping-cart" style="font-size:28px;"></i><span>لا توجد حركات للمورد في هذه الفترة</span></div>`;
-    } else {
-        html += `
-            <div style="max-height:400px;overflow-y:auto;font-size:12px;">
-                <div style="display:grid;grid-template-columns:1fr 0.8fr 1.2fr 0.8fr 0.8fr 0.8fr;gap:4px;padding:4px 0;font-weight:800;border-bottom:2px solid #C9A94E;color:#F5E6C8;">
-                    <span>التاريخ</span><span>النوع</span><span>البيان</span><span>مدين</span><span>دائن</span><span>الرصيد</span>
-                </div>
-        `;
-
-        transactions.forEach(t => {
-            const debitColor = t.debit > 0 ? '#E06060' : '#A89070';
-            const creditColor = t.credit > 0 ? '#2D8F5E' : '#A89070';
-            const balanceColor = t.balance > 0 ? '#2D8F5E' : t.balance < 0 ? '#E06060' : '#A89070';
-            html += `
-                <div style="display:grid;grid-template-columns:1fr 0.8fr 1.2fr 0.8fr 0.8fr 0.8fr;gap:4px;padding:4px 0;border-bottom:1px solid #2D2D2D;color:#F5E6C8;font-size:11px;">
-                    <span>${t.date}</span>
-                    <span style="color:${t.type.includes('مرتجع') ? '#E6A830' : t.type.includes('سداد') ? '#4A8AB5' : '#C9A94E'};">${t.type}</span>
-                    <span>${t.description}</span>
-                    <span style="color:${debitColor};font-weight:700;">${t.debit > 0 ? t.debit.toFixed(2) : '-'}</span>
-                    <span style="color:${creditColor};font-weight:700;">${t.credit > 0 ? t.credit.toFixed(2) : '-'}</span>
-                    <span style="color:${balanceColor};font-weight:700;">${t.balance.toFixed(2)}</span>
-                </div>
-            `;
-        });
-
-        html += `
-            </div>
-            <div style="margin-top:6px;padding:6px;background:#0D0D0D;border-radius:6px;border:2px solid ${finalBalance > 0 ? '#2D8F5E' : finalBalance < 0 ? '#E06060' : '#A89070'};text-align:center;">
-                <div style="font-weight:800;font-size:14px;color:${finalBalance > 0 ? '#2D8F5E' : finalBalance < 0 ? '#E06060' : '#A89070'};">
-                    ${finalBalance > 0 ? '🟢 المورد له' : finalBalance < 0 ? '🔴 المورد عليه' : '⚪ المورد مستقر'} ${Math.abs(finalBalance).toFixed(2)} 🇪🇬
-                </div>
-            </div>
-        `;
-    }
-
-    html += `
-        <div style="margin-top:8px;display:flex;gap:6px;">
-            <button class="btn btn-primary btn-block" onclick="printStatement()"><i class="fas fa-print"></i> طباعة</button>
-            <button class="btn btn-secondary btn-block" onclick="closeModal()"><i class="fas fa-times"></i> إغلاق</button>
-        </div>
-    </div>`;
-
-    container.innerHTML = html;
-    addAuditLog('add', 'report', `كشف حساب المورد: ${supplier.name}`);
-}
-
-function generateSupplierDetailedStatement() {
-    generateSupplierStatement();
-    showToast('📋 تم عرض الكشف التفصيلي', 'info');
-}
-
-function printStatement() {
-    const content = document.querySelector('.accounting-detail-content');
-    if (!content) return;
-    
-    const win = window.open('', '_blank', 'width=600,height=500');
-    if (win) {
-        win.document.write(`
-            <!DOCTYPE html>
-            <html dir="rtl">
-            <head>
-                <meta charset="UTF-8">
-                <title>كشف حساب</title>
-                <style>
-                    body { font-family: 'Tajawal', sans-serif; background: #fff; color: #000; padding: 20px; direction: rtl; }
-                    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; }
-                    .detail-label { font-weight: 600; color: #555; }
-                    .detail-value { font-weight: 700; color: #000; }
-                    h4 { color: #C9A94E; }
-                    @media print { body { padding: 10px; } }
-                </style>
-            </head>
-            <body>
-                ${content.outerHTML}
-                <script>window.onload = function() { window.print(); };<\/script>
-            </body>
-            </html>
-        `);
-        win.document.close();
     }
 }
 
