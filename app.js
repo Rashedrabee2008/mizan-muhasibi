@@ -1,5 +1,5 @@
 // ================================================================
-// app.js - التطبيق الرئيسي (النسخة النهائية المعدلة)
+// app.js - التطبيق الرئيسي (النسخة النهائية المستقرة)
 // ================================================================
 
 // ================================================================
@@ -1671,7 +1671,7 @@ function addTreasuryTransaction() {
 }
 
 // ===== دوال تسوية المخزون =====
-// ملاحظة: يتم تعريف inventoryAdjustmentItems في inventory_adjustment.js
+// ملاحظة: المتغير inventoryAdjustmentItems يُعرّف في inventory_adjustment.js
 function populateAdjustmentProducts() {
     if (typeof window.populateAdjustmentProducts === 'function') {
         window.populateAdjustmentProducts();
@@ -2492,12 +2492,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🔒 كلمة المرور: 123456');
     console.log('🔑 اضغط 5 مرات على رقم الإصدار في الإعدادات لتفعيل زر توليد المفاتيح');
 });
-
-// ================================================================
-// ===== دوال التوست والإشعارات =====
-// ================================================================
-
-// هذه الدوال تم تعريفها مسبقاً في الأعلى (showToast, safeSetText, إلخ)
 
 console.log('📦 app.js - النسخة النهائية المستقرة v3.0.0');
 console.log('📅 التاريخ:', new Date().toLocaleDateString('ar-EG'));
