@@ -192,54 +192,89 @@
             </div>
         </div>
 
-        <!-- ===== SALES ===== -->
-        <div id="page-sales" class="page-container">
-            <div class="page-content">
-                <h2><i class="fas fa-receipt"></i> فاتورة بيع</h2>
-                <div style="background:#0D0D0D;border-radius:10px;padding:10px;margin-bottom:10px;border:1px solid #2D2D2D;">
-                    <h4 style="margin-bottom:8px;color:#C9A94E;font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة فاتورة</h4>
-                    <div class="form-group"><label>العميل</label>
-                        <select id="salesCustomerSelect" onchange="updateCustomerWhatsApp()"><option value="">اختر عميل...</option></select>
-                        <div style="display:flex;gap:4px;"><input type="text" id="salesCustomer" placeholder="أو اكتب اسم العميل" style="flex:1;" onchange="updateCustomerWhatsAppManual()" /><button class="btn btn-success btn-sm" onclick="openAddCustomerModal()" title="إضافة عميل جديد"><i class="fas fa-user-plus"></i></button></div>
-                    </div>
-                    <div class="form-group" style="display:none;" id="customerWhatsAppGroup"><label>📱 رقم واتساب العميل</label><input type="text" id="customerWhatsApp" placeholder="رقم واتساب العميل..." /></div>
-                    <div class="form-group"><label>المخزن</label><select id="salesWarehouse"></select></div>
-                    <div class="form-group"><label>نوع الفاتورة</label><select id="salesInvoiceType"><option value="simple">عادية</option><option value="tax">ضريبية (14%)</option></select></div>
-                    <div class="form-group"><label>التاريخ</label><input type="date" id="salesDate" /></div>
-                    <div class="items-container">
-                        <h5 style="color:#C9A94E;margin-bottom:6px;font-size:13px;">🛒 الأصناف</h5>
-                        <div style="max-height:250px;overflow-y:auto;"><table class="invoice-items-table"><thead><tr><th>#</th><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th><th></th></tr></thead><tbody id="salesItemsBody"></tbody></table></div>
-                        <div class="add-item-row">
-                            <select id="salesItemProduct" style="flex:2;" onchange="updateSalesPrice()"><option value="">اختر منتج...</option></select>
-                            <button class="btn btn-success btn-sm" onclick="openAddProductModal('sales')" title="إضافة منتج جديد"><i class="fas fa-plus-circle"></i></button>
-                            <input type="number" id="salesItemQty" placeholder="كمية" min="1" step="1" style="flex:1;width:50px;" />
-                            <input type="number" id="salesItemPrice" placeholder="سعر" min="0.01" step="0.01" style="flex:1;width:65px;" />
-                            <button class="btn btn-success btn-sm" onclick="addSalesItem()"><i class="fas fa-plus"></i></button>
-                            <button class="btn btn-info btn-sm" onclick="navigateTo('barcode')"><i class="fas fa-qrcode"></i></button>
-                        </div>
-                        <div class="invoice-total-row"><span>الأصناف: <span id="salesItemsCount">0</span></span><span>الإجمالي: <span class="total-amount" id="salesTotalAmount">0.00</span> 🇪🇬</span></div>
-                        <div id="salesTaxInfo" style="font-size:12px;color:#A89070;text-align:left;margin-top:4px;"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>طريقة الدفع</label>
-                        <div class="payment-methods" id="salesPayment">
-                            <label class="selected"><input type="radio" name="salesPayment" value="نقدي" checked /> 💰 نقدي</label>
-                            <label><input type="radio" name="salesPayment" value="محفظة" /> 📱 محفظة</label>
-                            <label><input type="radio" name="salesPayment" value="إنستاباي" /> 📲 إنستاباي</label>
-                            <label><input type="radio" name="salesPayment" value="بنك" /> 🏦 بنك</label>
-                            <label><input type="radio" name="salesPayment" value="آجل" /> 📋 آجل</label>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                        <button class="btn btn-primary" style="flex:1;" onclick="saveSaleInvoice()"><i class="fas fa-save"></i> حفظ</button>
-                        <button class="btn btn-info" style="flex:1;" onclick="printInvoice('sales')"><i class="fas fa-print"></i> طباعة</button>
-                        <button class="btn btn-success whatsapp-btn" style="flex:1;" onclick="sendWhatsApp()"><i class="fab fa-whatsapp"></i> واتساب</button>
-                    </div>
+       <!-- ===== SALES ===== -->
+<div id="page-sales" class="page-container">
+    <div class="page-content">
+        <h2><i class="fas fa-receipt"></i> فاتورة بيع</h2>
+        <div style="background:#0D0D0D;border-radius:10px;padding:10px;margin-bottom:10px;border:1px solid #2D2D2D;">
+            <h4 style="margin-bottom:8px;color:#C9A94E;font-size:14px;"><i class="fas fa-plus-circle"></i> إضافة فاتورة</h4>
+            <div class="form-group">
+                <label>العميل</label>
+                <select id="salesCustomerSelect" onchange="updateCustomerWhatsApp(); updateCustomerBalanceDisplay();">
+                    <option value="">اختر عميل...</option>
+                </select>
+                <div style="display:flex;gap:4px;">
+                    <input type="text" id="salesCustomer" placeholder="أو اكتب اسم العميل" style="flex:1;" onchange="updateCustomerWhatsAppManual(); updateCustomerBalanceDisplay();" />
+                    <button class="btn btn-success btn-sm" onclick="openAddCustomerModal()" title="إضافة عميل جديد"><i class="fas fa-user-plus"></i></button>
                 </div>
-                <h4 style="font-size:14px;margin-bottom:8px;color:#F5E6C8;"><i class="fas fa-list"></i> فواتير البيع</h4>
-                <div id="salesList"><div class="empty-state"><i class="fas fa-receipt"></i><span>لا توجد فواتير</span></div></div>
+                <div id="customerBalanceDisplay" style="font-size:13px;font-weight:700;margin-top:4px;color:#A89070;">💰 الرصيد: 0.00</div>
+            </div>
+            <div class="form-group" style="display:none;" id="customerWhatsAppGroup">
+                <label>📱 رقم واتساب العميل</label>
+                <input type="text" id="customerWhatsApp" placeholder="رقم واتساب العميل..." />
+            </div>
+            <div class="form-group"><label>المخزن</label><select id="salesWarehouse"></select></div>
+            <div class="form-group"><label>نوع الفاتورة</label>
+                <select id="salesInvoiceType" onchange="renderSalesItems()">
+                    <option value="simple">عادية</option>
+                    <option value="tax">ضريبية (14%)</option>
+                </select>
+            </div>
+            <div class="form-group"><label>التاريخ</label><input type="date" id="salesDate" /></div>
+            <div class="items-container">
+                <h5 style="color:#C9A94E;margin-bottom:6px;font-size:13px;">🛒 الأصناف</h5>
+                <div style="max-height:250px;overflow-y:auto;">
+                    <table class="invoice-items-table">
+                        <thead>
+                            <tr>
+                                <th style="width:30px;">#</th>
+                                <th style="text-align:right;">المنتج</th>
+                                <th style="width:50px;">الكمية</th>
+                                <th style="width:70px;">السعر</th>
+                                <th style="width:80px;">الإجمالي</th>
+                                <th style="width:30px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesItemsBody"></tbody>
+                    </table>
+                </div>
+                <!-- صف الإدخال المرتب -->
+                <div class="add-item-row" style="display:grid;grid-template-columns:2fr 0.7fr 0.8fr 0.8fr 0.6fr 0.5fr;gap:6px;align-items:center;margin-top:6px;">
+                    <select id="salesItemProduct" onchange="updateSalesPrice()" style="padding:6px 8px;border-radius:6px;border:1px solid #3D3D3D;background:#1C1C1C;color:#F5E6C8;font-size:13px;">
+                        <option value="">اختر منتج...</option>
+                    </select>
+                    <input type="number" id="salesItemQty" placeholder="الكمية" min="1" step="1" value="1" style="padding:6px 8px;border-radius:6px;border:1px solid #3D3D3D;background:#1C1C1C;color:#F5E6C8;font-size:13px;text-align:center;width:100%;" oninput="updateSalesItemTotal()" />
+                    <input type="number" id="salesItemPrice" placeholder="السعر" min="0.01" step="0.01" style="padding:6px 8px;border-radius:6px;border:1px solid #3D3D3D;background:#1C1C1C;color:#F5E6C8;font-size:13px;text-align:center;width:100%;" oninput="updateSalesItemTotal()" />
+                    <span id="salesItemTotal" style="font-weight:700;color:#C9A94E;text-align:center;font-size:14px;">0.00</span>
+                    <button class="btn btn-success btn-sm" onclick="addSalesItem()" style="font-size:13px;padding:6px 10px;"><i class="fas fa-plus"></i> إضافة</button>
+                    <button class="btn btn-info btn-sm" onclick="openAddProductModal('sales')" title="إضافة منتج جديد" style="font-size:13px;padding:6px 10px;"><i class="fas fa-plus-circle"></i></button>
+                </div>
+                <div class="invoice-total-row">
+                    <span>الأصناف: <span id="salesItemsCount">0</span></span>
+                    <span>الإجمالي: <span class="total-amount" id="salesTotalAmount">0.00</span> 🇪🇬</span>
+                </div>
+                <div id="salesTaxInfo" style="font-size:12px;color:#A89070;text-align:left;margin-top:4px;"></div>
+            </div>
+            <div class="form-group">
+                <label>طريقة الدفع</label>
+                <div class="payment-methods" id="salesPayment">
+                    <label class="selected"><input type="radio" name="salesPayment" value="نقدي" checked /> 💰 نقدي</label>
+                    <label><input type="radio" name="salesPayment" value="محفظة" /> 📱 محفظة</label>
+                    <label><input type="radio" name="salesPayment" value="إنستاباي" /> 📲 إنستاباي</label>
+                    <label><input type="radio" name="salesPayment" value="بنك" /> 🏦 بنك</label>
+                    <label><input type="radio" name="salesPayment" value="آجل" /> 📋 آجل</label>
+                </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="btn btn-primary" style="flex:1;" onclick="saveSaleInvoice()"><i class="fas fa-save"></i> حفظ</button>
+                <button class="btn btn-info" style="flex:1;" onclick="printInvoice('sales')"><i class="fas fa-print"></i> طباعة</button>
+                <button class="btn btn-success whatsapp-btn" style="flex:1;" onclick="sendWhatsApp()"><i class="fab fa-whatsapp"></i> واتساب</button>
             </div>
         </div>
+        <h4 style="font-size:14px;margin-bottom:8px;color:#F5E6C8;"><i class="fas fa-list"></i> فواتير البيع</h4>
+        <div id="salesList"><div class="empty-state"><i class="fas fa-receipt"></i><span>لا توجد فواتير</span></div></div>
+    </div>
+</div>
 
         <!-- ===== PURCHASE ===== -->
         <div id="page-purchase" class="page-container">
