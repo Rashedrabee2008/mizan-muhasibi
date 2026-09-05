@@ -2,7 +2,7 @@
 // inventory_adjustment.js - تسوية المخزون
 // ================================================================
 
-// ===== متغيرات =====
+// تعريف المتغير مرة واحدة فقط - تم إزالة أي تعريف مكرر
 let inventoryAdjustmentItems = [];
 
 // ================================================================
@@ -10,18 +10,11 @@ let inventoryAdjustmentItems = [];
 // ================================================================
 function updateAdjustmentDateTime() {
     const dt = getCurrentDateTime();
-    const dateEl = document.getElementById('adjustmentDateDisplay');
-    const timeEl = document.getElementById('adjustmentTimeDisplay');
-
-    if (dateEl) {
-        dateEl.textContent = dt.date;
-    }
-    if (timeEl) {
-        timeEl.textContent = dt.time;
-    }
+    const dateDisplay = document.getElementById('adjustmentDateDisplay');
+    const timeDisplay = document.getElementById('adjustmentTimeDisplay');
+    if (dateDisplay) dateDisplay.textContent = dt.date;
+    if (timeDisplay) timeDisplay.textContent = dt.time;
 }
-
-// تشغيل التحديث كل ثانية
 setInterval(updateAdjustmentDateTime, 1000);
 updateAdjustmentDateTime();
 
@@ -31,15 +24,14 @@ updateAdjustmentDateTime();
 function populateAdjustmentProducts() {
     const select = document.getElementById('adjustmentProduct');
     if (!select) return;
-
     select.innerHTML = '<option value="">اختر منتج...</option>';
-    if (!window.products || window.products.length === 0) return;
-
-    const sorted = [...window.products].sort((a, b) => a.name.localeCompare(b.name));
-    sorted.forEach(p => {
-        const totalQty = window.warehouseProducts?.filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0) || 0;
-        select.innerHTML += `<option value="${p.id}">${p.name} (${totalQty})</option>`;
-    });
+    if (window.products) {
+        const sorted = [...window.products].sort((a, b) => a.name.localeCompare(b.name));
+        sorted.forEach(p => {
+            const totalQty = (window.warehouseProducts || []).filter(wp => wp.productId === p.id).reduce((s, wp) => s + wp.qty, 0);
+            select.innerHTML += `<option value="${p.id}">${p.name} (${totalQty})</option>`;
+        });
+    }
 }
 
 // ================================================================
@@ -49,27 +41,18 @@ function addAdjustmentItem() {
     const productId = parseInt(document.getElementById('adjustmentProduct')?.value);
     const actualQty = parseInt(document.getElementById('adjustmentActualQty')?.value);
 
-    if (!productId) {
-        showToast('⚠️ اختر منتج', 'error');
-        return;
-    }
-    if (isNaN(actualQty) || actualQty < 0) {
-        showToast('⚠️ أدخل كمية فعلية صحيحة', 'error');
-        return;
-    }
+    if (!productId) { showToast('⚠️ اختر منتج', 'error'); return; }
+    if (isNaN(actualQty) || actualQty < 0) { showToast('⚠️ أدخل كمية فعلية صحيحة', 'error'); return; }
 
-    const product = window.products?.find(p => p.id === productId);
-    if (!product) {
-        showToast('⚠️ المنتج غير موجود', 'error');
-        return;
-    }
+    const product = (window.products || []).find(p => p.id === productId);
+    if (!product) { showToast('⚠️ المنتج غير موجود', 'error'); return; }
 
     if (inventoryAdjustmentItems.find(item => item.productId === productId)) {
         showToast('⚠️ المنتج موجود بالفعل', 'warning');
         return;
     }
 
-    const currentQty = window.warehouseProducts?.filter(wp => wp.productId === productId).reduce((s, wp) => s + wp.qty, 0) || 0;
+    const currentQty = (window.warehouseProducts || []).filter(wp => wp.productId === productId).reduce((s, wp) => s + wp.qty, 0);
     const diff = actualQty - currentQty;
 
     inventoryAdjustmentItems.push({
@@ -156,10 +139,7 @@ function clearAdjustmentItems() {
 // SAVE INVENTORY ADJUSTMENT
 // ================================================================
 function saveInventoryAdjustment() {
-    if (inventoryAdjustmentItems.length === 0) {
-        showToast('⚠️ أضف صنف واحد على الأقل', 'error');
-        return;
-    }
+    if (inventoryAdjustmentItems.length === 0) { showToast('⚠️ أضف صنف واحد على الأقل', 'error'); return; }
     if (!confirm('✅ هل أنت متأكد من حفظ التسوية؟ سيتم تعديل المخزون تلقائياً')) return;
 
     const dt = getCurrentDateTime();
@@ -173,15 +153,13 @@ function saveInventoryAdjustment() {
         createdAt: new Date().toISOString()
     };
 
-    // تطبيق التعديلات على المخزون
     for (const item of inventoryAdjustmentItems) {
         if (item.diff === 0) continue;
-        
-        const existing = window.warehouseProducts?.find(w => w.productId === item.productId);
-        if (existing) {
-            existing.qty = item.actualQty;
+        const wp = (window.warehouseProducts || []).find(w => w.productId === item.productId);
+        if (wp) {
+            wp.qty = item.actualQty;
         } else {
-            const mainWarehouse = window.warehouses?.find(w => w.type === 'رئيسي');
+            const mainWarehouse = (window.warehouses || []).find(w => w.type === 'رئيسي');
             if (mainWarehouse) {
                 if (!window.warehouseProducts) window.warehouseProducts = [];
                 window.warehouseProducts.push({
@@ -193,18 +171,15 @@ function saveInventoryAdjustment() {
         }
     }
 
-    // حفظ في السجل
     if (!window.inventoryAdjustments) window.inventoryAdjustments = [];
     window.inventoryAdjustments.unshift(adjustment);
-    setData('inventoryAdjustments', window.inventoryAdjustments);
+    saveAllData();
 
     inventoryAdjustmentItems = [];
     renderAdjustmentItems();
     populateAdjustmentProducts();
     renderAdjustmentHistory();
     renderProducts();
-    saveAll();
-
     addAuditLog('add', 'adjustment', `تسوية مخزون - ${adjustment.totalItems} صنف - الفرق: ${adjustment.totalDiff}`);
     showToast(`✅ تم حفظ التسوية - ${adjustment.totalItems} صنف`, 'success');
 }
@@ -216,29 +191,28 @@ function renderAdjustmentHistory() {
     const container = document.getElementById('adjustmentHistory');
     if (!container) return;
 
-    if (!window.inventoryAdjustments || window.inventoryAdjustments.length === 0) {
+    const adjustments = window.inventoryAdjustments || [];
+    if (adjustments.length === 0) {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-history"></i><span>لا توجد تسويات سابقة</span></div>`;
         return;
     }
 
-    let html = `<div class="table-header" style="grid-template-columns:1.2fr 1fr 1fr 1fr 0.8fr 0.6fr;">
-        <span>التاريخ</span><span>الوقت</span><span>الأصناف</span><span>الفرق</span><span>الحالة</span><span></span>
-    </div>`;
+    let html = `<div class="table-header" style="grid-template-columns:1.2fr 1fr 1fr 1fr 0.8fr 0.6fr;"><span>التاريخ</span><span>الوقت</span><span>الأصناف</span><span>الفرق</span><span>الحالة</span><span></span></div>`;
 
-    window.inventoryAdjustments.slice(0, 20).forEach(adj => {
-        const totalDiff = adj.items?.reduce((s, i) => s + (i.diff || 0), 0) || 0;
+    adjustments.slice(0, 20).forEach(adj => {
+        const totalDiff = adj.items.reduce((s, i) => s + (i.diff || 0), 0);
         const statusColor = totalDiff === 0 ? '#A89070' : totalDiff > 0 ? '#2D8F5E' : '#E06060';
         const statusText = totalDiff === 0 ? 'متطابق' : totalDiff > 0 ? 'زائد' : 'ناقص';
         html += `
             <div class="table-row" style="grid-template-columns:1.2fr 1fr 1fr 1fr 0.8fr 0.6fr;font-size:12px;">
                 <span>${adj.date}</span>
                 <span>${adj.time || '-'}</span>
-                <span>${adj.items?.length || 0}</span>
+                <span>${adj.items.length}</span>
                 <span style="color:${statusColor};font-weight:700;">${totalDiff > 0 ? '+' : ''}${totalDiff}</span>
                 <span><span class="status-badge" style="background:${statusColor};color:#fff;">${statusText}</span></span>
                 <div class="actions">
-                    <button class="btn btn-info btn-sm" onclick="viewAdjustmentDetails(${adj.id})"><i class="fas fa-eye"></i></button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteAdjustment(${adj.id})"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-info btn-sm" onclick="viewAdjustmentDetails('${adj.id}')"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteAdjustment('${adj.id}')"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `;
@@ -251,11 +225,9 @@ function renderAdjustmentHistory() {
 // VIEW ADJUSTMENT DETAILS
 // ================================================================
 function viewAdjustmentDetails(id) {
-    const adj = window.inventoryAdjustments?.find(a => a.id == id);
-    if (!adj) {
-        showToast('⚠️ التسوية غير موجودة', 'error');
-        return;
-    }
+    const adjustments = window.inventoryAdjustments || [];
+    const adj = adjustments.find(a => a.id == id);
+    if (!adj) { showToast('⚠️ التسوية غير موجودة', 'error'); return; }
 
     let itemsHtml = `<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px;font-weight:800;color:#C9A94E;padding:4px 0;border-bottom:2px solid #C9A94E;font-size:11px;">
         <span>المنتج</span><span>الحالية</span><span>الفعلية</span><span>الفرق</span>
@@ -274,13 +246,13 @@ function viewAdjustmentDetails(id) {
         `;
     });
 
-    const totalDiff = adj.items?.reduce((s, i) => s + (i.diff || 0), 0) || 0;
+    const totalDiff = adj.items.reduce((s, i) => s + (i.diff || 0), 0);
 
     const html = `
         <div style="text-align:center;margin-bottom:8px;">
             <h4 style="color:#C9A94E;">📋 تفاصيل التسوية</h4>
             <div style="font-size:12px;color:#A89070;">📅 ${adj.date}  🕐 ${adj.time || '-'}</div>
-            <div style="font-size:12px;color:#A89070;">📦 ${adj.items?.length || 0} صنف | الفرق: <span style="color:${totalDiff === 0 ? '#A89070' : totalDiff > 0 ? '#2D8F5E' : '#E06060'};font-weight:700;">${totalDiff > 0 ? '+' : ''}${totalDiff}</span></div>
+            <div style="font-size:12px;color:#A89070;">📦 ${adj.items.length} صنف | الفرق: <span style="color:${totalDiff === 0 ? '#A89070' : totalDiff > 0 ? '#2D8F5E' : '#E06060'};font-weight:700;">${totalDiff > 0 ? '+' : ''}${totalDiff}</span></div>
         </div>
         ${itemsHtml}
         <div style="margin-top:8px;display:flex;gap:6px;">
@@ -288,7 +260,6 @@ function viewAdjustmentDetails(id) {
             <button class="btn btn-secondary btn-block" onclick="closeModal()"><i class="fas fa-times"></i> إغلاق</button>
         </div>
     `;
-
     openModal('📋 تفاصيل التسوية', html);
 }
 
@@ -297,27 +268,22 @@ function viewAdjustmentDetails(id) {
 // ================================================================
 function deleteAdjustment(id) {
     if (!confirm('⚠️ حذف التسوية؟ سيتم إلغاء التعديلات على المخزون')) return;
-    
-    const adj = window.inventoryAdjustments?.find(a => a.id == id);
-    if (!adj) {
-        showToast('⚠️ التسوية غير موجودة', 'error');
-        return;
-    }
+    const adjustments = window.inventoryAdjustments || [];
+    const adj = adjustments.find(a => a.id == id);
+    if (!adj) { showToast('⚠️ التسوية غير موجودة', 'error'); return; }
 
-    // إلغاء التعديلات
     for (const item of adj.items) {
         if (item.diff === 0) continue;
-        const wp = window.warehouseProducts?.find(w => w.productId === item.productId);
+        const wp = (window.warehouseProducts || []).find(w => w.productId === item.productId);
         if (wp) {
             wp.qty = item.currentQty;
         }
     }
 
-    window.inventoryAdjustments = window.inventoryAdjustments.filter(a => a.id != id);
-    setData('inventoryAdjustments', window.inventoryAdjustments);
+    window.inventoryAdjustments = adjustments.filter(a => a.id != id);
+    saveAllData();
     renderAdjustmentHistory();
     renderProducts();
-    saveAll();
     showToast('🗑️ تم حذف التسوية', 'info');
 }
 
@@ -325,10 +291,7 @@ function deleteAdjustment(id) {
 // PRINT INVENTORY ADJUSTMENT
 // ================================================================
 function printInventoryAdjustment() {
-    if (inventoryAdjustmentItems.length === 0) {
-        showToast('⚠️ لا توجد أصناف للطباعة', 'error');
-        return;
-    }
+    if (inventoryAdjustmentItems.length === 0) { showToast('⚠️ لا توجد أصناف للطباعة', 'error'); return; }
 
     const dt = getCurrentDateTime();
     const company = window.companyData || {};
@@ -347,15 +310,7 @@ function printInventoryAdjustment() {
                 <div class="info-item"><span class="label">🕐 الوقت:</span><span class="value">${dt.time}</span></div>
             </div>
             <table class="items-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>المنتج</th>
-                        <th>الحالية</th>
-                        <th>الفعلية</th>
-                        <th>الفرق</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>#</th><th>المنتج</th><th>الحالية</th><th>الفعلية</th><th>الفرق</th></tr></thead>
                 <tbody>
                     ${inventoryAdjustmentItems.map((item, i) => `
                         <tr>
@@ -372,10 +327,7 @@ function printInventoryAdjustment() {
                 <div>📦 عدد الأصناف: <span class="total-amount">${inventoryAdjustmentItems.length}</span></div>
                 <div>📊 صافي الفرق: <span class="total-amount" style="color:${totalDiff === 0 ? '#A89070' : totalDiff > 0 ? '#2D8F5E' : '#E06060'};">${totalDiff > 0 ? '+' : ''}${totalDiff}</span></div>
             </div>
-            <div class="footer-box">
-                <div class="thanks">خالص مع الشكر</div>
-                <div style="margin-top:4px;font-size:9px;color:#5D5D5D;">تم الطباعة في ${new Date().toLocaleString('ar')}</div>
-            </div>
+            <div class="footer-box"><div class="thanks">خالص مع الشكر</div></div>
         </div>
     `;
 
@@ -393,14 +345,12 @@ function printInventoryAdjustment() {
 // PRINT ADJUSTMENT DETAILS
 // ================================================================
 function printAdjustmentDetails(id) {
-    const adj = window.inventoryAdjustments?.find(a => a.id == id);
-    if (!adj) {
-        showToast('⚠️ التسوية غير موجودة', 'error');
-        return;
-    }
+    const adjustments = window.inventoryAdjustments || [];
+    const adj = adjustments.find(a => a.id == id);
+    if (!adj) { showToast('⚠️ التسوية غير موجودة', 'error'); return; }
 
     const company = window.companyData || {};
-    const totalDiff = adj.items?.reduce((s, i) => s + (i.diff || 0), 0) || 0;
+    const totalDiff = adj.items.reduce((s, i) => s + (i.diff || 0), 0);
 
     let html = `
         <div class="invoice-print-boxed">
@@ -415,15 +365,7 @@ function printAdjustmentDetails(id) {
                 <div class="info-item"><span class="label">🕐 الوقت:</span><span class="value">${adj.time || '-'}</span></div>
             </div>
             <table class="items-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>المنتج</th>
-                        <th>الحالية</th>
-                        <th>الفعلية</th>
-                        <th>الفرق</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>#</th><th>المنتج</th><th>الحالية</th><th>الفعلية</th><th>الفرق</th></tr></thead>
                 <tbody>
                     ${adj.items.map((item, i) => `
                         <tr>
@@ -440,10 +382,7 @@ function printAdjustmentDetails(id) {
                 <div>📦 عدد الأصناف: <span class="total-amount">${adj.items.length}</span></div>
                 <div>📊 صافي الفرق: <span class="total-amount" style="color:${totalDiff === 0 ? '#A89070' : totalDiff > 0 ? '#2D8F5E' : '#E06060'};">${totalDiff > 0 ? '+' : ''}${totalDiff}</span></div>
             </div>
-            <div class="footer-box">
-                <div class="thanks">خالص مع الشكر</div>
-                <div style="margin-top:4px;font-size:9px;color:#5D5D5D;">تم الطباعة في ${new Date().toLocaleString('ar')}</div>
-            </div>
+            <div class="footer-box"><div class="thanks">خالص مع الشكر</div></div>
         </div>
     `;
 
@@ -456,3 +395,17 @@ function printAdjustmentDetails(id) {
         showToast('⚠️ تم حظر النافذة المنبثقة', 'error');
     }
 }
+
+// جعل الدوال متاحة في النطاق العام
+window.populateAdjustmentProducts = populateAdjustmentProducts;
+window.renderAdjustmentItems = renderAdjustmentItems;
+window.addAdjustmentItem = addAdjustmentItem;
+window.removeAdjustmentItem = removeAdjustmentItem;
+window.clearAdjustmentItems = clearAdjustmentItems;
+window.saveInventoryAdjustment = saveInventoryAdjustment;
+window.renderAdjustmentHistory = renderAdjustmentHistory;
+window.viewAdjustmentDetails = viewAdjustmentDetails;
+window.deleteAdjustment = deleteAdjustment;
+window.printInventoryAdjustment = printInventoryAdjustment;
+window.printAdjustmentDetails = printAdjustmentDetails;
+window.updateAdjustmentDateTime = updateAdjustmentDateTime;
