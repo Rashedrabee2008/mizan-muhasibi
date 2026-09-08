@@ -848,50 +848,103 @@
         </div>
     </div>
 
-    <!-- ================================================================ -->
-    <!-- ===== JAVASCRIPT ===== -->
-    <!-- ================================================================ -->
-    
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+   <!-- ===== أولاً: المكتبات الخارجية ===== -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
-    <script src="modules/database.js"></script>
-    <script src="app.js"></script>
-    <script src="modules/products.js"></script>
-    <script src="modules/customers.js"></script>
-    <script src="modules/suppliers.js"></script>
-    <script src="modules/warehouses.js"></script>
-    <script src="modules/expenses.js"></script>
-    <script src="modules/treasury.js"></script>
-    <script src="modules/bonds.js"></script>
-    <script src="modules/backup.js"></script>
-    <script src="modules/company.js"></script>
-    <script src="modules/users.js"></script>
-    <script src="modules/accounts.js"></script>
-    <script src="modules/inventory_adjustment.js"></script>
-    <script src="modules/audit.js"></script>
-    <script src="modules/alerts.js"></script>
-    <script src="modules/qr.js"></script>
-    <script src="modules/dashboard.js"></script>
-    <script src="modules/remaining.js"></script>
+<!-- ===== ثانياً: الملفات الأساسية ===== -->
+<script src="modules/utils.js"></script>
+<script src="modules/database.js"></script>
+<script src="modules/firebase.js"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 بدء تشغيل الميزان v3.0.0');
-            if (typeof activateDemoLicense === 'function') { activateDemoLicense(); console.log('✅ تم تفعيل الترخيص التجريبي'); }
-            if (typeof seedData === 'function') { seedData(); console.log('✅ تم تهيئة البيانات'); }
-            if (typeof refreshAllPages === 'function') { refreshAllPages(); console.log('✅ تم تحديث جميع الصفحات'); }
-            if (typeof updateClock === 'function') { updateClock(); }
-            if (typeof initUsers === 'function') { initUsers(); console.log('✅ تم تهيئة المستخدمين'); }
-            if (typeof refreshDashboard === 'function') { refreshDashboard(); console.log('✅ تم تحديث لوحة التحكم'); }
-            if (typeof updateSecurityButton === 'function') { updateSecurityButton(); }
-            console.log('✅ الميزان جاهز للاستخدام');
-            console.log('🔒 كلمة المرور: 123456');
-            console.log('🔑 اضغط 5 مرات على رقم الإصدار في الإعدادات لتفعيل زر توليد المفاتيح');
-        });
-    </script>
+<!-- ===== ثالثاً: app.js ===== -->
+<script src="app.js"></script>
+
+<!-- ===== رابعاً: الملفات الوظيفية ===== -->
+<script src="modules/products.js"></script>
+<script src="modules/customers.js"></script>
+<script src="modules/suppliers.js"></script>
+<script src="modules/warehouses.js"></script>
+
+<!-- ===== خامساً: الفواتير ===== -->
+<script src="modules/sales.js"></script>
+<script src="modules/purchases.js"></script>
+<script src="modules/returns.js"></script>
+
+<!-- ===== سادساً: المالية ===== -->
+<script src="modules/expenses.js"></script>
+<script src="modules/treasury.js"></script>
+<script src="modules/bonds.js"></script>
+
+<!-- ===== سابعاً: المخازن والإذونات ===== -->
+<script src="modules/permissions.js"></script>
+<script src="modules/inventory_adjustment.js"></script>
+
+<!-- ===== ثامناً: المستخدمين والإعدادات ===== -->
+<script src="modules/users.js"></script>
+<script src="modules/company.js"></script>
+<script src="modules/backup.js"></script>
+
+<!-- ===== تاسعاً: التقارير والتحليلات ===== -->
+<script src="modules/accounts.js"></script>
+<script src="modules/dashboard.js"></script>
+<script src="modules/remaining.js"></script>
+
+<!-- ===== عاشراً: الأدوات ===== -->
+<script src="modules/audit.js"></script>
+<script src="modules/alerts.js"></script>
+<script src="modules/qr.js"></script>
+<script src="modules/barcode.js"></script>
+<script src="modules/cashier.js"></script>
+
+<!-- ===== أخيراً: تشغيل التطبيق ===== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 بدء تشغيل الميزان v3.0.0');
+        
+        // تهيئة Firebase
+        if (typeof initFirebase === 'function') {
+            initFirebase();
+        }
+        
+        // تهيئة المستخدمين
+        if (typeof initUsers === 'function') {
+            initUsers();
+        }
+        
+        // تهيئة البيانات
+        if (typeof seedData === 'function') {
+            seedData();
+        }
+        
+        // تحديث الواجهات
+        if (typeof populateAllSelects === 'function') {
+            populateAllSelects();
+        }
+        
+        if (typeof refreshAllPages === 'function') {
+            refreshAllPages();
+        }
+        
+        // الساعة
+        if (typeof updateClock === 'function') {
+            updateClock();
+        }
+        
+        // التحقق من حالة الدخول
+        if (localStorage.getItem('app_unlocked') === 'true') {
+            const loginContainer = document.getElementById('loginContainer');
+            const appContent = document.getElementById('appContent');
+            if (loginContainer) loginContainer.classList.add('hidden');
+            if (appContent) appContent.style.display = 'block';
+        }
+        
+        console.log('✅ الميزان جاهز للاستخدام');
+        console.log('🔒 كلمة المرور: 123456');
+    });
+</script>
 
 </body>
 </html>
