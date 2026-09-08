@@ -9,6 +9,7 @@ let cashierDay = null;
 // INIT CASHIER
 // ================================================================
 function initCashier() {
+    // التأكد إن cashierHistory Array
     if (!window.cashierHistory || !Array.isArray(window.cashierHistory)) {
         window.cashierHistory = [];
         setData('cashierHistory', window.cashierHistory);
@@ -167,7 +168,9 @@ function cashierCloseDay() {
     cashierDay.closedBy = window.currentUser?.username || 'admin';
 
     // حفظ في السجل
-    if (!window.cashierHistory) window.cashierHistory = [];
+    if (!window.cashierHistory || !Array.isArray(window.cashierHistory)) {
+        window.cashierHistory = [];
+    }
     window.cashierHistory.push({
         ...cashierDay,
         id: Date.now()
@@ -198,7 +201,8 @@ function renderCashierTodayTransactions(transactions) {
     }
 
     let html = '';
-    transactions.slice().reverse().forEach(t => {
+    for (let i = transactions.length - 1; i >= 0; i--) {
+        const t = transactions[i];
         const color = t.type === 'sale' ? '#2D8F5E' : t.type === 'expense' ? '#E06060' : '#C9A94E';
         const icon = t.type === 'sale' ? 'fa-arrow-down' : t.type === 'expense' ? 'fa-arrow-up' : 'fa-exchange-alt';
         const sign = t.type === 'sale' ? '+' : '-';
@@ -212,7 +216,7 @@ function renderCashierTodayTransactions(transactions) {
                 <span style="color:${color};font-weight:700;">${sign}${t.amount.toFixed(2)}</span>
             </div>
         `;
-    });
+    }
 
     container.innerHTML = html;
 }
@@ -224,13 +228,18 @@ function renderCashierHistory() {
     const container = document.getElementById('cashierHistory');
     if (!container) return;
 
-    if (!window.cashierHistory || window.cashierHistory.length === 0) {
+    // التأكد إن cashierHistory Array
+    if (!window.cashierHistory || !Array.isArray(window.cashierHistory) || window.cashierHistory.length === 0) {
         container.innerHTML = `<div class="empty-state" style="padding:16px 0;"><i class="fas fa-calendar" style="font-size:28px;"></i><span style="font-size:13px;">لا توجد سجلات سابقة</span></div>`;
         return;
     }
 
     let html = '';
-    window.cashierHistory.slice().reverse().forEach(day => {
+    // استخدام slice بأمان
+    const history = window.cashierHistory.slice().reverse();
+    
+    for (let i = 0; i < history.length; i++) {
+        const day = history[i];
         const balance = (day.openingBalance || 0) + (day.sales || 0) - (day.expenses || 0);
         html += `
             <div class="cashier-history-item" style="border-right-color:${day.status === 'closed' ? '#2D8F5E' : '#E6A830'};">
@@ -250,7 +259,7 @@ function renderCashierHistory() {
                 </div>
             </div>
         `;
-    });
+    }
 
     container.innerHTML = html;
 }
