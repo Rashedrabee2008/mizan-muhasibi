@@ -848,7 +848,7 @@
         </div>
     </div>
 
-   <!-- ===== أولاً: المكتبات الخارجية ===== -->
+  <!-- ===== أولاً: المكتبات الخارجية ===== -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -904,36 +904,17 @@
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 بدء تشغيل الميزان v3.0.0');
         
-        // تهيئة Firebase
-        if (typeof initFirebase === 'function') {
-            initFirebase();
-        }
+        if (typeof initFirebase === 'function') initFirebase();
+        if (typeof initUsers === 'function') initUsers();
+        if (typeof seedData === 'function') seedData();
+        if (typeof populateAllSelects === 'function') populateAllSelects();
+        if (typeof refreshAllPages === 'function') refreshAllPages();
+        if (typeof updateClock === 'function') updateClock();
+        if (typeof updateDashboard === 'function') updateDashboard();
+        if (typeof updateSecurityButton === 'function') updateSecurityButton();
+        if (typeof checkLicenseStatus === 'function') checkLicenseStatus();
+        if (typeof renderGeneratedKeys === 'function') renderGeneratedKeys();
         
-        // تهيئة المستخدمين
-        if (typeof initUsers === 'function') {
-            initUsers();
-        }
-        
-        // تهيئة البيانات
-        if (typeof seedData === 'function') {
-            seedData();
-        }
-        
-        // تحديث الواجهات
-        if (typeof populateAllSelects === 'function') {
-            populateAllSelects();
-        }
-        
-        if (typeof refreshAllPages === 'function') {
-            refreshAllPages();
-        }
-        
-        // الساعة
-        if (typeof updateClock === 'function') {
-            updateClock();
-        }
-        
-        // التحقق من حالة الدخول
         if (localStorage.getItem('app_unlocked') === 'true') {
             const loginContainer = document.getElementById('loginContainer');
             const appContent = document.getElementById('appContent');
@@ -945,6 +926,5 @@
         console.log('🔒 كلمة المرور: 123456');
     });
 </script>
-
 </body>
 </html>
