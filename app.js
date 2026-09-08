@@ -1,713 +1,1362 @@
-// ============================================
-// ملف app.js - النسخة الكاملة المعدلة v3.0.1
-// تم إصلاح: الاستدعاء الذاتي، الدوال غير المعرفة، المراجع الدائرية
-// تمت إضافة: دوال الوقت والتاريخ، دوال الصلاحيات المتقدمة
-// ============================================
+// ================================================================
+// app.js - الملف الرئيسي للتطبيق
+// ================================================================
 
-// ========== 1. الأدوات المساعدة (Utilities) ==========
+// ================================================================
+// CONFIG
+// ================================================================
+const DEFAULT_PASSWORD = '123456';
+const SECRET_KEY = 'Mizan_License_2025_Secret';
+const DEMO_LICENSE_KEY = 'UmFzaGVkfDIwMjctMDgtMjV8fDg5YWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTA=';
+const LICENSE_PRICES = { 30: 1500, 90: 2000, 180: 2500, 365: 3000, 730: 6000 };
 
-// دالة آمنة لطباعة الكائنات مع تجنب المراجع الدائرية
-function safeStringify(obj) {
-    const seen = new WeakSet();
-    return JSON.stringify(obj, (key, value) => {
-        if (typeof value === 'object' && value !== null) {
-            if (seen.has(value)) return '[Circular]';
-            seen.add(value);
-        }
-        return value;
-    }, 2);
+// ===== تحميل كلمة المرور من localStorage =====
+let currentPassword = localStorage.getItem('app_password') || DEFAULT_PASSWORD;
+let backupInterval = null;
+let versionClickCount = 0;
+
+// ===== تحميل المستخدم الحالي =====
+let currentUser = JSON.parse(localStorage.getItem('mizan_current_user')) || null;
+
+// ===== إذا لم يكن هناك مستخدم حالياً، استخدم المدير =====
+if (!currentUser) {
+    currentUser = { username: 'مدير', role: 'admin' };
+    localStorage.setItem('mizan_current_user', JSON.stringify(currentUser));
 }
 
-// دالة للتحقق من وجود دوال قبل استدعائها
-function safeCallFunction(fn, ...args) {
-    if (typeof fn === 'function') {
-        return fn(...args);
-    } else {
-        console.warn(`⚠️ الدالة غير موجودة: ${fn?.name || 'غير معروفة'}`);
-        return null;
-    }
+// ===== رقم الفاتورة المسلسل =====
+let invoiceCounter = parseInt(localStorage.getItem('mizan_invoice_counter')) || 1;
+
+function getNextInvoiceNumber() {
+    const current = invoiceCounter;
+    invoiceCounter++;
+    localStorage.setItem('mizan_invoice_counter', invoiceCounter);
+    return current;
 }
 
-// دالة للتحقق من وجود عنصر في DOM
-function getElementSafe(id) {
-    const element = document.getElementById(id);
-    if (!element) {
-        console.warn(`⚠️ العنصر "${id}" غير موجود في الصفحة`);
-    }
-    return element;
-}
+// ================================================================
+// INIT USERS - تهيئة المستخدمين
+// ================================================================
 
-// دالة لتنظيف النصوص من الـ HTML
-function sanitizeHTML(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// ========== 2. دوال الوقت والتاريخ (Date & Time Functions) ==========
-
-// دالة الحصول على الوقت الحالي
-function getCurrentDateTime() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
+function initUsers() {
+    // تحميل المستخدمين من localStorage
+    let users = localStorage.getItem('mizan_users');
     
-    const arabicMonths = ['يناير', 'فبراير', 'مارس', 'إبريل', 'مايو', 'يونيو', 
-                          'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-    
-    return {
-        date: `${year}-${month}-${day}`,
-        time: `${hours}:${minutes}:${seconds}`,
-        dateTime: `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`,
-        timestamp: now.getTime(),
-        formatted: `${day}/${month}/${year} ${hours}:${minutes}`,
-        iso: now.toISOString(),
-        arabicDate: `${day} ${arabicMonths[now.getMonth()]} ${year}`,
-        arabicDateTime: `${day} ${arabicMonths[now.getMonth()]} ${year} ${hours}:${minutes}`,
-        getDate: () => `${year}-${month}-${day}`,
-        getTime: () => `${hours}:${minutes}:${seconds}`,
-        getTimestamp: () => now.getTime(),
-        getFormatted: (format = 'YYYY-MM-DD') => {
-            switch(format) {
-                case 'YYYY-MM-DD': return `${year}-${month}-${day}`;
-                case 'DD/MM/YYYY': return `${day}/${month}/${year}`;
-                case 'YYYY-MM-DD HH:mm': return `${year}-${month}-${day} ${hours}:${minutes}`;
-                default: return `${year}-${month}-${day}`;
+    if (users) {
+        try {
+            window.users = JSON.parse(users);
+            // التأكد من وجود المستخدمين الأساسيين
+            if (!window.users.find(u => u.username === 'مدير')) {
+                window.users.push({ id: Date.now(), username: 'مدير', role: 'admin', password: DEFAULT_PASSWORD });
             }
+            if (!window.users.find(u => u.username === 'مشرف')) {
+                window.users.push({ id: Date.now() + 1, username: 'مشرف', role: 'manager', password: DEFAULT_PASSWORD });
+            }
+            if (!window.users.find(u => u.username === 'كاشير')) {
+                window.users.push({ id: Date.now() + 2, username: 'كاشير', role: 'cashier', password: DEFAULT_PASSWORD });
+            }
+            if (!window.users.find(u => u.username === 'مشاهد')) {
+                window.users.push({ id: Date.now() + 3, username: 'مشاهد', role: 'viewer', password: DEFAULT_PASSWORD });
+            }
+        } catch (e) {
+            window.users = getDefaultUsers();
         }
-    };
-}
-
-// دالة لتنسيق التاريخ حسب الطلب
-function formatDate(date, format = 'YYYY-MM-DD') {
-    if (!date) return null;
-    const d = new Date(date);
-    if (isNaN(d)) return null;
-    
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    
-    switch(format) {
-        case 'YYYY-MM-DD':
-            return `${year}-${month}-${day}`;
-        case 'DD/MM/YYYY':
-            return `${day}/${month}/${year}`;
-        case 'YYYY-MM-DD HH:mm':
-            return `${year}-${month}-${day} ${hours}:${minutes}`;
-        case 'DD/MM/YYYY HH:mm':
-            return `${day}/${month}/${year} ${hours}:${minutes}`;
-        default:
-            return `${year}-${month}-${day}`;
+    } else {
+        window.users = getDefaultUsers();
     }
-}
-
-// دالة للتحقق من صحة التاريخ
-function isValidDate(dateString) {
-    const date = new Date(dateString);
-    return date instanceof Date && !isNaN(date);
-}
-
-// دالة لحساب الفرق بين تاريخين
-function dateDiff(date1, date2, unit = 'days') {
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
-    if (isNaN(d1) || isNaN(d2)) return null;
     
-    const diffMs = Math.abs(d2 - d1);
-    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    localStorage.setItem('mizan_users', JSON.stringify(window.users));
     
-    switch(unit) {
-        case 'days': return diffDays;
-        case 'hours': return diffDays * 24;
-        case 'minutes': return diffDays * 24 * 60;
-        case 'seconds': return diffDays * 24 * 60 * 60;
-        default: return diffDays;
-    }
-}
-
-// ========== 3. دوال العملاء (Customer Functions) ==========
-
-// دالة إنشاء كشف حساب العميل
-function generateCustomerStatement(customerId, period = 'monthly') {
-    console.log(`📊 جاري إنشاء كشف حساب للعميل: ${customerId}`);
-
-    // التحقق من صحة المدخلات
-    if (!customerId) {
-        console.error('❌ خطأ: معرف العميل مطلوب');
-        return null;
-    }
-
-    // شرط الإيقاف لمنع التكرار اللانهائي
-    const validPeriods = ['daily', 'weekly', 'monthly', 'yearly'];
-    if (!validPeriods.includes(period)) {
-        console.warn(`⚠️ فترة غير معروفة: ${period}، سيتم استخدام الشهرية`);
-        period = 'monthly';
-    }
-
-    // محاكاة جلب البيانات
-    const now = getCurrentDateTime();
-    const statementData = {
-        customerId: customerId,
-        period: period,
-        generatedAt: now.dateTime,
-        timestamp: now.timestamp,
-        transactions: [
-            { date: '2026-09-01', description: 'فاتورة #1001', amount: 1500, type: 'sale' },
-            { date: '2026-09-03', description: 'دفعة مستلمة', amount: -500, type: 'payment' },
-            { date: '2026-09-05', description: 'فاتورة #1002', amount: 2000, type: 'sale' },
-        ],
-        summary: {
-            totalSales: 3500,
-            totalPayments: 500,
-            totalDue: 3000,
-            transactionCount: 3,
-        },
-        customerInfo: {
-            name: `العميل ${customerId}`,
-            phone: '05XXXXXXXX',
-            email: `customer${customerId}@example.com`,
+    // التحقق من وجود المستخدم الحالي
+    if (currentUser && currentUser.username) {
+        const exists = window.users.find(u => u.username === currentUser.username);
+        if (!exists) {
+            currentUser = { username: 'مدير', role: 'admin' };
+            localStorage.setItem('mizan_current_user', JSON.stringify(currentUser));
         }
-    };
-
-    console.log('✅ تم إنشاء كشف الحساب بنجاح');
-    return statementData;
-}
-
-// دالة إنشاء كشف حساب مفصل
-function generateCustomerDetailedStatement(customerId, includeDetails = true) {
-    console.log(`📋 جاري إنشاء كشف حساب مفصل للعميل: ${customerId}`);
-
-    if (!customerId) {
-        console.error('❌ خطأ: معرف العميل مطلوب');
-        return null;
-    }
-
-    // جلب الكشف الأساسي (بدون استدعاء ذاتي)
-    const baseStatement = generateCustomerStatement(customerId, 'monthly');
-    
-    if (!baseStatement) {
-        console.error('❌ فشل في إنشاء الكشف الأساسي');
-        return null;
-    }
-
-    // إضافة التفاصيل الموسعة
-    const detailedStatement = {
-        ...baseStatement,
-        isDetailed: true,
-        detailedTransactions: baseStatement.transactions.map(t => ({
-            ...t,
-            details: `تفاصيل المعاملة: ${t.description}`,
-            tax: t.amount > 0 ? t.amount * 0.14 : 0,
-            netAmount: t.amount > 0 ? t.amount * 0.86 : t.amount,
-            paymentMethod: t.type === 'payment' ? 'نقدي' : 'آجل',
-            status: t.amount > 0 ? 'مستحق' : 'مدفوع',
-        })),
-        detailedSummary: {
-            totalTax: baseStatement.transactions.reduce((sum, t) => sum + (t.amount > 0 ? t.amount * 0.14 : 0), 0),
-            netTotal: baseStatement.transactions.reduce((sum, t) => sum + (t.amount > 0 ? t.amount * 0.86 : t.amount), 0),
-            totalTransactions: baseStatement.transactions.length,
-            averageTransaction: baseStatement.transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0) / baseStatement.transactions.length,
-        },
-        paymentHistory: [
-            { date: '2026-09-01', amount: 500, method: 'نقدي', status: 'مكتمل' },
-            { date: '2026-09-04', amount: 300, method: 'تحويل', status: 'مكتمل' },
-        ],
-        balanceHistory: [
-            { date: '2026-09-01', balance: 1500 },
-            { date: '2026-09-03', balance: 1000 },
-            { date: '2026-09-05', balance: 3000 },
-        ],
-    };
-
-    console.log('✅ تم إنشاء الكشف المفصل بنجاح');
-    return detailedStatement;
-}
-
-// ========== 4. دوال الأرباح (Profit Functions) ==========
-
-// دالة تحليل الأرباح
-function generateProfitAnalysis(startDate, endDate, granularity = 'daily') {
-    console.log(`💰 جاري تحليل الأرباح من ${startDate} إلى ${endDate}`);
-
-    // التحقق من صحة المدخلات
-    if (!startDate || !endDate) {
-        console.error('❌ خطأ: يجب تحديد تاريخ البداية والنهاية');
-        return null;
-    }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    if (isNaN(start) || isNaN(end) || start > end) {
-        console.error('❌ خطأ: تواريخ غير صالحة');
-        return null;
-    }
-
-    // محاكاة حساب الأرباح
-    const profitData = {
-        startDate: startDate,
-        endDate: endDate,
-        granularity: granularity,
-        generatedAt: getCurrentDateTime().dateTime,
-        summary: {
-            totalRevenue: 45000,
-            totalCost: 28000,
-            grossProfit: 17000,
-            grossMargin: (17000 / 45000 * 100).toFixed(2) + '%',
-            expenses: 5000,
-            netProfit: 12000,
-            netMargin: (12000 / 45000 * 100).toFixed(2) + '%',
-        },
-        breakdown: {
-            sales: 45000,
-            returns: -2000,
-            discounts: -3000,
-            shipping: 500,
-            taxes: 1500,
-        },
-        dailyBreakdown: [
-            { date: '2026-09-01', revenue: 5000, cost: 3000, profit: 2000, margin: '40%' },
-            { date: '2026-09-02', revenue: 7000, cost: 4000, profit: 3000, margin: '42.86%' },
-            { date: '2026-09-03', revenue: 6500, cost: 3800, profit: 2700, margin: '41.54%' },
-            { date: '2026-09-04', revenue: 8000, cost: 5000, profit: 3000, margin: '37.5%' },
-            { date: '2026-09-05', revenue: 18500, cost: 12200, profit: 6300, margin: '34.05%' },
-        ],
-        topProducts: [
-            { name: 'منتج أ', revenue: 12000, cost: 7000, profit: 5000 },
-            { name: 'منتج ب', revenue: 8000, cost: 4500, profit: 3500 },
-            { name: 'منتج ج', revenue: 5000, cost: 3000, profit: 2000 },
-        ],
-    };
-
-    console.log('✅ تم تحليل الأرباح بنجاح');
-    return profitData;
-}
-
-// ========== 5. دوال الصلاحيات (Permissions Functions) ==========
-
-// دالة عرض الصلاحيات
-function renderPermissions(userRole, permissionsList = []) {
-    console.log(`🔐 جاري عرض صلاحيات المستخدم: ${userRole}`);
-
-    if (!userRole) {
-        console.error('❌ خطأ: دور المستخدم مطلوب');
-        return { error: 'دور المستخدم غير محدد' };
-    }
-
-    // قائمة الصلاحيات الافتراضية
-    const defaultPermissions = ['read', 'write', 'delete', 'manage_users', 'export', 'print'];
-    const effectivePermissions = permissionsList.length > 0 ? permissionsList : defaultPermissions;
-
-    // تحديد الصلاحيات حسب الدور
-    let allowedPermissions = [];
-    let roleLevel = 0;
-    
-    const roleConfig = {
-        'admin': { level: 100, permissions: effectivePermissions, description: 'مدير كامل الصلاحيات' },
-        'manager': { level: 75, permissions: effectivePermissions.filter(p => p !== 'delete' && p !== 'manage_users'), description: 'مدير' },
-        'supervisor': { level: 50, permissions: effectivePermissions.filter(p => p === 'read' || p === 'write' || p === 'export'), description: 'مشرف' },
-        'user': { level: 25, permissions: effectivePermissions.filter(p => p === 'read' || p === 'write'), description: 'مستخدم' },
-        'viewer': { level: 10, permissions: effectivePermissions.filter(p => p === 'read'), description: 'مشاهد' },
-    };
-
-    const config = roleConfig[userRole.toLowerCase()] || roleConfig['viewer'];
-    allowedPermissions = config.permissions;
-    roleLevel = config.level;
-
-    const result = {
-        userRole: userRole,
-        roleLevel: roleLevel,
-        roleDescription: config.description,
-        permissions: allowedPermissions,
-        hasAccess: allowedPermissions.length > 0,
-        isAdmin: userRole.toLowerCase() === 'admin',
-        timestamp: getCurrentDateTime().dateTime,
-        permissionMap: {
-            canRead: allowedPermissions.includes('read'),
-            canWrite: allowedPermissions.includes('write'),
-            canDelete: allowedPermissions.includes('delete'),
-            canManageUsers: allowedPermissions.includes('manage_users'),
-            canExport: allowedPermissions.includes('export'),
-            canPrint: allowedPermissions.includes('print'),
-        }
-    };
-
-    console.log('✅ تم عرض الصلاحيات بنجاح');
-    return result;
-}
-
-// دالة التحقق من صلاحية محددة
-function hasPermission(userRole, permission, permissionsList = []) {
-    const result = renderPermissions(userRole, permissionsList);
-    if (result.error) return false;
-    return result.permissions.includes(permission);
-}
-
-// ========== 6. دوال العرض (Render Functions) ==========
-
-// دوال العرض - جميعها معرفة الآن
-function renderSales(data) {
-    console.log('📊 جاري عرض بيانات المبيعات');
-    if (!data) {
-        console.warn('⚠️ لا توجد بيانات مبيعات للعرض');
-        return { status: 'warning', message: 'لا توجد بيانات' };
+    } else {
+        currentUser = { username: 'مدير', role: 'admin' };
+        localStorage.setItem('mizan_current_user', JSON.stringify(currentUser));
     }
     
-    try {
-        // محاكاة عرض البيانات
-        const salesData = typeof data === 'object' ? data : { data };
-        console.log('✅ تم عرض المبيعات بنجاح:', salesData);
-        return { status: 'success', data: salesData };
-    } catch (error) {
-        console.error('❌ خطأ في عرض المبيعات:', error);
-        return { status: 'error', message: error.message };
-    }
-}
-
-function renderAllPurchases(data) {
-    console.log('📦 جاري عرض جميع المشتريات');
-    if (!data) {
-        console.warn('⚠️ لا توجد بيانات مشتريات للعرض');
-        return { status: 'warning', message: 'لا توجد بيانات' };
+    // تحديث كلمة المرور الحالية
+    const current = window.users.find(u => u.username === currentUser.username);
+    if (current?.password) {
+        currentPassword = current.password;
+        localStorage.setItem('app_password', currentPassword);
     }
     
-    try {
-        console.log('✅ تم عرض المشتريات بنجاح');
-        return { status: 'success', data };
-    } catch (error) {
-        console.error('❌ خطأ في عرض المشتريات:', error);
-        return { status: 'error', message: error.message };
-    }
+    updateUIByPermissions();
 }
 
-function renderAllReturns(data) {
-    console.log('🔄 جاري عرض جميع المرتجعات');
-    if (!data) {
-        console.warn('⚠️ لا توجد بيانات مرتجعات للعرض');
-        return { status: 'warning', message: 'لا توجد بيانات' };
+function getDefaultUsers() {
+    return [
+        { id: 1, username: 'مدير', role: 'admin', password: DEFAULT_PASSWORD },
+        { id: 2, username: 'مشرف', role: 'manager', password: DEFAULT_PASSWORD },
+        { id: 3, username: 'كاشير', role: 'cashier', password: DEFAULT_PASSWORD },
+        { id: 4, username: 'مشاهد', role: 'viewer', password: DEFAULT_PASSWORD }
+    ];
+}
+
+// ================================================================
+// SEED DATA - تهيئة البيانات
+// ================================================================
+
+function seedData() {
+    // تهيئة المتغيرات
+    if (typeof window.products === 'undefined') window.products = [];
+    if (typeof window.customers === 'undefined') window.customers = [];
+    if (typeof window.suppliers === 'undefined') window.suppliers = [];
+    if (typeof window.purchases === 'undefined') window.purchases = [];
+    if (typeof window.sales === 'undefined') window.sales = [];
+    if (typeof window.returns === 'undefined') window.returns = [];
+    if (typeof window.expenses === 'undefined') window.expenses = [];
+    if (typeof window.treasury === 'undefined') window.treasury = [];
+    if (typeof window.bonds === 'undefined') window.bonds = [];
+    if (typeof window.warehouses === 'undefined') window.warehouses = [];
+    if (typeof window.warehouseProducts === 'undefined') window.warehouseProducts = [];
+    if (typeof window.permissions === 'undefined') window.permissions = [];
+    if (typeof window.backups === 'undefined') window.backups = [];
+    if (typeof window.accounts === 'undefined') window.accounts = [];
+    if (typeof window.auditLog === 'undefined') window.auditLog = [];
+    if (typeof window.alerts === 'undefined') window.alerts = [];
+    if (typeof window.cashierHistory === 'undefined') window.cashierHistory = [];
+    if (typeof window.inventoryAdjustments === 'undefined') window.inventoryAdjustments = [];
+    
+    if (!window.companyData || typeof window.companyData !== 'object') {
+        window.companyData = {};
     }
     
-    try {
-        console.log('✅ تم عرض المرتجعات بنجاح');
-        return { status: 'success', data };
-    } catch (error) {
-        console.error('❌ خطأ في عرض المرتجعات:', error);
-        return { status: 'error', message: error.message };
-    }
-}
-
-function renderAllInvoices(data) {
-    console.log('📄 جاري عرض جميع الفواتير');
-    if (!data) {
-        console.warn('⚠️ لا توجد بيانات فواتير للعرض');
-        return { status: 'warning', message: 'لا توجد بيانات' };
+    // تهيئة المستخدمين (لا تعيد إنشائهم إذا كانوا موجودين)
+    initUsers();
+    
+    // ===== فقط إذا كانت البيانات فارغة، نضيف بيانات تجريبية =====
+    if (window.warehouses.length === 0) {
+        window.warehouses = [
+            { id: 1, name: 'المخزن الرئيسي', type: 'رئيسي', address: 'القاهرة' },
+            { id: 2, name: 'مخزن المحل', type: 'محل', address: 'المنصورة' }
+        ];
+        setData('warehouses', window.warehouses);
     }
     
-    try {
-        console.log('✅ تم عرض الفواتير بنجاح');
-        return { status: 'success', data };
-    } catch (error) {
-        console.error('❌ خطأ في عرض الفواتير:', error);
-        return { status: 'error', message: error.message };
-    }
-}
-
-// ========== 7. دوال إدارة البيانات (Data Management) ==========
-
-// دالة حفظ الإعدادات
-function saveSettings(settings) {
-    console.log('⚙️ جاري حفظ الإعدادات');
-    try {
-        if (!settings || typeof settings !== 'object') {
-            throw new Error('الإعدادات غير صالحة');
-        }
+    if (window.products.length === 0 && window.warehouseProducts.length === 0) {
+        window.products = [
+            { id: 1, name: 'منتج تجريبي 1', buyPrice: 50, sellPrice: 100, min: 5, barcode: '123456789' },
+            { id: 2, name: 'منتج تجريبي 2', buyPrice: 30, sellPrice: 75, min: 3, barcode: '987654321' }
+        ];
+        setData('products', window.products);
         
-        const settingsToSave = {
-            ...settings,
-            savedAt: getCurrentDateTime().dateTime,
-            version: '3.0.1',
+        window.warehouseProducts = [
+            { warehouseId: 1, productId: 1, qty: 50 },
+            { warehouseId: 1, productId: 2, qty: 30 },
+            { warehouseId: 2, productId: 1, qty: 10 },
+            { warehouseId: 2, productId: 2, qty: 5 }
+        ];
+        setData('warehouseProducts', window.warehouseProducts);
+    }
+    
+    if (window.customers.length === 0) {
+        window.customers = [{
+            id: 1,
+            name: 'أحمد محمد',
+            phone: '01234567890',
+            whatsapp: '01011993799',
+            email: 'ahmed@test.com',
+            address: 'القاهرة',
+            active: true
+        }];
+        setData('customers', window.customers);
+    }
+    
+    if (window.suppliers.length === 0) {
+        window.suppliers = [{
+            id: 1,
+            name: 'شركة الاتصالات',
+            phone: '0234567890',
+            whatsapp: '01158767633',
+            email: 'info@telecom.com',
+            address: 'القاهرة',
+            active: true
+        }];
+        setData('suppliers', window.suppliers);
+    }
+    
+    if (window.accounts.length === 0) {
+        window.accounts = [
+            { id: 1, name: 'أصول', type: 'assets', parentId: null },
+            { id: 2, name: 'خصوم', type: 'liabilities', parentId: null },
+            { id: 3, name: 'حقوق ملكية', type: 'equity', parentId: null },
+            { id: 4, name: 'إيرادات', type: 'revenue', parentId: null },
+            { id: 5, name: 'مصروفات', type: 'expenses', parentId: null }
+        ];
+        setData('accounts', window.accounts);
+    }
+    
+    if (!window.companyData || typeof window.companyData !== 'object' || Object.keys(window.companyData).length === 0) {
+        window.companyData = {
+            name: 'شركة الميزان',
+            phone: '0234567890',
+            mobile: '01000000000',
+            address: 'القاهرة، مصر',
+            taxNumber: '123-456-789',
+            commercialRegister: '12345',
+            email: 'info@mizan.com',
+            vodafone: '01011993799',
+            instapay: 'rashedrabia@instapay',
+            bankAccount: '2021300000275818',
+            cash: '01080591108',
+            paymentEmail: 'payment@mizan.com',
+            logo: null
         };
+        setData('companyData', window.companyData);
+    }
+    
+    saveAll();
+    console.log('✅ تم تهيئة البيانات بنجاح');
+}
+
+// ================================================================
+// CHECK LOGIN - التحقق من الدخول
+// ================================================================
+
+function checkLogin() {
+    const input = document.getElementById('loginPassword');
+    const error = document.getElementById('loginError');
+    
+    // تحميل المستخدمين
+    initUsers();
+    
+    // البحث عن المستخدم بكلمة المرور المدخلة
+    let foundUser = window.users.find(u => u.password === input.value);
+    
+    // إذا لم يوجد، جرب كلمة المرور الافتراضية
+    if (!foundUser && input.value === DEFAULT_PASSWORD) {
+        foundUser = window.users.find(u => u.username === 'مدير');
+    }
+    
+    if (foundUser) {
+        const loginContainer = document.getElementById('loginContainer');
+        const appContent = document.getElementById('appContent');
         
-        localStorage.setItem('app_settings', JSON.stringify(settingsToSave));
-        console.log('✅ تم حفظ الإعدادات بنجاح');
-        return { status: 'success', data: settingsToSave };
-    } catch (error) {
-        console.error('❌ خطأ في حفظ الإعدادات:', error);
-        return { status: 'error', message: error.message };
+        // تحديث المستخدم الحالي
+        currentUser = { username: foundUser.username, role: foundUser.role };
+        currentPassword = foundUser.password;
+        localStorage.setItem('mizan_current_user', JSON.stringify(currentUser));
+        localStorage.setItem('app_password', currentPassword);
+        localStorage.setItem('app_unlocked', 'true');
+        
+        if (loginContainer) loginContainer.classList.add('hidden');
+        if (appContent) appContent.style.display = 'block';
+        if (error) error.classList.remove('show');
+        input.value = '';
+
+        showToast(`🔓 مرحباً ${foundUser.username}!`, 'success');
+
+        setTimeout(() => {
+            if (typeof seedData === 'function') seedData();
+            if (typeof populateAllSelects === 'function') populateAllSelects();
+            if (typeof refreshAllPages === 'function') refreshAllPages();
+            if (typeof startAutoBackup === 'function') startAutoBackup();
+            updateUIByPermissions();
+            updateSecurityButton();
+            updateClock();
+            if (typeof syncFromFirebase === 'function') syncFromFirebase();
+        }, 300);
+    } else {
+        if (error) error.classList.add('show');
+        input.value = '';
+        input.focus();
+        setTimeout(() => {
+            if (error) error.classList.remove('show');
+        }, 3000);
     }
 }
 
-// دالة تحميل الإعدادات
-function loadSettings() {
-    console.log('📂 جاري تحميل الإعدادات');
-    try {
-        const saved = localStorage.getItem('app_settings');
-        if (!saved) {
-            console.warn('⚠️ لا توجد إعدادات محفوظة');
-            return { status: 'warning', message: 'لا توجد إعدادات' };
-        }
+// ================================================================
+// CHANGE PASSWORD - تغيير كلمة المرور
+// ================================================================
+
+function changePasswordSettings() {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+
+    const oldEl = document.getElementById('oldPassword');
+    const newEl = document.getElementById('newPassword');
+    const confirmEl = document.getElementById('confirmPassword');
+
+    if (!oldEl || !newEl || !confirmEl) return;
+    const old = oldEl.value;
+    const newPwd = newEl.value;
+    const confirm = confirmEl.value;
+
+    // التحقق من كلمة المرور الحالية
+    const user = window.users.find(u => u.username === currentUser.username);
+    if (!user) {
+        showToast('⚠️ المستخدم غير موجود', 'error');
+        return;
+    }
+
+    if (old !== user.password && old !== DEFAULT_PASSWORD) {
+        showToast('❌ كلمة المرور الحالية غير صحيحة', 'error');
+        return;
+    }
+    
+    if (newPwd.length < 4) { 
+        showToast('❌ 4 أحرف على الأقل', 'error'); 
+        return; 
+    }
+    
+    if (newPwd !== confirm) { 
+        showToast('❌ غير مطابقة', 'error'); 
+        return; 
+    }
+
+    // تحديث كلمة المرور للمستخدم
+    user.password = newPwd;
+    if (currentUser.username === user.username) {
+        currentPassword = newPwd;
+    }
+    
+    // حفظ التغييرات
+    localStorage.setItem('mizan_users', JSON.stringify(window.users));
+    localStorage.setItem('app_password', currentPassword);
+    
+    addAuditLog('edit', 'settings', `تغيير كلمة المرور للمستخدم: ${user.username}`);
+
+    oldEl.value = '';
+    newEl.value = '';
+    confirmEl.value = '';
+
+    showToast(`✅ تم تغيير كلمة المرور للمستخدم ${user.username}`, 'success');
+}
+
+// ================================================================
+// ADD USER - إضافة مستخدم
+// ================================================================
+
+function addUser() {
+    if (!isAdmin()) {
+        showToast('⚠️ المدير فقط يمكنه إضافة مستخدمين', 'error');
+        return;
+    }
+
+    const username = document.getElementById('newUsername')?.value?.trim();
+    const password = document.getElementById('newUserPassword')?.value?.trim();
+    const role = document.getElementById('newUserRole')?.value;
+
+    if (!username) {
+        showToast('⚠️ أدخل اسم المستخدم', 'error');
+        return;
+    }
+    if (!password || password.length < 4) {
+        showToast('⚠️ كلمة المرور يجب أن تكون 4 أحرف على الأقل', 'error');
+        return;
+    }
+
+    if (window.users.find(u => u?.username === username)) {
+        showToast('⚠️ المستخدم موجود', 'warning');
+        return;
+    }
+
+    window.users.push({
+        id: Date.now(),
+        username: username,
+        role: role,
+        password: password,
+        createdAt: new Date().toISOString()
+    });
+
+    localStorage.setItem('mizan_users', JSON.stringify(window.users));
+    renderUsers();
+    populateUsersSelect();
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newUserPassword').value = '';
+    showToast('✅ تم إضافة المستخدم', 'success');
+    addAuditLog('add', 'user', `إضافة مستخدم: ${username} (${role})`);
+}
+
+// ================================================================
+// DELETE USER - حذف مستخدم
+// ================================================================
+
+function deleteUser(id) {
+    if (!isAdmin()) {
+        showToast('⚠️ المدير فقط يمكنه الحذف', 'error');
+        return;
+    }
+
+    if (!confirm('⚠️ حذف المستخدم نهائياً؟')) return;
+
+    const u = window.users.find(user => user?.id === id);
+    if (!u) {
+        showToast('⚠️ المستخدم غير موجود', 'error');
+        return;
+    }
+
+    // منع حذف المدير الرئيسي
+    if (u.username === 'مدير') {
+        showToast('⚠️ لا يمكن حذف المدير الرئيسي', 'error');
+        return;
+    }
+
+    // منع حذف المستخدم الحالي
+    if (currentUser?.username === u.username) {
+        showToast('⚠️ لا يمكن حذف نفسك', 'error');
+        return;
+    }
+
+    window.users = window.users.filter(user => user?.id !== id);
+    localStorage.setItem('mizan_users', JSON.stringify(window.users));
+    
+    renderUsers();
+    populateUsersSelect();
+    showToast(`🗑️ تم حذف المستخدم: ${u.username}`, 'info');
+    addAuditLog('delete', 'user', `حذف مستخدم: ${u.username}`);
+    closeModal();
+}
+
+// ================================================================
+// SWITCH USER - تبديل المستخدم
+// ================================================================
+
+function switchUser() {
+    const select = document.getElementById('switchUserSelect');
+    if (!select) return;
+
+    const userId = parseInt(select.value);
+    if (!userId) return;
+
+    const user = window.users.find(u => u?.id === userId);
+    if (!user) {
+        showToast('⚠️ المستخدم غير موجود', 'error');
+        return;
+    }
+
+    // تحديث المستخدم الحالي
+    currentUser = {
+        username: user.username,
+        role: user.role
+    };
+    currentPassword = user.password;
+
+    localStorage.setItem('mizan_current_user', JSON.stringify(currentUser));
+    localStorage.setItem('app_password', currentPassword);
+
+    updateUIByPermissions();
+    updateSecurityButton();
+    renderUsers();
+    showToast(`👤 تم التبديل إلى ${user.username} (${user.role})`, 'success');
+    addAuditLog('edit', 'user', `تبديل المستخدم إلى: ${user.username}`);
+    refreshAllPages();
+}
+
+// ================================================================
+// CLEAR ALL DATA - مسح البيانات (لا يمسح المستخدمين)
+// ================================================================
+
+function clearAllData() {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    if (!confirm('⚠️ هل أنت متأكد من حذف جميع البيانات؟')) return;
+    if (!confirm('✅ تأكيد نهائي؟')) return;
+
+    const keys = ['products', 'customers', 'suppliers', 'purchases', 'sales', 'returns', 'expenses',
+        'treasury', 'bonds', 'warehouses', 'warehouseProducts', 'permissions', 'companyData',
+        'backups', 'accounts', 'auditLog', 'alerts', 'cashierHistory', 'inventoryAdjustments'
+    ];
+    
+    let clearedCount = 0;
+    for (let i = 0; i < keys.length; i++) {
+        try {
+            localStorage.removeItem('mizan_' + keys[i]);
+            clearedCount++;
+        } catch(e) {}
         
-        const settings = JSON.parse(saved);
-        console.log('✅ تم تحميل الإعدادات بنجاح');
-        return { status: 'success', data: settings };
-    } catch (error) {
-        console.error('❌ خطأ في تحميل الإعدادات:', error);
-        return { status: 'error', message: error.message };
+        // إعادة تعيين المتغيرات
+        if (keys[i] === 'products') window.products = [];
+        else if (keys[i] === 'customers') window.customers = [];
+        else if (keys[i] === 'suppliers') window.suppliers = [];
+        else if (keys[i] === 'purchases') window.purchases = [];
+        else if (keys[i] === 'sales') window.sales = [];
+        else if (keys[i] === 'returns') window.returns = [];
+        else if (keys[i] === 'expenses') window.expenses = [];
+        else if (keys[i] === 'treasury') window.treasury = [];
+        else if (keys[i] === 'bonds') window.bonds = [];
+        else if (keys[i] === 'warehouses') window.warehouses = [];
+        else if (keys[i] === 'warehouseProducts') window.warehouseProducts = [];
+        else if (keys[i] === 'permissions') window.permissions = [];
+        else if (keys[i] === 'companyData') window.companyData = {};
+        else if (keys[i] === 'backups') window.backups = [];
+        else if (keys[i] === 'accounts') window.accounts = [];
+        else if (keys[i] === 'auditLog') window.auditLog = [];
+        else if (keys[i] === 'alerts') window.alerts = [];
+        else if (keys[i] === 'cashierHistory') window.cashierHistory = [];
+        else if (keys[i] === 'inventoryAdjustments') window.inventoryAdjustments = [];
+    }
+    
+    // لا نمسح المستخدمين وكلمة المرور
+
+    addAuditLog('delete', 'all', 'مسح جميع البيانات');
+    refreshAllPages();
+    showToast(`🗑️ تم مسح ${clearedCount} عنصر`, 'warning');
+}
+
+// ================================================================
+// LOCK APP - قفل التطبيق
+// ================================================================
+
+function lockApp() {
+    localStorage.removeItem('app_unlocked');
+    const loginContainer = document.getElementById('loginContainer');
+    const appContent = document.getElementById('appContent');
+    if (loginContainer) loginContainer.classList.remove('hidden');
+    if (appContent) appContent.style.display = 'none';
+    document.getElementById('loginPassword')?.focus();
+    showToast('🔒 تم قفل التطبيق', 'info');
+}
+
+// ================================================================
+// LOGOUT APP - تسجيل الخروج
+// ================================================================
+
+function logoutApp() {
+    if (!confirm('⚠️ هل أنت متأكد من تسجيل الخروج؟')) return;
+    lockApp();
+    showToast('👋 تم تسجيل الخروج', 'info');
+}
+
+// ================================================================
+// UPDATE CLOCK - تحديث الساعة
+// ================================================================
+
+function updateClock() {
+    const clock = document.getElementById('liveClock');
+    if (clock) {
+        clock.textContent = new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    setTimeout(updateClock, 1000);
+}
+
+// ================================================================
+// UPDATE UI BY PERMISSIONS - تحديث الواجهة حسب الصلاحيات
+// ================================================================
+
+function updateUIByPermissions() {
+    const isAdminUser = isAdmin();
+    const isManagerUser = isManager();
+    const canAddUser = canAdd();
+
+    // إخفاء/إظهار عناصر الإدارة
+    const userManagementElements = document.querySelectorAll('.admin-only');
+    userManagementElements.forEach(el => {
+        el.style.display = isAdminUser ? '' : 'none';
+    });
+
+    // زر مسح البيانات
+    const clearBtn = document.getElementById('clearAuditBtn');
+    if (clearBtn) {
+        clearBtn.style.display = isAdminUser ? '' : 'none';
+    }
+
+    // زر توليد المفاتيح
+    const licenseGeneratorBtn = document.getElementById('licenseGeneratorHiddenBtn');
+    if (licenseGeneratorBtn) {
+        licenseGeneratorBtn.style.display = isAdminUser ? '' : 'none';
+    }
+
+    // تحديث عرض المستخدم الحالي
+    const userDisplay = document.getElementById('currentUserDisplay');
+    const roleDisplay = document.getElementById('currentRoleDisplay');
+    if (userDisplay && window.currentUser) {
+        userDisplay.textContent = window.currentUser.username || 'admin';
+    }
+    if (roleDisplay && window.currentUser) {
+        const roles = { admin: '👑 مدير', manager: '📊 مشرف', cashier: '💰 كاشير', viewer: '👁️ مشاهد' };
+        roleDisplay.textContent = roles[window.currentUser.role] || window.currentUser.role;
     }
 }
 
-// دالة حفظ الميزان
-function saveBalance(balanceData) {
-    console.log('⚖️ جاري حفظ الميزان');
-    try {
-        if (!balanceData || typeof balanceData !== 'object') {
-            throw new Error('بيانات الميزان غير صالحة');
-        }
-        
-        const key = `balance_${balanceData.id || Date.now()}`;
-        const balanceToSave = {
-            ...balanceData,
-            savedAt: getCurrentDateTime().dateTime,
-            version: '3.0.1',
-        };
-        
-        localStorage.setItem(key, JSON.stringify(balanceToSave));
-        console.log('✅ تم حفظ الميزان بنجاح');
-        return { status: 'success', key, data: balanceToSave };
-    } catch (error) {
-        console.error('❌ خطأ في حفظ الميزان:', error);
-        return { status: 'error', message: error.message };
+// ================================================================
+// UPDATE SECURITY BUTTON - تحديث زر الأمن
+// ================================================================
+
+function updateSecurityButton() {
+    const btn = document.getElementById('securityAuditBtn');
+    if (btn) {
+        btn.style.display = canViewAudit() ? '' : 'none';
     }
 }
 
-// دالة تحميل الميزان
-function loadBalance(balanceId) {
-    console.log(`📂 جاري تحميل الميزان: ${balanceId}`);
-    try {
-        if (!balanceId) {
-            throw new Error('معرف الميزان مطلوب');
+// ================================================================
+// START AUTO BACKUP - بدء النسخ التلقائي
+// ================================================================
+
+function startAutoBackup() {
+    if (window.autoBackupInterval) {
+        clearInterval(window.autoBackupInterval);
+    }
+    window.autoBackupInterval = setInterval(() => {
+        if (typeof createAutoBackup === 'function') {
+            createAutoBackup();
         }
-        
-        const key = `balance_${balanceId}`;
-        const saved = localStorage.getItem(key);
-        if (!saved) {
-            console.warn(`⚠️ الميزان ${balanceId} غير موجود`);
-            return { status: 'warning', message: 'الميزان غير موجود' };
-        }
-        
-        const balance = JSON.parse(saved);
-        console.log('✅ تم تحميل الميزان بنجاح');
-        return { status: 'success', data: balance };
-    } catch (error) {
-        console.error('❌ خطأ في تحميل الميزان:', error);
-        return { status: 'error', message: error.message };
+    }, 30 * 60 * 1000); // كل 30 دقيقة
+}
+
+// ================================================================
+// SHOW TOAST - عرض إشعار
+// ================================================================
+
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.className = 'toast show ' + type;
+
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => {
+        toast.className = 'toast';
+    }, 3000);
+}
+
+// ================================================================
+// OPEN/CLOSE MODAL - فتح وإغلاق المودال
+// ================================================================
+
+function openModal(title, html) {
+    const overlay = document.getElementById('modalOverlay');
+    const titleEl = document.getElementById('modalTitle');
+    const bodyEl = document.getElementById('modalBody');
+
+    if (overlay) overlay.style.display = 'flex';
+    if (titleEl) titleEl.textContent = title;
+    if (bodyEl) bodyEl.innerHTML = html;
+
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const overlay = document.getElementById('modalOverlay');
+    if (overlay) overlay.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// ================================================================
+// PERMISSIONS - الصلاحيات
+// ================================================================
+
+function isAdmin() {
+    return window.currentUser?.role === 'admin';
+}
+
+function isManager() {
+    return window.currentUser?.role === 'admin' || window.currentUser?.role === 'manager';
+}
+
+function canAdd() {
+    return window.currentUser?.role === 'admin' || 
+           window.currentUser?.role === 'manager' || 
+           window.currentUser?.role === 'cashier';
+}
+
+function canEdit() {
+    return window.currentUser?.role === 'admin' || window.currentUser?.role === 'manager';
+}
+
+function canDelete() {
+    return window.currentUser?.role === 'admin';
+}
+
+function canViewAudit() {
+    return window.currentUser?.role === 'admin' || window.currentUser?.role === 'manager';
+}
+
+// ================================================================
+// REFRESH ALL PAGES - تحديث جميع الصفحات
+// ================================================================
+
+function refreshAllPages() {
+    if (typeof renderCustomers === 'function') renderCustomers();
+    if (typeof renderSuppliers === 'function') renderSuppliers();
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderSalesList === 'function') renderSalesList();
+    if (typeof renderPurchasesList === 'function') renderPurchasesList();
+    if (typeof renderReturnsList === 'function') renderReturnsList();
+    if (typeof renderExpenses === 'function') renderExpenses();
+    if (typeof renderTreasury === 'function') renderTreasury();
+    if (typeof renderBonds === 'function') renderBonds();
+    if (typeof renderWarehouses === 'function') renderWarehouses();
+    if (typeof renderPermissions === 'function') renderPermissions();
+    if (typeof renderAccounts === 'function') renderAccounts();
+    if (typeof renderUsers === 'function') renderUsers();
+    if (typeof renderBackups === 'function') renderBackups();
+    if (typeof renderAudit === 'function') renderAudit();
+    if (typeof updateAlertsUI === 'function') updateAlertsUI();
+    if (typeof updateDashboard === 'function') updateDashboard();
+    if (typeof updateCashierUI === 'function') updateCashierUI();
+    if (typeof populateAllSelects === 'function') populateAllSelects();
+    if (typeof loadCompanyData === 'function') loadCompanyData();
+}
+
+// ================================================================
+// POPULATE ALL SELECTS - ملء جميع القوائم
+// ================================================================
+
+function populateAllSelects() {
+    if (typeof populateSalesDropdowns === 'function') populateSalesDropdowns();
+    if (typeof populatePurchaseDropdowns === 'function') populatePurchaseDropdowns();
+    if (typeof populateReturnsDropdowns === 'function') populateReturnsDropdowns();
+    if (typeof populatePermissionDropdowns === 'function') populatePermissionDropdowns();
+    if (typeof populateAdjustmentProducts === 'function') populateAdjustmentProducts();
+    if (typeof populateAccountParents === 'function') populateAccountParents();
+    if (typeof populateUsersSelect === 'function') populateUsersSelect();
+
+    // تحديث قوائم المنتجات في البيع والشراء
+    const salesProductSelect = document.getElementById('salesItemProduct');
+    const purchaseProductSelect = document.getElementById('purchaseItemProduct');
+    const returnProductSelect = document.getElementById('returnItemProduct');
+
+    if (salesProductSelect && window.products) {
+        const currentValue = salesProductSelect.value;
+        salesProductSelect.innerHTML = '<option value="">اختر منتج...</option>';
+        window.products.forEach(p => {
+            salesProductSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+        });
+        salesProductSelect.value = currentValue;
+    }
+
+    if (purchaseProductSelect && window.products) {
+        const currentValue = purchaseProductSelect.value;
+        purchaseProductSelect.innerHTML = '<option value="">اختر منتج...</option>';
+        window.products.forEach(p => {
+            purchaseProductSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+        });
+        purchaseProductSelect.value = currentValue;
+    }
+
+    if (returnProductSelect && window.products) {
+        const currentValue = returnProductSelect.value;
+        returnProductSelect.innerHTML = '<option value="">اختر منتج...</option>';
+        window.products.forEach(p => {
+            returnProductSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+        });
+        returnProductSelect.value = currentValue;
     }
 }
 
-// ========== 8. دوال التهيئة (Initialization) ==========
+// ================================================================
+// NAVIGATE - التنقل بين الصفحات
+// ================================================================
 
-// دالة تهيئة التطبيق
-function initApp() {
-    console.log('🚀 جاري تهيئة التطبيق v3.0.1');
-    console.log(`🕐 وقت التهيئة: ${getCurrentDateTime().arabicDateTime}`);
+function navigateTo(page) {
+    // إخفاء جميع الصفحات
+    document.querySelectorAll('.page-container').forEach(el => {
+        el.classList.remove('active');
+    });
 
-    // التحقق من الإعدادات المحفوظة
-    const settingsResult = loadSettings();
-    if (settingsResult.status === 'success') {
-        console.log('📂 تم تحميل الإعدادات المحفوظة');
+    // إظهار الصفحة المطلوبة
+    const target = document.getElementById('page-' + page);
+    if (target) {
+        target.classList.add('active');
     }
 
-    // تهيئة الصلاحيات
-    const permissions = renderPermissions('admin');
-    console.log('🔐 الصلاحيات المهيأة:', permissions);
-
-    // تسجيل معلومات النظام
-    console.log('💻 معلومات النظام:');
-    console.log(`   - المتصفح: ${navigator.userAgent}`);
-    console.log(`   - اللغة: ${navigator.language}`);
-    console.log(`   - الوقت الحالي: ${getCurrentDateTime().formatted}`);
-    console.log(`   - المنطقة الزمنية: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
-
-    // التحقق من وجود عناصر مهمة في الصفحة
-    const importantElements = ['app-root', 'main-content', 'dashboard'];
-    importantElements.forEach(id => {
-        const element = getElementSafe(id);
-        if (element) {
-            console.log(`✅ العنصر "${id}" موجود`);
+    // تحديث التنقل السفلي
+    document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.remove('active');
+        if (el.dataset.page === page) {
+            el.classList.add('active');
         }
     });
 
-    console.log('✅ تم تهيئة التطبيق بنجاح');
-    return { 
-        status: 'success', 
-        version: '3.0.1',
-        timestamp: getCurrentDateTime().timestamp,
-        permissions: permissions,
-    };
-}
-
-// دالة إعادة تهيئة التطبيق
-function reinitApp() {
-    console.log('🔄 جاري إعادة تهيئة التطبيق');
-    // تنظيف أي بيانات مؤقتة
-    console.log('🧹 تنظيف البيانات المؤقتة');
-    // إعادة التهيئة
-    return initApp();
-}
-
-// ========== 9. دوال التصدير (Export Functions) ==========
-
-// دالة تصدير البيانات كـ JSON
-function exportData(data, filename = 'export') {
-    try {
-        const jsonString = safeStringify(data);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${filename}_${getCurrentDateTime().date}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        console.log('✅ تم تصدير البيانات بنجاح');
-        return { status: 'success', filename: link.download };
-    } catch (error) {
-        console.error('❌ خطأ في تصدير البيانات:', error);
-        return { status: 'error', message: error.message };
+    // تحديث الصفحة إذا كانت تحتاج تحديث
+    switch(page) {
+        case 'dashboard':
+            if (typeof updateDashboard === 'function') updateDashboard();
+            break;
+        case 'inventory':
+            if (typeof renderProducts === 'function') renderProducts();
+            break;
+        case 'sales':
+            if (typeof renderSalesList === 'function') renderSalesList();
+            break;
+        case 'purchase':
+            if (typeof renderPurchasesList === 'function') renderPurchasesList();
+            break;
+        case 'returns':
+            if (typeof renderReturnsList === 'function') renderReturnsList();
+            break;
+        case 'customers':
+            if (typeof renderCustomers === 'function') renderCustomers();
+            break;
+        case 'suppliers':
+            if (typeof renderSuppliers === 'function') renderSuppliers();
+            break;
+        case 'warehouses':
+            if (typeof renderWarehouses === 'function') renderWarehouses();
+            break;
+        case 'permissions':
+            if (typeof renderPermissions === 'function') renderPermissions();
+            break;
+        case 'expenses':
+            if (typeof renderExpenses === 'function') renderExpenses();
+            break;
+        case 'treasury':
+            if (typeof renderTreasury === 'function') renderTreasury();
+            break;
+        case 'bonds':
+            if (typeof renderBonds === 'function') renderBonds();
+            break;
+        case 'accounts':
+            if (typeof renderAccounts === 'function') renderAccounts();
+            break;
+        case 'users':
+            if (typeof renderUsers === 'function') renderUsers();
+            break;
+        case 'backup':
+            if (typeof renderBackups === 'function') renderBackups();
+            break;
+        case 'audit':
+            if (typeof renderAudit === 'function') renderAudit();
+            break;
+        case 'alerts':
+            if (typeof updateAlertsUI === 'function') updateAlertsUI();
+            break;
+        case 'cashier':
+            if (typeof updateCashierUI === 'function') updateCashierUI();
+            break;
+        case 'accounting':
+            if (typeof updateAccounting === 'function') updateAccounting();
+            break;
+        case 'company':
+            if (typeof loadCompanyData === 'function') loadCompanyData();
+            break;
+        case 'inventory_adjustment':
+            if (typeof renderAdjustmentHistory === 'function') renderAdjustmentHistory();
+            if (typeof populateAdjustmentProducts === 'function') populateAdjustmentProducts();
+            if (typeof renderAdjustmentItems === 'function') renderAdjustmentItems();
+            break;
+        case 'profit_analysis':
+            if (typeof generateProfitAnalysis === 'function') generateProfitAnalysis();
+            break;
+        case 'reports':
+            const result = document.getElementById('reportResult');
+            if (result) {
+                result.innerHTML = `<div class="alert-item info"><div class="icon"><i class="fas fa-info-circle"></i></div><div class="content"><div class="title">اختر تقريراً</div><div class="desc">اضغط على أحد التقارير أعلاه</div></div></div>`;
+            }
+            break;
+        case 'customer_statement':
+        case 'supplier_statement':
+            if (typeof populateAllSelects === 'function') populateAllSelects();
+            break;
+        default:
+            break;
     }
+
+    // إغلاق القائمة الجانبية
+    closeMorePanel();
+
+    // تمرير إلى أعلى الصفحة
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// دالة تصدير البيانات كـ CSV
-function exportCSV(data, filename = 'export') {
-    try {
-        if (!Array.isArray(data) || data.length === 0) {
-            throw new Error('البيانات يجب أن تكون مصفوفة غير فارغة');
-        }
-        
-        const headers = Object.keys(data[0]);
-        const rows = data.map(row => headers.map(header => row[header] || '').join(','));
-        const csv = [headers.join(','), ...rows].join('\n');
-        
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${filename}_${getCurrentDateTime().date}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        console.log('✅ تم تصدير CSV بنجاح');
-        return { status: 'success', filename: link.download };
-    } catch (error) {
-        console.error('❌ خطأ في تصدير CSV:', error);
-        return { status: 'error', message: error.message };
-    }
+// ================================================================
+// OPEN/CLOSE MORE PANEL - فتح وإغلاق قائمة المزيد
+// ================================================================
+
+function openMorePanel() {
+    const panel = document.getElementById('morePanel');
+    const overlay = document.getElementById('moreOverlay');
+    if (panel) panel.classList.add('open');
+    if (overlay) overlay.classList.add('open');
 }
 
-// ========== 10. التصدير (Exports) ==========
-
-// إذا كنت تستخدم CommonJS
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        // دوال مساعدة
-        safeStringify,
-        safeCallFunction,
-        getElementSafe,
-        sanitizeHTML,
-        
-        // دوال الوقت
-        getCurrentDateTime,
-        formatDate,
-        isValidDate,
-        dateDiff,
-        
-        // دوال العملاء
-        generateCustomerStatement,
-        generateCustomerDetailedStatement,
-        
-        // دوال الأرباح
-        generateProfitAnalysis,
-        
-        // دوال الصلاحيات
-        renderPermissions,
-        hasPermission,
-        
-        // دوال العرض
-        renderSales,
-        renderAllPurchases,
-        renderAllReturns,
-        renderAllInvoices,
-        
-        // دوال البيانات
-        saveSettings,
-        loadSettings,
-        saveBalance,
-        loadBalance,
-        
-        // دوال التهيئة
-        initApp,
-        reinitApp,
-        
-        // دوال التصدير
-        exportData,
-        exportCSV,
-    };
+function closeMorePanel() {
+    const panel = document.getElementById('morePanel');
+    const overlay = document.getElementById('moreOverlay');
+    if (panel) panel.classList.remove('open');
+    if (overlay) overlay.classList.remove('open');
 }
 
-// إذا كنت تستخدم ES6 Modules
-// export {
-//     safeStringify,
-//     safeCallFunction,
-//     getElementSafe,
-//     sanitizeHTML,
-//     getCurrentDateTime,
-//     formatDate,
-//     isValidDate,
-//     dateDiff,
-//     generateCustomerStatement,
-//     generateCustomerDetailedStatement,
-//     generateProfitAnalysis,
-//     renderPermissions,
-//     hasPermission,
-//     renderSales,
-//     renderAllPurchases,
-//     renderAllReturns,
-//     renderAllInvoices,
-//     saveSettings,
-//     loadSettings,
-//     saveBalance,
-//     loadBalance,
-//     initApp,
-//     reinitApp,
-//     exportData,
-//     exportCSV,
-// };
+// ================================================================
+// SYNC FUNCTIONS - دوال المزامنة
+// ================================================================
 
-// ========== 11. التشغيل التلقائي ==========
-
-// بدء التطبيق تلقائياً عند تحميل الصفحة
-if (typeof window !== 'undefined') {
-    // انتظر حتى تحميل DOM بالكامل
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🌐 تم تحميل الصفحة بالكامل');
-            initApp();
-        });
+function syncNow() {
+    if (typeof syncToFirebase === 'function') {
+        syncToFirebase();
     } else {
-        // إذا كان DOM قد تم تحميله بالفعل
-        console.log('🌐 الصفحة محملة بالفعل');
-        initApp();
+        showToast('⚠️ Firebase غير متاح', 'error');
     }
 }
 
-console.log('📁 تم تحميل ملف app.js المعدل بالكامل v3.0.1');
-console.log('🕐 وقت التحميل:', getCurrentDateTime().arabicDateTime);
+function forceSync() {
+    if (typeof syncToFirebase === 'function') {
+        showToast('⏳ جاري المزامنة...', 'info');
+        syncToFirebase();
+    } else {
+        showToast('⚠️ Firebase غير متاح', 'error');
+    }
+}
+
+// ================================================================
+// COUNT VERSION CLICKS - تفعيل زر توليد المفاتيح
+// ================================================================
+
+function countVersionClicks() {
+    versionClickCount++;
+    if (versionClickCount >= 5) {
+        const btn = document.getElementById('licenseGeneratorHiddenBtn');
+        if (btn) {
+            btn.style.display = 'block';
+            showToast('🔑 تم تفعيل زر توليد المفاتيح', 'success');
+        }
+        versionClickCount = 0;
+    }
+}
+
+// ================================================================
+// ACTIVATE DEMO LICENSE - تفعيل الترخيص التجريبي
+// ================================================================
+
+function activateDemoLicense() {
+    try {
+        const data = atob(DEMO_LICENSE_KEY);
+        const parts = data.split('|');
+        if (parts.length >= 3) {
+            const expiryDate = new Date(parts[1]);
+            const today = new Date();
+            if (expiryDate > today) {
+                localStorage.setItem('mizan_license', JSON.stringify({
+                    key: DEMO_LICENSE_KEY,
+                    expiry: parts[1],
+                    customer: parts[0],
+                    active: true
+                }));
+                console.log('✅ تم تفعيل الترخيص التجريبي حتى ' + parts[1]);
+                return true;
+            }
+        }
+    } catch(e) {
+        console.warn('⚠️ فشل تفعيل الترخيص التجريبي');
+    }
+    return false;
+}
+
+// ================================================================
+// ACTIVATE LICENSE - تفعيل الترخيص
+// ================================================================
+
+function activateLicense() {
+    const keyInput = document.getElementById('licenseKeyInput');
+    if (!keyInput) return;
+    
+    const key = keyInput.value.trim();
+    if (!key) {
+        showToast('⚠️ أدخل مفتاح الترخيص', 'error');
+        return;
+    }
+
+    try {
+        const data = atob(key);
+        const parts = data.split('|');
+        if (parts.length < 3) {
+            showToast('❌ مفتاح غير صالح', 'error');
+            return;
+        }
+
+        const expiryDate = new Date(parts[1]);
+        const today = new Date();
+        if (expiryDate <= today) {
+            showToast('❌ انتهى الترخيص', 'error');
+            return;
+        }
+
+        localStorage.setItem('mizan_license', JSON.stringify({
+            key: key,
+            expiry: parts[1],
+            customer: parts[0],
+            active: true
+        }));
+
+        showToast(`✅ تم تفعيل الترخيص للعميل: ${parts[0]}`, 'success');
+        addAuditLog('add', 'license', `تفعيل ترخيص للعميل: ${parts[0]}`);
+        
+        if (typeof checkLicenseStatus === 'function') checkLicenseStatus();
+    } catch(e) {
+        showToast('❌ مفتاح غير صالح', 'error');
+    }
+}
+
+// ================================================================
+// CHECK LICENSE STATUS - التحقق من حالة الترخيص
+// ================================================================
+
+function checkLicenseStatus() {
+    const license = localStorage.getItem('mizan_license');
+    if (!license) {
+        safeSetText('licenseStatusDisplay', '❌ غير مفعل');
+        safeSetText('licenseExpiryDisplay', '-');
+        safeSetText('licenseDaysLeft', '-');
+        return;
+    }
+
+    try {
+        const data = JSON.parse(license);
+        if (!data.active) {
+            safeSetText('licenseStatusDisplay', '❌ غير مفعل');
+            safeSetText('licenseExpiryDisplay', '-');
+            safeSetText('licenseDaysLeft', '-');
+            return;
+        }
+
+        const expiry = new Date(data.expiry);
+        const today = new Date();
+        const daysLeft = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+
+        safeSetText('licenseStatusDisplay', daysLeft > 0 ? '✅ نشط' : '❌ منتهي');
+        safeSetText('licenseExpiryDisplay', data.expiry);
+        safeSetText('licenseDaysLeft', daysLeft > 0 ? daysLeft + ' يوم' : 'منتهي');
+    } catch(e) {
+        safeSetText('licenseStatusDisplay', '❌ خطأ');
+        safeSetText('licenseExpiryDisplay', '-');
+        safeSetText('licenseDaysLeft', '-');
+    }
+}
+
+// ================================================================
+// GENERATE NEW LICENSE - توليد مفتاح جديد
+// ================================================================
+
+function generateNewLicense() {
+    if (!isAdmin()) {
+        showToast('⚠️ المدير فقط يمكنه التوليد', 'error');
+        return;
+    }
+
+    const customer = document.getElementById('licenseCustomerName')?.value?.trim();
+    const days = parseInt(document.getElementById('licenseDays')?.value);
+
+    if (!customer) {
+        showToast('⚠️ أدخل اسم العميل', 'error');
+        return;
+    }
+
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + days);
+    const expiryStr = expiry.toISOString().split('T')[0];
+
+    // توليد مفتاح عشوائي
+    const randomPart = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const keyData = `${customer}|${expiryStr}|${randomPart}`;
+    const key = btoa(keyData);
+
+    document.getElementById('genCustomer').textContent = customer;
+    document.getElementById('genDays').textContent = days + ' يوم';
+    document.getElementById('genAmount').textContent = (LICENSE_PRICES[days] || 0) + ' جنيه';
+    document.getElementById('genExpiry').textContent = expiryStr;
+    document.getElementById('genKey').textContent = key;
+    document.getElementById('licenseResult').style.display = 'block';
+
+    // حفظ المفتاح
+    const keys = JSON.parse(localStorage.getItem('mizan_generated_keys') || '[]');
+    keys.push({
+        customer: customer,
+        days: days,
+        expiry: expiryStr,
+        key: key,
+        createdAt: new Date().toISOString()
+    });
+    localStorage.setItem('mizan_generated_keys', JSON.stringify(keys));
+
+    renderGeneratedKeys();
+    showToast('✅ تم توليد المفتاح', 'success');
+    addAuditLog('add', 'license', `توليد مفتاح للعميل: ${customer}`);
+}
+
+// ================================================================
+// UPDATE LICENSE PRICE - تحديث سعر الترخيص
+// ================================================================
+
+function updateLicensePrice() {
+    const days = parseInt(document.getElementById('licenseDays')?.value);
+    const amount = document.getElementById('licenseAmount');
+    if (amount) {
+        amount.value = LICENSE_PRICES[days] || 3000;
+    }
+}
+
+// ================================================================
+// COPY LICENSE KEY - نسخ مفتاح الترخيص
+// ================================================================
+
+function copyLicenseKey() {
+    const key = document.getElementById('genKey')?.textContent;
+    if (key) {
+        copyToClipboard(key);
+    }
+}
+
+// ================================================================
+// RENDER GENERATED KEYS - عرض المفاتيح المُنشأة
+// ================================================================
+
+function renderGeneratedKeys() {
+    const container = document.getElementById('generatedKeysList');
+    if (!container) return;
+
+    const keys = JSON.parse(localStorage.getItem('mizan_generated_keys') || '[]');
+    
+    if (keys.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fas fa-key"></i><span>لا توجد مفاتيح</span></div>`;
+        return;
+    }
+
+    let html = `<div class="table-header" style="grid-template-columns:1.2fr 1fr 1.2fr 0.8fr;">
+        <span>العميل</span><span>المدة</span><span>تاريخ الانتهاء</span><span></span>
+    </div>`;
+
+    keys.slice().reverse().forEach(k => {
+        const isExpired = new Date(k.expiry) < new Date();
+        html += `
+            <div class="table-row" style="grid-template-columns:1.2fr 1fr 1.2fr 0.8fr;font-size:12px;">
+                <span><strong>${k.customer}</strong></span>
+                <span>${k.days} يوم</span>
+                <span style="color:${isExpired ? '#E06060' : '#2D8F5E'};">${k.expiry} ${isExpired ? '❌' : '✅'}</span>
+                <div class="actions">
+                    <button class="btn btn-info btn-sm" onclick="copyText('${k.key}')"><i class="fas fa-copy"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteGeneratedKey('${k.key}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+// ================================================================
+// DELETE GENERATED KEY - حذف مفتاح مُنشأ
+// ================================================================
+
+function deleteGeneratedKey(key) {
+    if (!isAdmin()) {
+        showToast('⚠️ المدير فقط يمكنه الحذف', 'error');
+        return;
+    }
+    if (!confirm('⚠️ حذف المفتاح؟')) return;
+
+    let keys = JSON.parse(localStorage.getItem('mizan_generated_keys') || '[]');
+    keys = keys.filter(k => k.key !== key);
+    localStorage.setItem('mizan_generated_keys', JSON.stringify(keys));
+    renderGeneratedKeys();
+    showToast('🗑️ تم الحذف', 'info');
+}
+
+// ================================================================
+// COPY TEXT - نسخ نص
+// ================================================================
+
+function copyText(text) {
+    copyToClipboard(text);
+}
+
+// ================================================================
+// COPY TO CLIPBOARD - نسخ للنص
+// ================================================================
+
+function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+            .then(() => showToast('✅ تم النسخ', 'success'))
+            .catch(() => fallbackCopy(text));
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showToast('✅ تم النسخ', 'success');
+    } catch(e) {
+        showToast('❌ فشل النسخ', 'error');
+    }
+    document.body.removeChild(textarea);
+}
+
+// ================================================================
+// SAFE SET TEXT - تعيين نص بأمان
+// ================================================================
+
+function safeSetText(id, value) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.textContent = value !== undefined && value !== null ? value : '0';
+    }
+}
+
+// ================================================================
+// SAFE SET VALUE - تعيين قيمة بأمان
+// ================================================================
+
+function safeSetValue(id, value) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.value = value !== undefined && value !== null ? value : '';
+    }
+}
+
+// ================================================================
+// GET TODAY DATE - الحصول على تاريخ اليوم
+// ================================================================
+
+function getTodayDate() {
+    return new Date().toISOString().split('T')[0];
+}
+
+// ================================================================
+// GET CURRENT TIME - الحصول على الوقت الحالي
+// ================================================================
+
+function getCurrentTime() {
+    return new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ================================================================
+// GET CURRENT DATE TIME - الحصول على التاريخ والوقت
+// ================================================================
+
+function getCurrentDateTime() {
+    const now = new Date();
+    return {
+        date: now.toISOString().split('T')[0],
+        time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        full: now.toLocaleString('ar')
+    };
+}
+
+// ================================================================
+// START APP - تشغيل التطبيق
+// ================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 بدء تشغيل الميزان v3.0.0');
+    
+    // تهيئة المستخدمين
+    if (typeof initUsers === 'function') {
+        initUsers();
+        console.log('✅ تم تهيئة المستخدمين');
+    }
+    
+    // تفعيل الترخيص التجريبي
+    if (typeof activateDemoLicense === 'function') {
+        activateDemoLicense();
+        console.log('✅ تم تفعيل الترخيص التجريبي');
+    }
+    
+    // تهيئة البيانات
+    if (typeof seedData === 'function') {
+        seedData();
+        console.log('✅ تم تهيئة البيانات');
+    }
+    
+    // تحديث جميع الصفحات
+    if (typeof refreshAllPages === 'function') {
+        refreshAllPages();
+        console.log('✅ تم تحديث جميع الصفحات');
+    }
+    
+    // تحديث الساعة
+    if (typeof updateClock === 'function') {
+        updateClock();
+        console.log('✅ تم تحديث الساعة');
+    }
+    
+    // تحديث لوحة التحكم
+    if (typeof updateDashboard === 'function') {
+        updateDashboard();
+        console.log('✅ تم تحديث لوحة التحكم');
+    }
+    
+    // تحديث زر الأمن
+    if (typeof updateSecurityButton === 'function') {
+        updateSecurityButton();
+    }
+    
+    // التحقق من حالة الترخيص
+    if (typeof checkLicenseStatus === 'function') {
+        checkLicenseStatus();
+    }
+    
+    // عرض المفاتيح المُنشأة
+    if (typeof renderGeneratedKeys === 'function') {
+        renderGeneratedKeys();
+    }
+    
+    // التحقق من حالة الدخول
+    if (localStorage.getItem('app_unlocked') === 'true') {
+        const loginContainer = document.getElementById('loginContainer');
+        const appContent = document.getElementById('appContent');
+        if (loginContainer) loginContainer.classList.add('hidden');
+        if (appContent) appContent.style.display = 'block';
+    }
+    
+    console.log('✅ الميزان جاهز للاستخدام');
+    console.log('🔒 كلمة المرور: 123456');
+    console.log('🔑 اضغط 5 مرات على رقم الإصدار في الإعدادات لتفعيل زر توليد المفاتيح');
+});
+
+// ================================================================
+// EXPOSE FUNCTIONS TO GLOBAL - تعريض الدوال للنطاق العام
+// ================================================================
+
+window.initUsers = initUsers;
+window.seedData = seedData;
+window.checkLogin = checkLogin;
+window.changePasswordSettings = changePasswordSettings;
+window.addUser = addUser;
+window.deleteUser = deleteUser;
+window.switchUser = switchUser;
+window.clearAllData = clearAllData;
+window.lockApp = lockApp;
+window.logoutApp = logoutApp;
+window.updateClock = updateClock;
+window.updateUIByPermissions = updateUIByPermissions;
+window.updateSecurityButton = updateSecurityButton;
+window.startAutoBackup = startAutoBackup;
+window.showToast = showToast;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.isAdmin = isAdmin;
+window.isManager = isManager;
+window.canAdd = canAdd;
+window.canEdit = canEdit;
+window.canDelete = canDelete;
+window.canViewAudit = canViewAudit;
+window.refreshAllPages = refreshAllPages;
+window.populateAllSelects = populateAllSelects;
+window.navigateTo = navigateTo;
+window.openMorePanel = openMorePanel;
+window.closeMorePanel = closeMorePanel;
+window.syncNow = syncNow;
+window.forceSync = forceSync;
+window.countVersionClicks = countVersionClicks;
+window.activateDemoLicense = activateDemoLicense;
+window.activateLicense = activateLicense;
+window.checkLicenseStatus = checkLicenseStatus;
+window.generateNewLicense = generateNewLicense;
+window.updateLicensePrice = updateLicensePrice;
+window.copyLicenseKey = copyLicenseKey;
+window.renderGeneratedKeys = renderGeneratedKeys;
+window.deleteGeneratedKey = deleteGeneratedKey;
+window.copyText = copyText;
+window.copyToClipboard = copyToClipboard;
+window.safeSetText = safeSetText;
+window.safeSetValue = safeSetValue;
+window.getTodayDate = getTodayDate;
+window.getCurrentTime = getCurrentTime;
+window.getCurrentDateTime = getCurrentDateTime;
+window.getNextInvoiceNumber = getNextInvoiceNumber;
