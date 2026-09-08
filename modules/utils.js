@@ -23,7 +23,7 @@ function safeSetValue(id, value) {
 }
 
 // ================================================================
-// GET TODAY DATE - الحصول على تاريخ اليوم
+// GET TODAY DATE - الحصول على تاريخ اليوم (YYYY-MM-DD)
 // ================================================================
 function getTodayDate() {
     return new Date().toISOString().split('T')[0];
@@ -46,6 +46,44 @@ function getCurrentDateTime() {
         time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         full: now.toLocaleString('ar')
     };
+}
+
+// ================================================================
+// GET FORMATTED DATE - تاريخ منسق (مثال: 15/09/2026)
+// ================================================================
+function getFormattedDate() {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+// ================================================================
+// GET ARABIC DATE - تاريخ عربي (مثال: 15 سبتمبر 2026)
+// ================================================================
+function getArabicDate() {
+    const now = new Date();
+    const months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 
+                    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    const day = now.getDate();
+    const month = months[now.getMonth()];
+    const year = now.getFullYear();
+    return `${day} ${month} ${year}`;
+}
+
+// ================================================================
+// UPDATE CLOCK - تحديث الساعة مع التاريخ
+// ================================================================
+function updateClock() {
+    const clock = document.getElementById('liveDateTime');
+    if (clock) {
+        const now = new Date();
+        const dateStr = getFormattedDate();
+        const timeStr = now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        clock.textContent = `${dateStr} ${timeStr}`;
+    }
+    setTimeout(updateClock, 1000);
 }
 
 // ================================================================
@@ -85,4 +123,7 @@ window.safeSetValue = safeSetValue;
 window.getTodayDate = getTodayDate;
 window.getCurrentTime = getCurrentTime;
 window.getCurrentDateTime = getCurrentDateTime;
+window.getFormattedDate = getFormattedDate;
+window.getArabicDate = getArabicDate;
+window.updateClock = updateClock;
 window.copyToClipboard = copyToClipboard;
