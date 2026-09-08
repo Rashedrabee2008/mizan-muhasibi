@@ -6,9 +6,10 @@
 let cashierDay = null;
 
 // ================================================================
-// INIT CASHIER
+// INIT CASHIER - تهيئة الكاشير
 // ================================================================
 function initCashier() {
+    // ✅ التأكد إن cashierHistory Array
     if (!window.cashierHistory || !Array.isArray(window.cashierHistory)) {
         window.cashierHistory = [];
         setData('cashierHistory', window.cashierHistory);
@@ -27,7 +28,7 @@ function initCashier() {
 }
 
 // ================================================================
-// UPDATE CASHIER UI
+// UPDATE CASHIER UI - تحديث واجهة الكاشير
 // ================================================================
 function updateCashierUI() {
     const today = getTodayDate();
@@ -62,7 +63,6 @@ function updateCashierUI() {
         safeSetText('cashierTotalExpenses', expenses.toFixed(2));
         safeSetText('cashierClosingBalance', closing.toFixed(2));
 
-        // تفاصيل طرق الدفع
         const cash = cashierDay.cash || 0;
         const wallet = cashierDay.wallet || 0;
         const bank = cashierDay.bank || 0;
@@ -73,12 +73,10 @@ function updateCashierUI() {
         safeSetText('cashierBank', bank.toFixed(2));
         safeSetText('cashierInstapay', instapay.toFixed(2));
 
-        // عدد الحركات
         const transCount = (cashierDay.transactions || []).length;
         safeSetText('cashierTransactionCount', transCount);
         safeSetText('cashierTodayCount', transCount);
 
-        // عرض الحركات
         renderCashierTodayTransactions(cashierDay.transactions || []);
     } else {
         safeSetText('cashierOpeningBalance', '0.00');
@@ -98,7 +96,7 @@ function updateCashierUI() {
         }
     }
 
-    // عرض تاريخ الكاشير
+    // ✅ عرض تاريخ الكاشير (من غير حلقة لا نهائية)
     renderCashierHistory();
 }
 
@@ -169,8 +167,10 @@ function cashierCloseDay() {
     cashierDay.closedAt = new Date().toISOString();
     cashierDay.closedBy = window.currentUser?.username || 'admin';
 
-    // حفظ في السجل
-    if (!window.cashierHistory) window.cashierHistory = [];
+    // ✅ حفظ في السجل مع التأكد من وجود المصفوفة
+    if (!window.cashierHistory || !Array.isArray(window.cashierHistory)) {
+        window.cashierHistory = [];
+    }
     window.cashierHistory.push({
         ...cashierDay,
         id: Date.now()
@@ -178,7 +178,6 @@ function cashierCloseDay() {
     setData('cashierHistory', window.cashierHistory);
 
     localStorage.removeItem('mizan_cashier_day');
-    const savedDay = { ...cashierDay };
     cashierDay = null;
 
     saveAll();
@@ -189,7 +188,7 @@ function cashierCloseDay() {
 }
 
 // ================================================================
-// RENDER CASHIER TODAY TRANSACTIONS
+// RENDER CASHIER TODAY TRANSACTIONS - عرض حركات اليوم
 // ================================================================
 function renderCashierTodayTransactions(transactions) {
     const container = document.getElementById('cashierTodayTransactions');
@@ -201,7 +200,8 @@ function renderCashierTodayTransactions(transactions) {
     }
 
     let html = '';
-    transactions.slice().reverse().forEach(t => {
+    for (let i = transactions.length - 1; i >= 0; i--) {
+        const t = transactions[i];
         const color = t.type === 'sale' ? '#2D8F5E' : t.type === 'expense' ? '#E06060' : '#C9A94E';
         const icon = t.type === 'sale' ? 'fa-arrow-down' : t.type === 'expense' ? 'fa-arrow-up' : 'fa-exchange-alt';
         const sign = t.type === 'sale' ? '+' : '-';
@@ -215,27 +215,30 @@ function renderCashierTodayTransactions(transactions) {
                 <span style="color:${color};font-weight:700;">${sign}${t.amount.toFixed(2)}</span>
             </div>
         `;
-    });
+    }
 
     container.innerHTML = html;
 }
 
 // ================================================================
-// RENDER CASHIER HISTORY
+// RENDER CASHIER HISTORY - ✅ معدل (بدون حلقة لا نهائية)
 // ================================================================
 function renderCashierHistory() {
     const container = document.getElementById('cashierHistory');
     if (!container) return;
 
-    initCashier();
-
-    if (window.cashierHistory.length === 0) {
+    // ✅ التأكد إن cashierHistory Array
+    if (!window.cashierHistory || !Array.isArray(window.cashierHistory) || window.cashierHistory.length === 0) {
         container.innerHTML = `<div class="empty-state" style="padding:16px 0;"><i class="fas fa-calendar" style="font-size:28px;"></i><span style="font-size:13px;">لا توجد سجلات سابقة</span></div>`;
         return;
     }
 
     let html = '';
-    window.cashierHistory.slice().reverse().forEach(day => {
+    // ✅ استخدام slice بأمان
+    const history = window.cashierHistory.slice().reverse();
+    
+    for (let i = 0; i < history.length; i++) {
+        const day = history[i];
         const balance = (day.openingBalance || 0) + (day.sales || 0) - (day.expenses || 0);
         html += `
             <div class="cashier-history-item" style="border-right-color:${day.status === 'closed' ? '#2D8F5E' : '#E6A830'};">
@@ -255,13 +258,13 @@ function renderCashierHistory() {
                 </div>
             </div>
         `;
-    });
+    }
 
     container.innerHTML = html;
 }
 
 // ================================================================
-// CASHIER PRINT REPORT
+// CASHIER PRINT REPORT - طباعة تقرير الكاشير
 // ================================================================
 function cashierPrintReport() {
     if (!cashierDay || cashierDay.status !== 'open') {
@@ -322,3 +325,14 @@ function cashierPrintReport() {
         showToast('⚠️ تم حظر النافذة المنبثقة', 'error');
     }
 }
+
+// ================================================================
+// ✅ تعريض الدوال للنطاق العام
+// ================================================================
+window.initCashier = initCashier;
+window.updateCashierUI = updateCashierUI;
+window.cashierOpenDay = cashierOpenDay;
+window.cashierCloseDay = cashierCloseDay;
+window.cashierPrintReport = cashierPrintReport;
+window.renderCashierHistory = renderCashierHistory;
+window.renderCashierTodayTransactions = renderCashierTodayTransactions;
