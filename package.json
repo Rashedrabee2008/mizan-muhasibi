@@ -1,16 +1,20 @@
 {
-  "name": "mizan-muhasibi",
-  "version": "3.0.0",
-  "description": "نظام محاسبة ونقاط بيع متكامل",
-  "main": "index.html",
-  "scripts": {
-    "start": "live-server",
-    "build": "echo 'No build step required'"
-  },
-  "dependencies": {
-    "firebase": "^10.7.1"
-  },
-  "devDependencies": {
-    "live-server": "^1.2.2"
-  }
+  "short_name": "الميزان",
+  "name": "الميزان - نظام محاسبة ونقاط بيع",
+  "display": "standalone",
+  "start_url": "/",
+  "background_color": "#0D0D0D",
+  "theme_color": "#C9A94E",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
