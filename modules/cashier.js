@@ -62,7 +62,6 @@ function updateCashierUI() {
         safeSetText('cashierTotalExpenses', expenses.toFixed(2));
         safeSetText('cashierClosingBalance', closing.toFixed(2));
 
-        // تفاصيل طرق الدفع
         const cash = cashierDay.cash || 0;
         const wallet = cashierDay.wallet || 0;
         const bank = cashierDay.bank || 0;
@@ -73,12 +72,10 @@ function updateCashierUI() {
         safeSetText('cashierBank', bank.toFixed(2));
         safeSetText('cashierInstapay', instapay.toFixed(2));
 
-        // عدد الحركات
         const transCount = (cashierDay.transactions || []).length;
         safeSetText('cashierTransactionCount', transCount);
         safeSetText('cashierTodayCount', transCount);
 
-        // عرض الحركات
         renderCashierTodayTransactions(cashierDay.transactions || []);
     } else {
         safeSetText('cashierOpeningBalance', '0.00');
@@ -227,9 +224,7 @@ function renderCashierHistory() {
     const container = document.getElementById('cashierHistory');
     if (!container) return;
 
-    initCashier();
-
-    if (window.cashierHistory.length === 0) {
+    if (!window.cashierHistory || window.cashierHistory.length === 0) {
         container.innerHTML = `<div class="empty-state" style="padding:16px 0;"><i class="fas fa-calendar" style="font-size:28px;"></i><span style="font-size:13px;">لا توجد سجلات سابقة</span></div>`;
         return;
     }
@@ -322,3 +317,12 @@ function cashierPrintReport() {
         showToast('⚠️ تم حظر النافذة المنبثقة', 'error');
     }
 }
+
+// تعريض الدوال للنطاق العام
+window.initCashier = initCashier;
+window.updateCashierUI = updateCashierUI;
+window.cashierOpenDay = cashierOpenDay;
+window.cashierCloseDay = cashierCloseDay;
+window.cashierPrintReport = cashierPrintReport;
+window.renderCashierHistory = renderCashierHistory;
+window.renderCashierTodayTransactions = renderCashierTodayTransactions;
