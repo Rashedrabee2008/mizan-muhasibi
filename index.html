@@ -42,21 +42,24 @@
 
     <div id="appContent" style="display:none;">
 
-        <header class="top-header">
-            <div class="logo-icon"><i class="fas fa-scale-balanced"></i></div>
-            <div class="header-text">
-                <h1 onclick="navigateTo('dashboard')">الميزان</h1>
-                <div class="sub-title"><i class="fas fa-calculator" style="margin-left:3px;color:#C9A94E;"></i> نظام محاسبة</div>
-            </div>
-            <div class="header-actions">
-                <span class="clock" id="liveClock">--:--:--</span>
-                <span class="badge" id="headerBadge" onclick="syncNow()">☁️ مباشر</span>
-                <button class="badge" onclick="forceSync()" style="background:#4A8AB5;color:#fff;padding:3px 10px;border-radius:30px;font-size:10px;font-weight:800;cursor:pointer;border:none;">🔄</button>
-                <span class="badge" id="notificationBadge" onclick="navigateTo('alerts')" style="background:#E06060;color:#fff;cursor:pointer;">🔔 <span id="alertCount">0</span></span>
-                <button class="lock-btn" onclick="lockApp()" title="قفل التطبيق"><i class="fas fa-lock"></i></button>
-                <button class="logout-btn" onclick="logoutApp()" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i></button>
-            </div>
-        </header>
+       <header class="top-header">
+    <div class="logo-icon"><i class="fas fa-scale-balanced"></i></div>
+    <div class="header-text">
+        <h1 onclick="navigateTo('dashboard')">الميزان</h1>
+        <div class="sub-title"><i class="fas fa-calculator" style="margin-left:3px;color:#C9A94E;"></i> نظام محاسبة</div>
+    </div>
+    <div class="header-actions">
+        <!-- ✅ التاريخ والساعة مع بعض -->
+        <span class="clock" id="liveDateTime" style="direction:ltr;font-size:11px;color:#A89070;font-weight:600;background:#0D0D0D;padding:3px 8px;border-radius:8px;border:1px solid #3D3D3D;font-family:'Courier New',monospace;">
+            --/--/---- --:--:--
+        </span>
+        <span class="badge" id="headerBadge" onclick="syncNow()">☁️ مباشر</span>
+        <button class="badge" onclick="forceSync()" style="background:#4A8AB5;color:#fff;padding:3px 10px;border-radius:30px;font-size:10px;font-weight:800;cursor:pointer;border:none;">🔄</button>
+        <span class="badge" id="notificationBadge" onclick="navigateTo('alerts')" style="background:#E06060;color:#fff;cursor:pointer;">🔔 <span id="alertCount">0</span></span>
+        <button class="lock-btn" onclick="lockApp()" title="قفل التطبيق"><i class="fas fa-lock"></i></button>
+        <button class="logout-btn" onclick="logoutApp()" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+</header>
 
         <!-- ===== DASHBOARD ===== -->
         <div id="page-dashboard" class="page-container active">
