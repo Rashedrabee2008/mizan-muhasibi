@@ -1296,6 +1296,12 @@ document.addEventListener('DOMContentLoaded', function() {
         renderGeneratedKeys();
     }
     
+    // تهيئة الكاشير
+    if (typeof initCashier === 'function') {
+        initCashier();
+        console.log('✅ تم تهيئة الكاشير');
+    }
+    
     // التحقق من حالة الدخول
     if (localStorage.getItem('app_unlocked') === 'true') {
         const loginContainer = document.getElementById('loginContainer');
