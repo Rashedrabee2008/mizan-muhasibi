@@ -9,7 +9,6 @@ let cashierDay = null;
 // INIT CASHIER
 // ================================================================
 function initCashier() {
-    // التأكد إن cashierHistory Array
     if (!window.cashierHistory || !Array.isArray(window.cashierHistory)) {
         window.cashierHistory = [];
         setData('cashierHistory', window.cashierHistory);
@@ -63,6 +62,7 @@ function updateCashierUI() {
         safeSetText('cashierTotalExpenses', expenses.toFixed(2));
         safeSetText('cashierClosingBalance', closing.toFixed(2));
 
+        // تفاصيل طرق الدفع
         const cash = cashierDay.cash || 0;
         const wallet = cashierDay.wallet || 0;
         const bank = cashierDay.bank || 0;
@@ -73,10 +73,12 @@ function updateCashierUI() {
         safeSetText('cashierBank', bank.toFixed(2));
         safeSetText('cashierInstapay', instapay.toFixed(2));
 
+        // عدد الحركات
         const transCount = (cashierDay.transactions || []).length;
         safeSetText('cashierTransactionCount', transCount);
         safeSetText('cashierTodayCount', transCount);
 
+        // عرض الحركات
         renderCashierTodayTransactions(cashierDay.transactions || []);
     } else {
         safeSetText('cashierOpeningBalance', '0.00');
@@ -168,9 +170,7 @@ function cashierCloseDay() {
     cashierDay.closedBy = window.currentUser?.username || 'admin';
 
     // حفظ في السجل
-    if (!window.cashierHistory || !Array.isArray(window.cashierHistory)) {
-        window.cashierHistory = [];
-    }
+    if (!window.cashierHistory) window.cashierHistory = [];
     window.cashierHistory.push({
         ...cashierDay,
         id: Date.now()
@@ -201,8 +201,7 @@ function renderCashierTodayTransactions(transactions) {
     }
 
     let html = '';
-    for (let i = transactions.length - 1; i >= 0; i--) {
-        const t = transactions[i];
+    transactions.slice().reverse().forEach(t => {
         const color = t.type === 'sale' ? '#2D8F5E' : t.type === 'expense' ? '#E06060' : '#C9A94E';
         const icon = t.type === 'sale' ? 'fa-arrow-down' : t.type === 'expense' ? 'fa-arrow-up' : 'fa-exchange-alt';
         const sign = t.type === 'sale' ? '+' : '-';
@@ -216,7 +215,7 @@ function renderCashierTodayTransactions(transactions) {
                 <span style="color:${color};font-weight:700;">${sign}${t.amount.toFixed(2)}</span>
             </div>
         `;
-    }
+    });
 
     container.innerHTML = html;
 }
@@ -228,18 +227,15 @@ function renderCashierHistory() {
     const container = document.getElementById('cashierHistory');
     if (!container) return;
 
-    // التأكد إن cashierHistory Array
-    if (!window.cashierHistory || !Array.isArray(window.cashierHistory) || window.cashierHistory.length === 0) {
+    initCashier();
+
+    if (window.cashierHistory.length === 0) {
         container.innerHTML = `<div class="empty-state" style="padding:16px 0;"><i class="fas fa-calendar" style="font-size:28px;"></i><span style="font-size:13px;">لا توجد سجلات سابقة</span></div>`;
         return;
     }
 
     let html = '';
-    // استخدام slice بأمان
-    const history = window.cashierHistory.slice().reverse();
-    
-    for (let i = 0; i < history.length; i++) {
-        const day = history[i];
+    window.cashierHistory.slice().reverse().forEach(day => {
         const balance = (day.openingBalance || 0) + (day.sales || 0) - (day.expenses || 0);
         html += `
             <div class="cashier-history-item" style="border-right-color:${day.status === 'closed' ? '#2D8F5E' : '#E6A830'};">
@@ -259,7 +255,7 @@ function renderCashierHistory() {
                 </div>
             </div>
         `;
-    }
+    });
 
     container.innerHTML = html;
 }
@@ -326,12 +322,3 @@ function cashierPrintReport() {
         showToast('⚠️ تم حظر النافذة المنبثقة', 'error');
     }
 }
-
-// تعريض الدوال للنطاق العام
-window.initCashier = initCashier;
-window.updateCashierUI = updateCashierUI;
-window.cashierOpenDay = cashierOpenDay;
-window.cashierCloseDay = cashierCloseDay;
-window.cashierPrintReport = cashierPrintReport;
-window.renderCashierHistory = renderCashierHistory;
-window.renderCashierTodayTransactions = renderCashierTodayTransactions;
