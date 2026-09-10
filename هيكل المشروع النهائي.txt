@@ -1,11 +1,4 @@
-mizan-muhasibi/
+mizan/
 ├── index.html
-├── package.json
-├── src/
-│   ├── firebase.js          # تهيئة Firebase
-│   ├── app.js               # منطق التطبيق الرئيسي
-│   ├── data.js              # إدارة البيانات (localStorage)
-│   ├── ui.js                # واجهة المستخدم
-│   └── utils.js             # دوال مساعدة
-└── public/
-    └── index.html
+├── style.css
+└── app.js
