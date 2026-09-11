@@ -256,14 +256,32 @@ function updateSyncStatus(msg, type = 'info') {
 function syncToCloud() {
     const ref = getFirebaseRef();
     if (!ref) { showToast('⚠️ Firebase غير متصل', 'error'); return; }
-    const data = {
+    
+    // ✅ دالة لتنظيف القيم undefined من أي كائن (مهمة لـ Firebase)
+    function cleanUndefined(obj) {
+        if (obj === null || obj === undefined) return null;
+        if (Array.isArray(obj)) return obj.map(cleanUndefined);
+        if (typeof obj === 'object') {
+            const cleaned = {};
+            for (const key in obj) {
+                const val = cleanUndefined(obj[key]);
+                if (val !== undefined && val !== null) cleaned[key] = val;
+                else cleaned[key] = null;
+            }
+            return cleaned;
+        }
+        return obj;
+    }
+    
+    const data = cleanUndefined({
         products, sales, purchases, returns, expenses,
         customers, suppliers, treasury, payments, companyData,
         users, auditLog, vatSettings, accounts, journalEntries,
         inventoryMovements,
         lastSync: new Date().toISOString(),
         version: '13.0.0'
-    };
+    });
+    
     updateSyncStatus('⏳ جاري الرفع...', 'info');
     showToast('⏳ جاري الرفع...', 'info');
     ref.set(data)
