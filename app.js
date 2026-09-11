@@ -1,5 +1,5 @@
 // ============================================================
-// الميزان - الإصدار 12.0.0 (الحسابات المحاسبية)
+// الميزان - الإصدار 12.1.0 (الحسابات + قائمة محسّنة)
 // ============================================================
 
 const STORAGE_KEY = 'mizan_';
@@ -235,7 +235,7 @@ function syncToCloud() {
         customers, suppliers, treasury, payments, companyData,
         users, auditLog, vatSettings, accounts, journalEntries,
         lastSync: new Date().toISOString(),
-        version: '12.0.0'
+        version: '12.1.0'
     };
     updateSyncStatus('⏳ جاري الرفع...', 'info');
     showToast('⏳ جاري الرفع...', 'info');
@@ -673,24 +673,56 @@ function populateAccountParents() {
     sel.value = cv;
 }
 
+// ✅ النسخة المحدثة: قائمة الحسابات الفرعية فقط + مجموعات
 function populateAccountDropdowns() {
     populateAccountParents();
     const jeDebitEl = $('jeDebitAccount');
     const jeCreditEl = $('jeCreditAccount');
+    
+    // ✅ دالة مساعدة: الحساب يكون فرعي (مش عند فرع تحته)
+    function isLeafAccount(acc) {
+        if (acc.isParent) return false;
+        const hasChildren = accounts.some(a => a.parentId === acc.id);
+        return !hasChildren;
+    }
+    
+    // ✅ دالة لعرض الحسابات في optgroup حسب النوع
+    function buildOptionsHTML() {
+        const typeNames = {
+            assets: '🏛️ الأصول',
+            liabilities: '💳 الخصوم',
+            equity: '👑 حقوق الملكية',
+            revenue: '💰 الإيرادات',
+            expenses: '💸 المصروفات'
+        };
+        const typeOrder = ['assets', 'liabilities', 'equity', 'revenue', 'expenses'];
+        
+        let html = '<option value="">اختر حساب...</option>';
+        
+        typeOrder.forEach(type => {
+            const typeAccounts = accounts.filter(a => a.type === type && isLeafAccount(a));
+            if (typeAccounts.length === 0) return;
+            
+            html += `<optgroup label="${typeNames[type]}">`;
+            typeAccounts.forEach(a => {
+                html += `<option value="${a.id}">${a.code ? a.code + ' - ' : ''}${a.name}</option>`;
+            });
+            html += `</optgroup>`;
+        });
+        
+        return html;
+    }
+    
+    const optionsHTML = buildOptionsHTML();
+    
     if (jeDebitEl) {
         const cv = jeDebitEl.value;
-        jeDebitEl.innerHTML = '<option value="">اختر حساب...</option>';
-        accounts.filter(a => !a.isParent).forEach(a => {
-            jeDebitEl.innerHTML += `<option value="${a.id}">${a.code ? a.code + ' - ' : ''}${a.name}</option>`;
-        });
+        jeDebitEl.innerHTML = optionsHTML;
         jeDebitEl.value = cv;
     }
     if (jeCreditEl) {
         const cv = jeCreditEl.value;
-        jeCreditEl.innerHTML = '<option value="">اختر حساب...</option>';
-        accounts.filter(a => !a.isParent).forEach(a => {
-            jeCreditEl.innerHTML += `<option value="${a.id}">${a.code ? a.code + ' - ' : ''}${a.name}</option>`;
-        });
+        jeCreditEl.innerHTML = optionsHTML;
         jeCreditEl.value = cv;
     }
 }
@@ -699,7 +731,6 @@ function populateAccountDropdowns() {
 // القيود المحاسبية - Journal Entries
 // ============================================================
 
-// إنشاء قيد محاسبي تلقائي
 function createJournalEntry(description, reference, date, lines) {
     if (!lines || lines.length < 2) return null;
     const totalDebit = lines.reduce((s, l) => s + (l.debit || 0), 0);
@@ -726,18 +757,16 @@ function createJournalEntry(description, reference, date, lines) {
     return entry;
 }
 
-// إيجاد حساب بالكود
 function getAccountByCode(code) {
     return accounts.find(a => a.code === code);
 }
 
-// البحث عن حساب باسم يحتوي على كلمة
 function getAccountByNameContains(name) {
     return accounts.find(a => a.name.includes(name) && !a.isParent);
 }
 
 // ============================================================
-// الكاشير (مع الضريبة + القيود التلقائية)
+// الكاشير
 // ============================================================
 function populateSaleProducts() {
     const sel = $('saleProduct'); if (!sel) return;
@@ -858,7 +887,6 @@ function saveSale() {
         return;
     }
 
-    // حساب COGS
     let cogsTotal = 0;
     currentSaleItems.forEach(it => {
         const p = products.find(pr => pr.id == it.productId);
@@ -880,7 +908,6 @@ function saveSale() {
     };
     sales.push(inv);
 
-    // الخزنة
     if (paymentMethod === 'cash') {
         treasury.push({
             id: Date.now() + 1, type: 'deposit', amount: total,
@@ -897,7 +924,7 @@ function saveSale() {
         });
     }
 
-    // ✅ القيد المحاسبي التلقائي
+    // قيد محاسبي تلقائي
     try {
         const lines = [];
         const cashAcc = getAccountByNameContains('النقدية بالخزنة');
@@ -963,7 +990,7 @@ function clearSale() {
 }
 
 // ============================================================
-// الشراء (مع الضريبة + القيود التلقائية)
+// الشراء
 // ============================================================
 function populatePurSuppliers() {
     const sel = $('purSupplier'); if (!sel) return;
@@ -1112,7 +1139,7 @@ function savePurchase() {
         });
     }
     
-    // ✅ القيد التلقائي
+    // قيد محاسبي تلقائي
     try {
         const lines = [];
         const cashAcc = getAccountByNameContains('النقدية بالخزنة');
@@ -1220,17 +1247,14 @@ function viewPurchase(id) {
         <button class="modal-close" onclick="closeModal()">&times;</button>
         <h3>🛒 فاتورة شراء #${inv.number}</h3>
         <div class="invoice-print ${isTax ? 'tax-invoice' : ''}">
-            <div class="inv-header">
-                ${taxBadge}${logoHtml}
+            <div class="inv-header">${taxBadge}${logoHtml}
                 <h2>${companyData.name || 'الميزان'}</h2>
                 <p>فاتورة شراء</p>
                 ${companyData.phone ? `<p>📞 ${companyData.phone}</p>` : ''}
-                ${companyData.address ? `<p>📍 ${companyData.address}</p>` : ''}
             </div>
             <div class="inv-info">
                 <div><span class="lbl">رقم:</span> #${inv.number}</div>
                 <div><span class="lbl">التاريخ:</span> ${inv.date}</div>
-                <div><span class="lbl">الوقت:</span> ${inv.time}</div>
                 <div><span class="lbl">المورد:</span> ${inv.supplierName}</div>
                 <div><span class="lbl">الدفع:</span> ${inv.status === 'paid' ? '✅ نقدي' : '⏳ آجل'}</div>
             </div>
@@ -1260,13 +1284,9 @@ function deletePurchase(id) {
     treasury = treasury.filter(t => !((t.refType === 'purchase' || t.refType === 'purchase_credit') && t.refId === id));
     purchases = purchases.filter(p => p.id !== id);
     setData('products', products); setData('purchases', purchases); setData('treasury', treasury);
-    addAuditLog('delete', 'purchase', 
-        `حذف فاتورة شراء #${inv.number} - ${inv.supplierName} - ${formatMoney(inv.total)} ج.م`,
-        { invoiceNumber: inv.number, supplier: inv.supplierName, total: inv.total,
-          items: inv.items.map(it => ({ name: it.name, qty: it.qty, price: it.price, total: it.total })) }
-    );
+    addAuditLog('delete', 'purchase', `حذف فاتورة شراء #${inv.number}`);
     renderPurchases(); renderProducts(); updateDashboard();
-    showToast(`🗑️ تم حذف فاتورة #${inv.number}`, 'info');
+    showToast(`🗑️ تم الحذف`, 'info');
 }
 
 // ============================================================
@@ -1390,12 +1410,7 @@ function saveReturn() {
         });
     }
     setData('products', products); setData('returns', returns); setData('treasury', treasury);
-    addAuditLog('add', 'return', 
-        `مرتجع ${type === 'sale' ? 'بيع' : 'شراء'} #${ret.number} - ${party} - ${formatMoney(total)} ج.م`,
-        { returnNumber: ret.number, type: type === 'sale' ? 'مرتجع بيع' : 'مرتجع شراء',
-          party: party, total: total,
-          items: ret.items.map(it => ({ name: it.name, qty: it.qty, price: it.price, total: it.total })) }
-    );
+    addAuditLog('add', 'return', `مرتجع ${type === 'sale' ? 'بيع' : 'شراء'} #${ret.number} - ${party} - ${formatMoney(total)} ج.م`);
     currentRetItems = [];
     const partyEl = $('retParty'); if (partyEl) partyEl.value = '';
     renderRetItems(); renderReturns(); populateRetProducts(); updateDashboard();
@@ -1447,7 +1462,7 @@ function deleteReturn(id) {
     treasury = treasury.filter(t => !(t.refType === 'return' && t.refId === id));
     returns = returns.filter(x => x.id !== id);
     setData('products', products); setData('returns', returns); setData('treasury', treasury);
-    addAuditLog('delete', 'return', `حذف مرتجع #${r.number} - ${r.party}`);
+    addAuditLog('delete', 'return', `حذف مرتجع #${r.number}`);
     renderReturns(); renderProducts(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
@@ -1477,12 +1492,10 @@ function saveExpense() {
         refType: 'expense', refId: exp.id
     });
     setData('expenses', expenses); setData('treasury', treasury);
-    addAuditLog('add', 'expense', `مصروف: ${note} - ${formatMoney(amount)} ج.م`, {
-        note, amount, category, date
-    });
+    addAuditLog('add', 'expense', `مصروف: ${note} - ${formatMoney(amount)} ج.م`);
     $('expNote').value = ''; $('expAmount').value = '';
     renderExpenses(); updateDashboard();
-    showToast(`✅ تم إضافة مصروف ${formatMoney(amount)} 🇪🇬`, 'success');
+    showToast(`✅ تم الإضافة ${formatMoney(amount)} 🇪🇬`, 'success');
 }
 
 function renderExpenses() {
@@ -1582,18 +1595,14 @@ function viewInvoice(id) {
         <button class="modal-close" onclick="closeModal()">&times;</button>
         <h3>📄 فاتورة #${inv.number}</h3>
         <div class="invoice-print ${isTax ? 'tax-invoice' : ''}">
-            <div class="inv-header">
-                ${taxBadge}${logoHtml}
+            <div class="inv-header">${taxBadge}${logoHtml}
                 <h2>${companyData.name || 'الميزان'}</h2>
                 <p>فاتورة بيع</p>
                 ${companyData.phone ? `<p>📞 ${companyData.phone}</p>` : ''}
-                ${companyData.address ? `<p>📍 ${companyData.address}</p>` : ''}
-                ${companyData.tax && isTax ? `<p>🆔 الرقم الضريبي: ${companyData.tax}</p>` : ''}
             </div>
             <div class="inv-info">
                 <div><span class="lbl">رقم:</span> #${inv.number}</div>
                 <div><span class="lbl">التاريخ:</span> ${inv.date}</div>
-                <div><span class="lbl">الوقت:</span> ${inv.time}</div>
                 <div><span class="lbl">العميل:</span> ${inv.customer}</div>
                 <div><span class="lbl">الدفع:</span> ${pm === 'cash' ? '💵 نقدي' : '⏳ آجل'}</div>
             </div>
@@ -1623,7 +1632,7 @@ function deleteInvoice(id) {
     treasury = treasury.filter(t => !((t.refType === 'sale' || t.refType === 'sale_credit') && t.refId === id));
     sales = sales.filter(s => s.id !== id);
     setData('products', products); setData('sales', sales); setData('treasury', treasury);
-    addAuditLog('delete', 'sale', `حذف فاتورة بيع #${inv.number} - ${inv.customer}`);
+    addAuditLog('delete', 'sale', `حذف فاتورة بيع #${inv.number}`);
     renderInvoices(); renderProducts(); updateDashboard();
     showToast(`🗑️ تم الحذف`, 'info');
 }
@@ -2324,7 +2333,6 @@ function showReceipt(pay) {
                 ${logoHtml}
                 <h2 style="color:${color};">${companyData.name || 'الميزان'}</h2>
                 <p>${label}</p>
-                ${companyData.phone ? `<p>📞 ${companyData.phone}</p>` : ''}
             </div>
             <div class="rec-info">
                 <div><span class="lbl">رقم الإيصال:</span> #${pay.id.toString().slice(-6)}</div>
@@ -2359,7 +2367,7 @@ function deletePayment(id) {
 }
 
 // ============================================================
-// القيود اليدوية (Journal Entries)
+// القيود اليدوية
 // ============================================================
 function updateJournalCheck() {
     const debit = parseFloat($('jeDebitAmount')?.value) || 0;
@@ -2701,7 +2709,7 @@ function renderVATReport() {
 }
 
 // ============================================================
-// التقارير المحاسبية (Trial Balance / Income Statement / Balance Sheet)
+// التقارير المحاسبية
 // ============================================================
 function switchAccountsTab(tab, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -3301,7 +3309,7 @@ function changePassword() {
 function exportData() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const data = {
-        version: '12.0.0', exportDate: new Date().toISOString(),
+        version: '12.1.0', exportDate: new Date().toISOString(),
         products, sales, purchases, returns, expenses,
         customers, suppliers, treasury, payments, users, auditLog, companyData, vatSettings,
         accounts, journalEntries
@@ -3442,11 +3450,10 @@ function populateAllDropdowns() {
 // Init
 // ============================================================
 function init() {
-    console.log('🚀 الميزان 12.0.0 - الحسابات المحاسبية');
+    console.log('🚀 الميزان 12.1.0 - الحسابات + قائمة محسّنة');
 
     initFirebase();
 
-    // تحميل البيانات
     const rawProducts = getData('products', []);
     sales = getData('sales', []);
     purchases = getData('purchases', []);
@@ -3462,11 +3469,10 @@ function init() {
     accounts = getData('accounts', []);
     journalEntries = getData('journalEntries', []);
 
-    // لو مفيش حسابات → ضيف الشجرة الافتراضية
     if (accounts.length === 0) {
         accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
         setData('accounts', accounts);
-        console.log('✅ تم تحميل شجرة الحسابات الافتراضية:', accounts.length, 'حساب');
+        console.log('✅ تم تحميل شجرة الحسابات:', accounts.length, 'حساب');
     }
 
     users = getData('users', []);
@@ -3503,7 +3509,6 @@ function init() {
     if ($('payDate')) $('payDate').value = getTodayDate();
     if ($('jeDate')) $('jeDate').value = getTodayDate();
 
-    // ربط حدث التوازن في القيد
     setTimeout(() => {
         const debitAmt = $('jeDebitAmount');
         const creditAmt = $('jeCreditAmount');
@@ -3523,10 +3528,8 @@ function init() {
     renderSettings();
 
     console.log('✅ الميزان جاهز');
-    console.log('👥 المستخدمين:', users.map(u => `${u.name} (${u.role})`).join(', '));
     console.log('📊 الحسابات:', accounts.length);
     console.log('📖 القيود:', journalEntries.length);
-    console.log('🧾 نسبة الضريبة:', vatSettings.defaultVAT + '%');
 }
 
 document.addEventListener('DOMContentLoaded', init);
@@ -3540,13 +3543,11 @@ window.navigateTo = navigateTo;
 window.syncToCloud = syncToCloud;
 window.syncFromCloud = syncFromCloud;
 
-// منتجات
 window.saveProduct = saveProduct;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
 window.resetProductForm = resetProductForm;
 
-// كاشير
 window.updateSalePrice = updateSalePrice;
 window.addSaleItem = addSaleItem;
 window.removeSaleItem = removeSaleItem;
@@ -3554,7 +3555,6 @@ window.saveSale = saveSale;
 window.clearSale = clearSale;
 window.updateSaleTotals = updateSaleTotals;
 
-// شراء
 window.updatePurPrice = updatePurPrice;
 window.addPurItem = addPurItem;
 window.removePurItem = removePurItem;
@@ -3564,7 +3564,6 @@ window.viewPurchase = viewPurchase;
 window.deletePurchase = deletePurchase;
 window.updatePurTotals = updatePurTotals;
 
-// مرتجعات
 window.toggleReturnCustomer = toggleReturnCustomer;
 window.updateRetPrice = updateRetPrice;
 window.addRetItem = addRetItem;
@@ -3573,19 +3572,15 @@ window.saveReturn = saveReturn;
 window.clearReturn = clearReturn;
 window.deleteReturn = deleteReturn;
 
-// مصروفات
 window.saveExpense = saveExpense;
 window.deleteExpense = deleteExpense;
 
-// فواتير
 window.viewInvoice = viewInvoice;
 window.deleteInvoice = deleteInvoice;
 
-// خزنة
 window.addTreasuryTransaction = addTreasuryTransaction;
 window.deleteTreasury = deleteTreasury;
 
-// عملاء
 window.saveCustomer = saveCustomer;
 window.editCustomer = editCustomer;
 window.deleteCustomer = deleteCustomer;
@@ -3593,7 +3588,6 @@ window.resetCustomerForm = resetCustomerForm;
 window.viewCustomerStatement = viewCustomerStatement;
 window.openCollectModal = openCollectModal;
 
-// موردين
 window.saveSupplier = saveSupplier;
 window.editSupplier = editSupplier;
 window.deleteSupplier = deleteSupplier;
@@ -3601,7 +3595,6 @@ window.resetSupplierForm = resetSupplierForm;
 window.viewSupplierStatement = viewSupplierStatement;
 window.openPayModal = openPayModal;
 
-// تحصيل/سداد
 window.switchPayTab = switchPayTab;
 window.updateCollectInfo = updateCollectInfo;
 window.updatePayInfo = updatePayInfo;
@@ -3611,10 +3604,8 @@ window.showReceipt = showReceipt;
 window.showReceiptById = showReceiptById;
 window.deletePayment = deletePayment;
 
-// تقارير
 window.switchReport = switchReport;
 
-// ✅ الحسابات
 window.saveAccount = saveAccount;
 window.editAccount = editAccount;
 window.deleteAccount = deleteAccount;
@@ -3627,33 +3618,28 @@ window.updateJournalCheck = updateJournalCheck;
 window.switchAccountsTab = switchAccountsTab;
 window.showAccountingReport = showAccountingReport;
 
-// شركة
 window.saveCompanySettings = saveCompanySettings;
 window.uploadLogo = uploadLogo;
 window.removeLogo = removeLogo;
 window.saveVATSettings = saveVATSettings;
 
-// مستخدمين
 window.saveUser = saveUser;
 window.editUser = editUser;
 window.deleteUser = deleteUser;
 window.toggleUserActive = toggleUserActive;
 window.resetUserForm = resetUserForm;
 
-// سجل النشاطات
 window.toggleAuditItem = toggleAuditItem;
 window.filterAudit = filterAudit;
 window.exportAuditLog = exportAuditLog;
 window.exportAuditLogText = exportAuditLogText;
 window.clearAuditLog = clearAuditLog;
 
-// إعدادات
 window.changePassword = changePassword;
 window.exportData = exportData;
 window.importData = importData;
 window.clearAllData = clearAllData;
 
-// modal
 window.openModal = openModal;
 window.closeModal = closeModal;
 
