@@ -1,5 +1,5 @@
 /* ============================================================
-   الميزان - الإصدار 8.1.0 (إصلاح الطباعة)
+   الميزان - الإصدار 11.0.0 (الضريبة VAT)
    ============================================================ */
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
@@ -28,16 +28,17 @@ body {
 .login-box .logo { font-size: 48px; color: #C9A94E; margin-bottom: 8px; }
 .login-box h1 { font-size: 26px; font-weight: 900; color: #C9A94E; margin-bottom: 4px; }
 .login-box .subtitle { font-size: 13px; color: #A89070; margin-bottom: 18px; }
-.login-box .form-group input {
-    font-size: 16px; padding: 14px; background: #0D0D0D;
+.login-box .form-group input,
+.login-box .form-group select.login-select {
+    font-size: 15px; padding: 13px; background: #0D0D0D;
     border: 2px solid #3D3D3D; border-radius: 10px; color: #F5E6C8;
     text-align: center; width: 100%; font-family: inherit;
 }
-.login-box .form-group input:focus { outline: none; border-color: #C9A94E; }
+.login-box .form-group select.login-select { cursor: pointer; text-align-last: center; }
+.login-box .form-group input:focus,
+.login-box .form-group select.login-select:focus { outline: none; border-color: #C9A94E; }
 .login-box .btn { margin-top: 12px; }
-.login-box .error-msg {
-    color: #E06060; font-size: 13px; margin-top: 10px; display: none; font-weight: 700;
-}
+.login-box .error-msg { color: #E06060; font-size: 13px; margin-top: 10px; display: none; font-weight: 700; }
 .login-box .error-msg.show { display: block; }
 .login-box .hint { font-size: 12px; color: #5D5D5D; margin-top: 12px; }
 
@@ -61,6 +62,16 @@ body {
     cursor: pointer; padding: 6px 10px; border-radius: 8px;
 }
 .top-header .lock-btn:hover { background: #2A2A2A; }
+
+/* ============ User Badge ============ */
+.user-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #0D0D0D; border: 1px solid #C9A94E; color: #C9A94E;
+    padding: 4px 10px; border-radius: 20px; font-size: 11px;
+    font-weight: 700; cursor: pointer; transition: 0.2s;
+}
+.user-badge i { font-size: 13px; }
+.user-badge:hover { background: #2A2A2A; }
 
 /* ============ Cloud Buttons ============ */
 .cloud-btn {
@@ -140,6 +151,37 @@ body {
     border-color: #C9A94E; background: #2A2A2A;
 }
 
+/* ============ Tax Summary ============ */
+.tax-summary {
+    background: #1C1C1C;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #2D2D2D;
+}
+.tax-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    color: #F5E6C8;
+    border-bottom: 1px solid #2D2D2D;
+}
+.tax-row:last-child { border-bottom: none; }
+.tax-row span:last-child { font-weight: 700; }
+.tax-row.total {
+    border-top: 2px solid #C9A94E;
+    padding-top: 10px;
+    margin-top: 6px;
+    font-size: 17px;
+    font-weight: 900;
+}
+.tax-row.total span:last-child {
+    color: #C9A94E;
+    font-size: 20px;
+}
+
 /* ============ Tabs Row ============ */
 .tabs-row {
     display: flex; gap: 6px; margin-bottom: 14px;
@@ -162,9 +204,7 @@ body {
     margin: 10px 0; font-size: 13px; color: #A89070;
     text-align: center; font-weight: 700;
 }
-.credit-info strong {
-    color: #E6A830; font-size: 16px; margin: 0 4px;
-}
+.credit-info strong { color: #E6A830; font-size: 16px; margin: 0 4px; }
 
 /* ============ Buttons ============ */
 .btn {
@@ -185,10 +225,7 @@ body {
 .btn-secondary { background: #3D3D3D; color: #F5E6C8; }
 .btn-secondary:hover { background: #4D4D4D; }
 .btn-block { width: 100%; }
-.btn-sm {
-    font-size: 11px; padding: 5px 10px; min-height: 30px;
-    min-width: 30px; border-radius: 6px;
-}
+.btn-sm { font-size: 11px; padding: 5px 10px; min-height: 30px; min-width: 30px; border-radius: 6px; }
 
 /* ============ Dashboard ============ */
 .dashboard-stats {
@@ -199,12 +236,8 @@ body {
     text-align: center; border: 1px solid #2D2D2D;
     border-right: 4px solid #C9A94E; transition: 0.3s;
 }
-.dashboard-card:hover {
-    transform: translateY(-2px); box-shadow: 0 6px 16px rgba(201, 169, 78, 0.1);
-}
-.dashboard-card .number {
-    font-size: 20px; font-weight: 900; color: #C9A94E; margin-bottom: 4px;
-}
+.dashboard-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(201, 169, 78, 0.1); }
+.dashboard-card .number { font-size: 20px; font-weight: 900; color: #C9A94E; margin-bottom: 4px; }
 .dashboard-card .label { font-size: 11px; color: #A89070; font-weight: 600; }
 
 /* ============ Tables ============ */
@@ -216,9 +249,7 @@ body {
     font-size: 12px; padding: 10px 0; border-bottom: 1px solid #2D2D2D;
     display: grid; gap: 6px; align-items: center; color: #F5E6C8;
 }
-.table-row:hover {
-    background: #2A2A2A; border-radius: 8px; padding-right: 8px; padding-left: 8px;
-}
+.table-row:hover { background: #2A2A2A; border-radius: 8px; padding-right: 8px; padding-left: 8px; }
 
 /* ============ Search ============ */
 .search-box { margin-bottom: 12px; }
@@ -296,9 +327,7 @@ body {
 }
 
 /* ============ Stats Mini ============ */
-.stats-mini {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;
-}
+.stats-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
 .stat-mini {
     background: #0D0D0D; border-radius: 10px; padding: 12px 8px;
     text-align: center; border: 1px solid #2D2D2D;
@@ -329,10 +358,7 @@ body {
     overflow-y: auto; border: 1px solid #3D3D3D;
     animation: fadeIn 0.3s; position: relative;
 }
-.modal-box h3 {
-    font-size: 18px; font-weight: 800; color: #C9A94E;
-    margin-bottom: 12px; text-align: center;
-}
+.modal-box h3 { font-size: 18px; font-weight: 800; color: #C9A94E; margin-bottom: 12px; text-align: center; }
 .modal-close {
     position: absolute; top: 10px; left: 10px;
     background: none; border: none; font-size: 24px;
@@ -346,6 +372,20 @@ body {
     direction: rtl; background: #0D0D0D; padding: 15px;
     border-radius: 10px; border: 1px solid #3D3D3D;
     margin-bottom: 12px; font-size: 12px;
+}
+.invoice-print.tax-invoice {
+    border: 2px solid #C9A94E;
+    background: #0D0D0D;
+}
+.invoice-print .tax-badge {
+    display: inline-block;
+    background: #C9A94E;
+    color: #0D0D0D;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 900;
+    margin-bottom: 8px;
 }
 .invoice-print .inv-header {
     text-align: center; padding-bottom: 10px;
@@ -371,9 +411,24 @@ body {
 .invoice-print table td {
     color: #F5E6C8; padding: 6px 4px; text-align: center; border: 1px solid #3D3D3D;
 }
-.invoice-print .inv-total {
-    display: flex; justify-content: space-between; font-size: 16px;
-    font-weight: 900; color: #C9A94E; padding-top: 10px; border-top: 2px solid #C9A94E;
+.invoice-print .inv-totals {
+    padding-top: 10px;
+    border-top: 2px solid #C9A94E;
+}
+.invoice-print .inv-total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 13px;
+    color: #F5E6C8;
+}
+.invoice-print .inv-total-row.grand {
+    font-size: 18px;
+    font-weight: 900;
+    color: #C9A94E;
+    padding-top: 8px;
+    margin-top: 6px;
+    border-top: 2px solid #C9A94E;
 }
 .invoice-print .inv-footer {
     text-align: center; margin-top: 12px; padding-top: 10px;
@@ -408,44 +463,23 @@ body {
     border: 1px dashed #2D8F5E;
 }
 .receipt-print .rec-amount .lbl { font-size: 12px; color: #A89070; margin-bottom: 6px; }
-.receipt-print .rec-amount .value {
-    font-size: 28px; font-weight: 900; color: #2D8F5E;
-}
+.receipt-print .rec-amount .value { font-size: 28px; font-weight: 900; color: #2D8F5E; }
 .receipt-print .rec-footer {
     text-align: center; padding-top: 10px;
     border-top: 1px solid #3D3D3D; font-size: 11px; color: #A89070;
 }
 
-/* ============ PRINT MEDIA - نسخة مصححة ============ */
+/* ============ PRINT MEDIA ============ */
 @media print {
-    /* إخفاء كل حاجة */
-    body * {
-        visibility: hidden !important;
-    }
-    
-    /* إظهار الـ Modal فقط */
-    #modalOverlay,
-    #modalOverlay * {
-        visibility: visible !important;
-    }
-    
-    /* إظهار الفاتورة والإيصال */
-    .invoice-print,
-    .invoice-print *,
-    .receipt-print,
-    .receipt-print * {
-        visibility: visible !important;
-    }
-    
-    /* ضبط الـ Modal على الصفحة كاملة */
+    body * { visibility: hidden !important; }
+    #modalOverlay, #modalOverlay * { visibility: visible !important; }
+    .invoice-print, .invoice-print *,
+    .receipt-print, .receipt-print * { visibility: visible !important; }
     #modalOverlay {
         position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        width: 100% !important;
-        height: auto !important;
+        top: 0 !important; left: 0 !important;
+        right: 0 !important; bottom: 0 !important;
+        width: 100% !important; height: auto !important;
         min-height: 100vh !important;
         background: #fff !important;
         padding: 10px !important;
@@ -453,74 +487,37 @@ body {
         overflow: visible !important;
         z-index: 99999 !important;
     }
-    
     .modal-box {
-        background: #fff !important;
-        border: none !important;
-        padding: 0 !important;
-        max-width: 100% !important;
-        max-height: none !important;
-        box-shadow: none !important;
+        background: #fff !important; border: none !important;
+        padding: 0 !important; max-width: 100% !important;
+        max-height: none !important; box-shadow: none !important;
         overflow: visible !important;
     }
-    
-    /* إخفاء العناصر اللي مش مطلوبة في الطباعة */
-    .modal-close,
-    .modal-box > div:last-child,
-    .modal-box > button,
-    .no-print {
-        display: none !important;
+    .modal-close, .modal-box > div:last-child,
+    .modal-box > button, .no-print { display: none !important; }
+    .invoice-print, .receipt-print {
+        background: #fff !important; color: #000 !important;
+        border: 1px solid #000 !important; margin: 0 !important;
+        padding: 15px !important; page-break-inside: avoid;
     }
-    
-    /* ضبط الفاتورة للأبيض والأسود */
-    .invoice-print {
-        background: #fff !important;
-        color: #000 !important;
-        border: 1px solid #000 !important;
-        margin: 0 !important;
-        padding: 15px !important;
-        page-break-inside: avoid;
-    }
-    .invoice-print .inv-header { border-bottom-color: #000 !important; }
-    .invoice-print .inv-header h2 { color: #000 !important; }
-    .invoice-print .inv-header p { color: #333 !important; }
-    .invoice-print .inv-info div { color: #000 !important; }
-    .invoice-print .inv-info span.lbl { color: #333 !important; }
+    .invoice-print.tax-invoice { border: 2px solid #000 !important; }
+    .invoice-print .tax-badge { background: #000 !important; color: #fff !important; }
+    .invoice-print .inv-header, .receipt-print .rec-header { border-bottom-color: #000 !important; }
+    .invoice-print .inv-header h2, .receipt-print .rec-header h2 { color: #000 !important; }
+    .invoice-print .inv-header p, .receipt-print .rec-header p { color: #333 !important; }
+    .invoice-print .inv-info div, .receipt-print .rec-info div { color: #000 !important; }
+    .invoice-print .inv-info span.lbl, .receipt-print .rec-info span.lbl { color: #333 !important; }
     .invoice-print table th { background: #eee !important; color: #000 !important; border-color: #000 !important; }
     .invoice-print table td { color: #000 !important; border-color: #000 !important; }
-    .invoice-print .inv-total { color: #000 !important; border-top-color: #000 !important; }
+    .invoice-print .inv-total-row { color: #000 !important; }
+    .invoice-print .inv-total-row.grand { color: #000 !important; border-top-color: #000 !important; }
     .invoice-print .inv-footer { color: #333 !important; }
-    
-    /* ضبط الإيصال للأبيض والأسود */
-    .receipt-print {
-        background: #fff !important;
-        color: #000 !important;
-        border: 1px solid #000 !important;
-        margin: 0 !important;
-        padding: 15px !important;
-        page-break-inside: avoid;
-    }
-    .receipt-print .rec-header { border-bottom-color: #000 !important; }
-    .receipt-print .rec-header h2 { color: #000 !important; }
-    .receipt-print .rec-header p { color: #333 !important; }
-    .receipt-print .rec-info div { color: #000 !important; }
-    .receipt-print .rec-info span.lbl { color: #333 !important; }
     .receipt-print .rec-amount { border-color: #000 !important; background: #f5f5f5 !important; }
     .receipt-print .rec-amount .lbl { color: #333 !important; }
     .receipt-print .rec-amount .value { color: #000 !important; }
     .receipt-print .rec-footer { color: #333 !important; }
-    
-    /* ضبط الصفحة */
-    @page {
-        size: auto;
-        margin: 10mm;
-    }
-    
-    body {
-        background: #fff !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
+    @page { size: auto; margin: 10mm; }
+    body { background: #fff !important; padding: 0 !important; margin: 0 !important; }
 }
 
 /* ============ Settings Section ============ */
@@ -536,9 +533,7 @@ body {
 .settings-section.danger { border-color: #E06060; }
 .settings-section.danger h3 { color: #E06060; }
 .settings-section.danger h3 i { color: #E06060; }
-.settings-desc {
-    font-size: 12px; color: #A89070; margin-bottom: 10px; line-height: 1.5;
-}
+.settings-desc { font-size: 12px; color: #A89070; margin-bottom: 10px; line-height: 1.5; }
 .settings-info-row {
     display: flex; justify-content: space-between; padding: 6px 0;
     border-bottom: 1px solid #2D2D2D; font-size: 13px; color: #F5E6C8;
@@ -581,12 +576,14 @@ body {
     display: flex; gap: 6px; margin-bottom: 14px;
     background: #0D0D0D; padding: 5px; border-radius: 12px;
     border: 1px solid #2D2D2D;
+    flex-wrap: wrap;
 }
 .report-tab {
     flex: 1; padding: 10px; border-radius: 8px;
     background: transparent; border: none; color: #A89070;
-    font-size: 13px; font-weight: 700; cursor: pointer;
+    font-size: 12px; font-weight: 700; cursor: pointer;
     transition: 0.2s; font-family: inherit;
+    min-width: 70px;
 }
 .report-tab.active { background: #C9A94E; color: #0D0D0D; }
 .report-tab:hover:not(.active) { background: #2A2A2A; }
@@ -626,6 +623,7 @@ body {
 .report-chart .chart-bar.sales { background: linear-gradient(180deg, #2D8F5E, #1A5A3E); }
 .report-chart .chart-bar.purchases { background: linear-gradient(180deg, #E06060, #A04040); }
 .report-chart .chart-bar.expenses { background: linear-gradient(180deg, #E6A830, #A07020); }
+.report-chart .chart-bar.vat { background: linear-gradient(180deg, #9B59B6, #6D3A82); }
 .report-chart .chart-bar-label {
     font-size: 10px; color: #A89070; font-weight: 600;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
@@ -642,8 +640,44 @@ body {
     margin-top: 10px; font-size: 11px; color: #F5E6C8; flex-wrap: wrap;
 }
 .report-legend span { display: inline-flex; align-items: center; gap: 4px; }
-.report-legend .dot {
-    width: 10px; height: 10px; border-radius: 3px; display: inline-block;
+.report-legend .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* ============ VAT Report ============ */
+.vat-report-card {
+    background: linear-gradient(135deg, #1C1C1C, #2A2A2A);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 14px;
+    border: 2px solid #9B59B6;
+    text-align: center;
+}
+.vat-report-card .vat-big {
+    font-size: 32px;
+    font-weight: 900;
+    color: #9B59B6;
+    margin-bottom: 6px;
+}
+.vat-report-card .vat-label {
+    font-size: 13px;
+    color: #A89070;
+    font-weight: 700;
+}
+.vat-report-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #2D2D2D;
+    font-size: 14px;
+    color: #F5E6C8;
+}
+.vat-report-row:last-child {
+    border-bottom: none;
+    border-top: 2px solid #9B59B6;
+    padding-top: 12px;
+    margin-top: 6px;
+    font-weight: 900;
+    font-size: 17px;
+    color: #9B59B6;
 }
 
 /* ============ Company Preview ============ */
@@ -660,35 +694,23 @@ body {
     border: 3px solid #F5E6C8; overflow: hidden;
 }
 .company-preview-logo img { width: 100%; height: 100%; object-fit: cover; }
-.company-preview-name {
-    font-size: 20px; font-weight: 900; color: #C9A94E; margin-bottom: 6px;
-}
-.company-preview-info {
-    font-size: 12px; color: #A89070; line-height: 1.6;
-}
+.company-preview-name { font-size: 20px; font-weight: 900; color: #C9A94E; margin-bottom: 6px; }
+.company-preview-info { font-size: 12px; color: #A89070; line-height: 1.6; }
 
 /* ============ Logo Upload ============ */
-.logo-upload-box {
-    display: grid; grid-template-columns: 120px 1fr;
-    gap: 12px; align-items: center;
-}
+.logo-upload-box { display: grid; grid-template-columns: 120px 1fr; gap: 12px; align-items: center; }
 .logo-preview-box {
     width: 120px; height: 120px; background: #1C1C1C;
     border: 2px dashed #3D3D3D; border-radius: 12px;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 6px; color: #5D5D5D; overflow: hidden; transition: 0.2s;
 }
 .logo-preview-box:hover { border-color: #C9A94E; }
 .logo-preview-box i { font-size: 32px; color: #3D3D3D; }
 .logo-preview-box span { font-size: 10px; font-weight: 600; }
-.logo-preview-box img {
-    width: 100%; height: 100%; object-fit: contain; border-radius: 8px;
-}
+.logo-preview-box img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
 .logo-actions { display: flex; flex-direction: column; gap: 4px; }
-.logo-hint {
-    font-size: 11px; color: #5D5D5D; margin-top: 8px; text-align: center;
-}
+.logo-hint { font-size: 11px; color: #5D5D5D; margin-top: 8px; text-align: center; }
 
 /* ============ Invoice Preview ============ */
 .invoice-preview {
@@ -707,17 +729,118 @@ body {
     max-width: 100%; max-height: 100%;
     border-radius: 6px; object-fit: contain;
 }
-.inv-preview-name {
-    font-size: 18px; font-weight: 900; color: #C9A94E; margin-bottom: 4px;
-}
-.inv-preview-phone,
-.inv-preview-address {
-    font-size: 11px; color: #A89070; margin: 2px 0;
-}
+.inv-preview-name { font-size: 18px; font-weight: 900; color: #C9A94E; margin-bottom: 4px; }
+.inv-preview-phone, .inv-preview-address { font-size: 11px; color: #A89070; margin: 2px 0; }
 .inv-preview-footer {
     font-size: 11px; color: #A89070; padding-top: 8px;
     border-top: 1px solid #2D2D2D; margin-top: 8px;
 }
+
+/* ============ Role Badges ============ */
+.role-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 10px; font-weight: 800; white-space: nowrap;
+}
+.role-badge.admin { background: #E06060; color: #fff; }
+.role-badge.manager { background: #C9A94E; color: #0D0D0D; }
+.role-badge.cashier { background: #4A8AB5; color: #fff; }
+.role-badge.viewer { background: #5D5D5D; color: #F5E6C8; }
+
+/* ============ Audit Log Items ============ */
+.audit-item {
+    background: #0D0D0D; border-radius: 12px; margin-bottom: 10px;
+    border-right: 4px solid #C9A94E; border-top: 1px solid #2D2D2D;
+    border-left: 1px solid #2D2D2D; border-bottom: 1px solid #2D2D2D;
+    overflow: hidden; transition: 0.2s;
+}
+.audit-item:hover { background: #151515; }
+.audit-item.add { border-right-color: #2D8F5E; }
+.audit-item.edit { border-right-color: #E6A830; }
+.audit-item.delete { border-right-color: #E06060; }
+.audit-item.login { border-right-color: #4A8AB5; }
+.audit-item.sale { border-right-color: #2D8F5E; }
+.audit-item.purchase { border-right-color: #E06060; }
+.audit-item.payment { border-right-color: #C9A94E; }
+
+.audit-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px; cursor: pointer; user-select: none;
+}
+.audit-header .audit-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+}
+.audit-header .audit-main { flex: 1; min-width: 0; }
+.audit-header .audit-title { font-size: 13px; font-weight: 800; margin-bottom: 2px; }
+.audit-header .audit-meta {
+    font-size: 10px; color: #5D5D5D;
+    display: flex; gap: 8px; flex-wrap: wrap;
+}
+.audit-header .audit-meta span { display: inline-flex; align-items: center; gap: 3px; }
+.audit-header .audit-expand {
+    font-size: 14px; color: #5D5D5D; transition: transform 0.3s;
+    padding: 4px; border-radius: 6px;
+}
+.audit-item.expanded .audit-expand { transform: rotate(180deg); color: #C9A94E; }
+
+.audit-body {
+    display: none; padding: 0 12px 12px;
+    border-top: 1px dashed #2D2D2D; margin-top: -1px;
+}
+.audit-item.expanded .audit-body { display: block; animation: fadeIn 0.3s; }
+.audit-body .audit-details-text {
+    font-size: 12px; color: #A89070; padding: 10px 0;
+    line-height: 1.6; word-break: break-word;
+}
+.audit-body .audit-items-title {
+    font-size: 12px; color: #C9A94E; font-weight: 800;
+    margin: 10px 0 6px; padding-top: 8px;
+    border-top: 1px solid #2D2D2D;
+}
+.audit-body .audit-items-table {
+    background: #1C1C1C; border-radius: 8px;
+    overflow: hidden; font-size: 11px; margin-bottom: 8px;
+}
+.audit-body .audit-items-header {
+    display: grid; grid-template-columns: 2fr 0.8fr 1fr 1fr;
+    gap: 6px; padding: 8px 10px; background: #2D2D2D;
+    color: #C9A94E; font-weight: 800; font-size: 10px;
+}
+.audit-body .audit-item-row {
+    display: grid; grid-template-columns: 2fr 0.8fr 1fr 1fr;
+    gap: 6px; padding: 6px 10px;
+    border-bottom: 1px solid #2D2D2D; color: #F5E6C8;
+}
+.audit-body .audit-item-row:last-child { border-bottom: none; }
+.audit-body .audit-item-row span { font-size: 11px; }
+.audit-body .audit-total {
+    display: flex; justify-content: space-between;
+    padding: 8px 10px; background: #1C1C1C;
+    border-radius: 8px; font-weight: 800;
+    font-size: 13px; color: #C9A94E;
+}
+
+/* ============ Filter Chips ============ */
+.filter-chips {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.filter-chip {
+    padding: 6px 12px; border-radius: 16px;
+    border: 2px solid #3D3D3D; background: #0D0D0D;
+    color: #F5E6C8; font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: 0.2s; font-family: inherit;
+}
+.filter-chip.active { background: #C9A94E; color: #0D0D0D; border-color: #C9A94E; }
+.filter-chip:hover:not(.active) { border-color: #C9A94E; }
+
+/* ============ Payment Status Badge ============ */
+.payment-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 700;
+}
+.payment-badge.cash { background: #2D8F5E; color: #fff; }
+.payment-badge.credit { background: #E6A830; color: #0D0D0D; }
 
 /* ============ Scroll ============ */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -738,4 +861,7 @@ body {
     .logo-preview-box { margin: 0 auto; }
     .payment-methods { grid-template-columns: 1fr; }
     .tabs-row { flex-direction: column; }
+    .user-badge span { display: none; }
+    .user-badge { padding: 4px 8px; }
+    .report-tab { font-size: 10px; padding: 8px 4px; min-width: 60px; }
 }
