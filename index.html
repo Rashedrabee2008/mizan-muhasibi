@@ -17,18 +17,15 @@
             <div class="logo"><i class="fas fa-scale-balanced"></i></div>
             <h1>الميزان</h1>
             <p class="subtitle">نظام محاسبة ونقاط بيع</p>
-            
             <div class="form-group">
                 <label>👤 اسم المستخدم</label>
                 <select id="loginUsername" class="login-select"></select>
             </div>
-            
             <div class="form-group">
                 <label>🔑 كلمة المرور</label>
                 <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور..." 
                        onkeydown="if(event.key==='Enter') checkLogin()" />
             </div>
-            
             <button class="btn btn-primary btn-block" onclick="checkLogin()">
                 <i class="fas fa-unlock"></i> دخول
             </button>
@@ -168,6 +165,19 @@
                         <div class="form-group"><label>السعر (بدون ضريبة)</label><input type="number" id="salePrice" min="0" step="0.01" /></div>
                         <div class="form-group"><label>العميل</label><select id="saleCustomer"><option value="">عميل نقدي</option></select></div>
                     </div>
+                    <div class="form-group">
+                        <label>طريقة الدفع</label>
+                        <div class="payment-methods">
+                            <label class="payment-option">
+                                <input type="radio" name="salePaymentMethod" value="cash" checked />
+                                <span>💵 نقدي</span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="salePaymentMethod" value="credit" />
+                                <span>📝 آجل</span>
+                            </label>
+                        </div>
+                    </div>
                     <div class="form-actions"><button class="btn btn-success btn-block" onclick="addSaleItem()"><i class="fas fa-cart-plus"></i> إضافة للفاتورة</button></div>
                 </div>
                 <div id="saleItemsContainer"><div class="empty-state"><i class="fas fa-shopping-cart"></i><span>لا توجد أصناف</span></div></div>
@@ -256,7 +266,11 @@
                                 <option value="purchase">🔄 مرتجع شراء</option>
                             </select>
                         </div>
-                        <div class="form-group"><label id="retPartyLabel">العميل</label><select id="retParty"><option value="">اختر...</option></select></div>
+                        <div class="form-group"><label id="retPartyLabel">العميل</label><select id="retParty" onchange="loadReturnInvoices()"><option value="">اختر...</option></select></div>
+                    </div>
+                    <div class="form-group">
+                        <label>الفاتورة الأصلية (اختياري)</label>
+                        <select id="retOriginalInvoice"><option value="">بدون ربط بفاتورة</option></select>
                     </div>
                     <div class="divider">— إضافة أصناف —</div>
                     <div class="form-row">
@@ -325,6 +339,13 @@
                     <div class="stat-mini"><div class="num" id="invTotalCount">0</div><div class="lbl">عدد الفواتير</div></div>
                     <div class="stat-mini"><div class="num" id="invTotalAmount">0.00</div><div class="lbl">الإجمالي</div></div>
                     <div class="stat-mini"><div class="num" id="invTodayAmount">0.00</div><div class="lbl">اليوم</div></div>
+                    <div class="stat-mini"><div class="num" id="invPendingAmount">0.00</div><div class="lbl">آجل غير مدفوع</div></div>
+                </div>
+                <div class="filter-chips">
+                    <button class="filter-chip active" onclick="filterInvoices('all', this)">📊 الكل</button>
+                    <button class="filter-chip" onclick="filterInvoices('paid', this)">✅ مدفوعة</button>
+                    <button class="filter-chip" onclick="filterInvoices('partial', this)">⚠️ جزئية</button>
+                    <button class="filter-chip" onclick="filterInvoices('unpaid', this)">❌ غير مدفوعة</button>
                 </div>
                 <div class="search-box"><input type="text" id="invoiceSearch" placeholder="🔍 بحث..." oninput="renderInvoices()" /></div>
                 <div id="invoiceList"></div>
@@ -353,6 +374,15 @@
                     </div>
                     <div class="form-group"><label>البيان</label><input type="text" id="treasuryNote" /></div>
                     <button class="btn btn-primary btn-block" onclick="addTreasuryTransaction()"><i class="fas fa-plus"></i> إضافة</button>
+                </div>
+                <div class="filter-chips">
+                    <button class="filter-chip active" onclick="filterTreasury('all', this)">📊 الكل</button>
+                    <button class="filter-chip" onclick="filterTreasury('sale', this)">💰 مبيعات</button>
+                    <button class="filter-chip" onclick="filterTreasury('purchase', this)">🛒 مشتريات</button>
+                    <button class="filter-chip" onclick="filterTreasury('payment', this)">💳 تحصيل/سداد</button>
+                    <button class="filter-chip" onclick="filterTreasury('expense', this)">💸 مصروفات</button>
+                    <button class="filter-chip" onclick="filterTreasury('return', this)">🔄 مرتجعات</button>
+                    <button class="filter-chip" onclick="filterTreasury('manual', this)">✋ يدوي</button>
                 </div>
                 <h2 style="margin-top:20px;"><i class="fas fa-history"></i> السجل</h2>
                 <div id="treasuryList"></div>
@@ -420,6 +450,7 @@
                 <div class="tabs-row">
                     <button class="tab-btn active" onclick="switchPayTab('collect', this)">💰 تحصيل من عميل</button>
                     <button class="tab-btn" onclick="switchPayTab('pay', this)">💸 سداد لمورد</button>
+                    <button class="tab-btn" onclick="switchPayTab('settle', this)">🔄 مقاصة بضاعة</button>
                 </div>
                 <div id="payTabCollect" class="pay-tab-content">
                     <div class="form-card">
@@ -434,6 +465,10 @@
                             <span>💳 المديونية الحالية: </span>
                             <strong id="collectCurrentDebt">0.00</strong>
                             <span> 🇪🇬</span>
+                        </div>
+                        <div class="form-group">
+                            <label>الفاتورة (اختياري - للتسديد المباشر)</label>
+                            <select id="collectInvoice"><option value="">توزيع تلقائي (الأقدم أولاً)</option></select>
                         </div>
                         <div class="form-row">
                             <div class="form-group"><label>المبلغ</label><input type="number" id="collectAmount" min="0.01" step="0.01" /></div>
@@ -459,6 +494,10 @@
                             <strong id="payCurrentDebt">0.00</strong>
                             <span> 🇪🇬</span>
                         </div>
+                        <div class="form-group">
+                            <label>الفاتورة (اختياري - للتسديد المباشر)</label>
+                            <select id="payInvoice"><option value="">توزيع تلقائي (الأقدم أولاً)</option></select>
+                        </div>
                         <div class="form-row">
                             <div class="form-group"><label>المبلغ</label><input type="number" id="payAmount" min="0.01" step="0.01" /></div>
                             <div class="form-group"><label>التاريخ</label><input type="date" id="payDate" /></div>
@@ -467,6 +506,40 @@
                         <button class="btn btn-danger btn-block" onclick="savePay()">
                             <i class="fas fa-money-bill-wave"></i> حفظ السداد
                         </button>
+                    </div>
+                </div>
+                <div id="payTabSettle" class="pay-tab-content" style="display:none;">
+                    <div class="form-card">
+                        <h3>🔄 مقاصة بضاعة مقابل دين</h3>
+                        <p class="settings-desc">العميل يأخذ بضاعة بدل الفلوس اللي عليه. اختر العميل والمنتجات وسيتم خصم قيمتها من مديونيته.</p>
+                        <div class="form-group">
+                            <label>العميل</label>
+                            <select id="settleCustomer" onchange="updateSettleInfo()">
+                                <option value="">اختر عميل...</option>
+                            </select>
+                        </div>
+                        <div class="credit-info" id="settleInfoBox" style="display:none;">
+                            <span>💳 المديونية الحالية: </span>
+                            <strong id="settleCurrentDebt">0.00</strong>
+                            <span> 🇪🇬</span>
+                        </div>
+                        <div class="divider">— إضافة أصناف المقاصة —</div>
+                        <div class="form-row">
+                            <div class="form-group"><label>المنتج</label><select id="settleProduct" onchange="updateSettlePrice()"><option value="">اختر...</option></select></div>
+                            <div class="form-group"><label>الكمية</label><input type="number" id="settleQty" value="1" min="1" /></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>السعر</label><input type="number" id="settlePrice" min="0" step="0.01" /></div>
+                            <div class="form-group"><label>&nbsp;</label><button class="btn btn-success btn-block" onclick="addSettleItem()"><i class="fas fa-plus"></i> إضافة</button></div>
+                        </div>
+                        <div id="settleItemsContainer"><div class="empty-state"><i class="fas fa-exchange-alt"></i><span>لا توجد أصناف</span></div></div>
+                        <div class="sale-total-box" id="settleTotalBox" style="display:none;">
+                            <div class="tax-summary">
+                                <div class="tax-row total"><span>إجمالي المقاصة:</span><span id="settleTotal">0.00 🇪🇬</span></div>
+                            </div>
+                            <button class="btn btn-primary btn-block" onclick="saveSettle()" style="margin-top:10px;"><i class="fas fa-check"></i> حفظ المقاصة</button>
+                            <button class="btn btn-secondary btn-block" onclick="clearSettle()" style="margin-top:6px;"><i class="fas fa-times"></i> إلغاء</button>
+                        </div>
                     </div>
                 </div>
                 <h2 style="margin-top:20px;"><i class="fas fa-history"></i> سجل العمليات</h2>
@@ -490,18 +563,15 @@
             </div>
         </div>
 
-        <!-- ============ الحسابات (جديد) ============ -->
+        <!-- ============ الحسابات ============ -->
         <div id="page-accounts" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-sitemap"></i> الحسابات</h2>
-
                 <div class="tabs-row">
                     <button class="tab-btn active" onclick="switchAccountsTab('tree', this)">🏛️ الشجرة</button>
                     <button class="tab-btn" onclick="switchAccountsTab('journal', this)">📝 دفتر اليومية</button>
                     <button class="tab-btn" onclick="switchAccountsTab('reports', this)">📊 التقارير</button>
                 </div>
-
-                <!-- تاب الشجرة -->
                 <div id="accTabTree" class="pay-tab-content">
                     <div class="form-card">
                         <h3 id="accFormTitle">➕ إضافة حساب جديد</h3>
@@ -533,8 +603,6 @@
                     </div>
                     <div id="accountsTree"></div>
                 </div>
-
-                <!-- تاب دفتر اليومية -->
                 <div id="accTabJournal" class="pay-tab-content" style="display:none;">
                     <div class="form-card">
                         <h3>📝 قيد محاسبي جديد</h3>
@@ -543,24 +611,20 @@
                             <div class="form-group"><label>المرجع (اختياري)</label><input type="text" id="jeRef" placeholder="مثال: قيد يومية #1" /></div>
                         </div>
                         <div class="form-group"><label>الشرح</label><input type="text" id="jeDesc" placeholder="مثال: شراء مكتب" /></div>
-
                         <div class="divider">— المدين (Debit) —</div>
                         <div class="form-row">
                             <div class="form-group"><label>الحساب المدين</label><select id="jeDebitAccount"><option value="">اختر...</option></select></div>
                             <div class="form-group"><label>المبلغ</label><input type="number" id="jeDebitAmount" min="0" step="0.01" /></div>
                         </div>
-
                         <div class="divider">— الدائن (Credit) —</div>
                         <div class="form-row">
                             <div class="form-group"><label>الحساب الدائن</label><select id="jeCreditAccount"><option value="">اختر...</option></select></div>
                             <div class="form-group"><label>المبلغ</label><input type="number" id="jeCreditAmount" min="0" step="0.01" /></div>
                         </div>
-
                         <div class="journal-check" id="jeCheck">
                             <span>التوازن: </span>
                             <strong id="jeBalanceStatus" style="color:#A89070;">مدين = دائن ✅</strong>
                         </div>
-
                         <button class="btn btn-primary btn-block" onclick="saveJournalEntry()" style="margin-top:10px;">
                             <i class="fas fa-check"></i> حفظ القيد
                         </button>
@@ -569,8 +633,6 @@
                     <h3 style="color:#C9A94E;font-size:15px;margin:14px 0 10px;">📖 دفتر اليومية</h3>
                     <div id="journalList"></div>
                 </div>
-
-                <!-- تاب التقارير المحاسبية -->
                 <div id="accTabReports" class="pay-tab-content" style="display:none;">
                     <div class="accounting-grid">
                         <div class="accounting-card" onclick="showAccountingReport('trial')">
@@ -591,6 +653,19 @@
                     </div>
                     <div id="accountingReportContent" style="margin-top:14px;"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ============ حركات المخزون ============ -->
+        <div id="page-inventory-movements" class="page-container">
+            <div class="page-content">
+                <h2><i class="fas fa-exchange-alt"></i> حركات المخزون</h2>
+                <div class="filter-chips">
+                    <button class="filter-chip active" onclick="filterInventoryMovements('all', this)">📊 الكل</button>
+                    <button class="filter-chip" onclick="filterInventoryMovements('in', this)">⬇️ إدخال</button>
+                    <button class="filter-chip" onclick="filterInventoryMovements('out', this)">⬆️ إخراج</button>
+                </div>
+                <div id="inventoryMovementsList"></div>
             </div>
         </div>
 
@@ -754,12 +829,13 @@
 
                 <div class="settings-section">
                     <h3><i class="fas fa-info-circle"></i> عن التطبيق</h3>
-                    <div class="settings-info-row"><span class="label">الإصدار</span><span class="value">12.0.0</span></div>
-                    <div class="settings-info-row"><span class="label">المرحلة</span><span class="value">الحسابات المحاسبية</span></div>
+                    <div class="settings-info-row"><span class="label">الإصدار</span><span class="value">13.0.0</span></div>
+                    <div class="settings-info-row"><span class="label">المرحلة</span><span class="value">الربط الكامل</span></div>
                     <div class="settings-info-row"><span class="label">عدد المنتجات</span><span class="value" id="setProductsCount">0</span></div>
                     <div class="settings-info-row"><span class="label">عدد الفواتير</span><span class="value" id="setSalesCount">0</span></div>
                     <div class="settings-info-row"><span class="label">عدد الحسابات</span><span class="value" id="setAccountsCount">0</span></div>
                     <div class="settings-info-row"><span class="label">عدد القيود</span><span class="value" id="setJournalCount">0</span></div>
+                    <div class="settings-info-row"><span class="label">حركات المخزون</span><span class="value" id="setMovementsCount">0</span></div>
                     <div class="settings-info-row"><span class="label">عدد المستخدمين</span><span class="value" id="setUsersCount">0</span></div>
                     <div class="settings-info-row"><span class="label">حجم البيانات</span><span class="value" id="setDataSize">0 KB</span></div>
                 </div>
@@ -786,6 +862,7 @@
                     <button class="more-item" onclick="navigateTo('treasury')"><i class="fas fa-vault"></i><span>الخزنة</span></button>
                     <button class="more-item" onclick="navigateTo('customers')"><i class="fas fa-users"></i><span>العملاء</span></button>
                     <button class="more-item" onclick="navigateTo('suppliers')"><i class="fas fa-truck"></i><span>الموردين</span></button>
+                    <button class="more-item" onclick="navigateTo('inventory-movements')"><i class="fas fa-exchange-alt"></i><span>حركات المخزون</span></button>
                     <button class="more-item" onclick="navigateTo('company')"><i class="fas fa-building"></i><span>بيانات الشركة</span></button>
                     <button class="more-item admin-only" onclick="navigateTo('users')"><i class="fas fa-user-cog"></i><span>المستخدمين</span></button>
                     <button class="more-item admin-only" onclick="navigateTo('audit')"><i class="fas fa-history"></i><span>سجل النشاطات</span></button>

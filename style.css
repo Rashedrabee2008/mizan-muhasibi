@@ -1,5 +1,5 @@
 /* ============================================================
-   الميزان - الإصدار 12.0.0 (الحسابات المحاسبية)
+   الميزان - الإصدار 13.0.0 (الربط الكامل)
    ============================================================ */
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
@@ -408,6 +408,15 @@ body {
     border-top: 1px solid #3D3D3D; font-size: 11px; color: #A89070;
 }
 
+/* ============ Invoice Status Badge ============ */
+.invoice-status {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 10px; font-weight: 800;
+}
+.invoice-status.paid { background: #2D8F5E; color: #fff; }
+.invoice-status.partial { background: #E6A830; color: #0D0D0D; }
+.invoice-status.unpaid { background: #E06060; color: #fff; }
+
 /* ============ Receipt Print ============ */
 .receipt-print {
     direction: rtl; background: #0D0D0D; padding: 15px;
@@ -794,7 +803,7 @@ body {
 .payment-badge.cash { background: #2D8F5E; color: #fff; }
 .payment-badge.credit { background: #E6A830; color: #0D0D0D; }
 
-/* ============ Accounting Grid (جديد) ============ */
+/* ============ Accounting Grid ============ */
 .accounting-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -832,7 +841,7 @@ body {
     color: #A89070;
 }
 
-/* ============ Accounts Tree (جديد) ============ */
+/* ============ Accounts Tree ============ */
 .acc-type-header {
     background: #1C1C1C;
     border-radius: 10px;
@@ -885,7 +894,7 @@ body {
     gap: 3px;
 }
 
-/* ============ Journal Entry Check (جديد) ============ */
+/* ============ Journal Entry Check ============ */
 .journal-check {
     background: #1C1C1C;
     border-radius: 8px;
@@ -908,7 +917,7 @@ body {
     color: #E06060;
 }
 
-/* ============ Journal List (جديد) ============ */
+/* ============ Journal List ============ */
 .journal-item {
     background: #0D0D0D;
     border-radius: 10px;
@@ -967,7 +976,7 @@ body {
     gap: 4px;
 }
 
-/* ============ Accounting Report (جديد) ============ */
+/* ============ Accounting Report ============ */
 .acc-report-title {
     text-align: center;
     font-size: 18px;
@@ -1019,13 +1028,50 @@ body {
     font-size: 15px;
     color: #C9A94E;
 }
-.acc-report-row.total.profit {
-    color: #2D8F5E;
-}
-.acc-report-row.total.loss {
-    color: #E06060;
-}
+.acc-report-row.total.profit { color: #2D8F5E; }
+.acc-report-row.total.loss { color: #E06060; }
 .acc-report-row.indent { padding-right: 16px; }
+
+/* ============ Invoice Detail Modal ============ */
+.invoice-detail {
+    background: #0D0D0D;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #2D2D2D;
+}
+.invoice-detail .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #2D2D2D;
+    font-size: 13px;
+}
+.invoice-detail .detail-row:last-child { border-bottom: none; }
+.invoice-detail .detail-row span:first-child { color: #A89070; font-weight: 700; }
+
+.invoice-related-section {
+    background: #0D0D0D;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-right: 4px solid #C9A94E;
+}
+.invoice-related-section h4 {
+    font-size: 13px;
+    color: #C9A94E;
+    margin-bottom: 8px;
+    font-weight: 800;
+}
+.invoice-related-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed #2D2D2D;
+    font-size: 11px;
+    color: #F5E6C8;
+}
+.invoice-related-item:last-child { border-bottom: none; }
 
 /* ============ Scroll ============ */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
