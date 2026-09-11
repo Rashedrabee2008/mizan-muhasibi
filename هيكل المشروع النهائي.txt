@@ -1,4 +1,6 @@
-mizan/
+📁 mizan-muhasibi/
 ├── index.html
 ├── style.css
-└── app.js
+├── app-part1.js    ← الأساسيات (600 سطر تقريباً)
+├── app-part2.js    ← العمليات (1400 سطر تقريباً)
+└── app-part3.js    ← العرض والتهيئة (1600 سطر تقريباً)
