@@ -257,7 +257,7 @@ function syncToCloud() {
     const ref = getFirebaseRef();
     if (!ref) { showToast('⚠️ Firebase غير متصل', 'error'); return; }
     
-    // ✅ دالة لتنظيف القيم undefined من أي كائن (مهمة لـ Firebase)
+    // ✅ دالة تنظيف القيم الفارغة (مهمة لـ Firebase)
     function cleanUndefined(obj) {
         if (obj === null || obj === undefined) return null;
         if (Array.isArray(obj)) return obj.map(cleanUndefined);
@@ -265,8 +265,7 @@ function syncToCloud() {
             const cleaned = {};
             for (const key in obj) {
                 const val = cleanUndefined(obj[key]);
-                if (val !== undefined && val !== null) cleaned[key] = val;
-                else cleaned[key] = null;
+                cleaned[key] = (val === undefined) ? null : val;
             }
             return cleaned;
         }
