@@ -517,7 +517,6 @@
         <div id="page-users" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-user-cog"></i> إدارة المستخدمين</h2>
-
                 <div class="form-card" id="userFormCard">
                     <h3 id="userFormTitle">➕ إضافة مستخدم جديد</h3>
                     <input type="hidden" id="userId" />
@@ -539,7 +538,6 @@
                         <button class="btn btn-secondary" onclick="resetUserForm()"><i class="fas fa-times"></i> إلغاء</button>
                     </div>
                 </div>
-
                 <div class="search-box"><input type="text" id="userSearch" placeholder="🔍 بحث..." oninput="renderUsers()" /></div>
                 <div id="userList"></div>
             </div>
@@ -549,7 +547,37 @@
         <div id="page-audit" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-history"></i> سجل النشاطات</h2>
-                <div class="search-box"><input type="text" id="auditSearch" placeholder="🔍 بحث..." oninput="renderAudit()" /></div>
+                
+                <div class="stats-mini">
+                    <div class="stat-mini"><div class="num" id="auditTotalCount">0</div><div class="lbl">إجمالي النشاطات</div></div>
+                    <div class="stat-mini"><div class="num" id="auditTodayCount">0</div><div class="lbl">نشاطات اليوم</div></div>
+                </div>
+
+                <div class="form-card">
+                    <h3>📤 تصدير السجل</h3>
+                    <p class="settings-desc">حمّل ملف بكل النشاطات للمراجعة.</p>
+                    <button class="btn btn-success btn-block" onclick="exportAuditLog()">
+                        <i class="fas fa-download"></i> تصدير السجل (JSON)
+                    </button>
+                    <button class="btn btn-warning btn-block" onclick="exportAuditLogText()" style="margin-top:6px;">
+                        <i class="fas fa-file-alt"></i> تصدير كملف نصي
+                    </button>
+                    <button class="btn btn-danger btn-block" onclick="clearAuditLog()" style="margin-top:6px;">
+                        <i class="fas fa-trash"></i> مسح السجل كاملاً
+                    </button>
+                </div>
+
+                <div class="filter-chips">
+                    <button class="filter-chip active" onclick="filterAudit('all', this)">📊 الكل</button>
+                    <button class="filter-chip" onclick="filterAudit('add', this)">➕ إضافة</button>
+                    <button class="filter-chip" onclick="filterAudit('edit', this)">✏️ تعديل</button>
+                    <button class="filter-chip" onclick="filterAudit('delete', this)">🗑️ حذف</button>
+                    <button class="filter-chip" onclick="filterAudit('sale', this)">💰 فواتير بيع</button>
+                    <button class="filter-chip" onclick="filterAudit('purchase', this)">🛒 فواتير شراء</button>
+                    <button class="filter-chip" onclick="filterAudit('payment', this)">💳 تحصيل/سداد</button>
+                </div>
+
+                <div class="search-box"><input type="text" id="auditSearch" placeholder="🔍 بحث في السجل..." oninput="renderAudit()" /></div>
                 <div id="auditList"></div>
             </div>
         </div>
@@ -592,8 +620,8 @@
 
                 <div class="settings-section">
                     <h3><i class="fas fa-info-circle"></i> عن التطبيق</h3>
-                    <div class="settings-info-row"><span class="label">الإصدار</span><span class="value">10.0.0</span></div>
-                    <div class="settings-info-row"><span class="label">المرحلة</span><span class="value">المستخدمين والصلاحيات</span></div>
+                    <div class="settings-info-row"><span class="label">الإصدار</span><span class="value">10.1.0</span></div>
+                    <div class="settings-info-row"><span class="label">المرحلة</span><span class="value">سجل النشاطات الكامل</span></div>
                     <div class="settings-info-row"><span class="label">عدد المنتجات</span><span class="value" id="setProductsCount">0</span></div>
                     <div class="settings-info-row"><span class="label">عدد الفواتير</span><span class="value" id="setSalesCount">0</span></div>
                     <div class="settings-info-row"><span class="label">عدد المستخدمين</span><span class="value" id="setUsersCount">0</span></div>

@@ -1,11 +1,10 @@
 // ============================================================
-// الميزان - الإصدار 10.0.0 (المستخدمين والصلاحيات)
+// الميزان - الإصدار 10.1.0 (سجل النشاطات الكامل)
 // ============================================================
 
 const STORAGE_KEY = 'mizan_';
 const DEFAULT_PASSWORD = '123456';
 
-// ===== Firebase Config =====
 const firebaseConfig = {
     apiKey: "AIzaSyCP7vpqviR6A11gPkC7cO6MQJBGKWcnVWE",
     authDomain: "accounting-balance-ab9d3.firebaseapp.com",
@@ -20,16 +19,14 @@ const firebaseConfig = {
 let firebaseReady = false;
 const CLOUD_PATH = 'mizan_data';
 
-// ===== الحالة =====
 let products = [], sales = [], purchases = [], returns = [], expenses = [];
 let customers = [], suppliers = [], treasury = [];
-let payments = [];
-let users = [];
-let auditLog = [];
+let payments = [], users = [], auditLog = [];
 let currentUser = null;
 let currentSaleItems = [], currentPurItems = [], currentRetItems = [];
 let companyData = {};
 let currentReport = 'daily';
+let currentAuditFilter = 'all';
 
 // ============================================================
 // أدوات مساعدة
@@ -79,10 +76,8 @@ function migrateOldProducts(oldProducts) {
 }
 
 // ============================================================
-// نظام المستخدمين والصلاحيات
+// المستخدمين والصلاحيات
 // ============================================================
-
-// الأدوار
 const ROLES = {
     admin: { name: 'مدير', icon: '👑', color: '#E06060' },
     manager: { name: 'مشرف', icon: '📊', color: '#C9A94E' },
@@ -90,18 +85,15 @@ const ROLES = {
     viewer: { name: 'مشاهد', icon: '👁️', color: '#5D5D5D' }
 };
 
-// التحقق من صلاحية
 function hasPermission(permission) {
     if (!currentUser) return false;
     const role = currentUser.role;
-    
     const permissions = {
         admin: ['add', 'edit', 'delete', 'view', 'manage_users', 'view_audit', 'clear_data'],
-        manager: ['add', 'edit', 'view', 'view_audit'],
+        manager: ['add', 'edit', 'view'],
         cashier: ['add_sale', 'view'],
         viewer: ['view']
     };
-    
     return (permissions[role] || []).includes(permission);
 }
 
@@ -116,14 +108,15 @@ function canViewAudit() { return hasPermission('view_audit'); }
 function canClearData() { return hasPermission('clear_data'); }
 
 // ============================================================
-// سجل النشاطات (Audit Log)
+// سجل النشاطات - النسخة الجديدة
 // ============================================================
-function addAuditLog(action, type, details) {
+function addAuditLog(action, type, details, extraData = null) {
     const log = {
         id: Date.now() + Math.random(),
-        action: action, // add | edit | delete | login
-        type: type, // product | customer | sale | ...
+        action: action,
+        type: type,
         details: details,
+        extraData: extraData, // تفاصيل إضافية (الأصناف، المبالغ، إلخ)
         userName: currentUser ? currentUser.name : 'غير معروف',
         userRole: currentUser ? currentUser.role : 'unknown',
         date: getTodayDate(),
@@ -131,8 +124,7 @@ function addAuditLog(action, type, details) {
         createdAt: new Date().toISOString()
     };
     auditLog.unshift(log);
-    // احتفظ بآخر 500 فقط
-    if (auditLog.length > 500) auditLog = auditLog.slice(0, 500);
+    if (auditLog.length > 2000) auditLog = auditLog.slice(0, 2000);
     setData('auditLog', auditLog);
 }
 
@@ -141,10 +133,7 @@ function addAuditLog(action, type, details) {
 // ============================================================
 function initFirebase() {
     try {
-        if (typeof firebase === 'undefined') {
-            console.warn('⚠️ Firebase SDK غير محمّل');
-            return false;
-        }
+        if (typeof firebase === 'undefined') return false;
         if (!firebase.apps || firebase.apps.length === 0) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -164,9 +153,6 @@ function getFirebaseRef() {
     catch (e) { return null; }
 }
 
-// ============================================================
-// Cloud Sync
-// ============================================================
 function updateSyncStatus(msg, type = 'info') {
     const el = $('syncStatus');
     if (!el) return;
@@ -182,21 +168,17 @@ function syncToCloud() {
     const ref = getFirebaseRef();
     if (!ref) {
         showToast('⚠️ Firebase غير متصل', 'error');
-        updateSyncStatus('❌ Firebase غير متصل', 'error');
         return;
     }
-
     const data = {
         products, sales, purchases, returns, expenses,
         customers, suppliers, treasury, payments, companyData,
         users, auditLog,
         lastSync: new Date().toISOString(),
-        version: '10.0.0'
+        version: '10.1.0'
     };
-
     updateSyncStatus('⏳ جاري الرفع...', 'info');
     showToast('⏳ جاري الرفع...', 'info');
-
     ref.set(data)
         .then(() => {
             showToast('✅ تم الرفع للسحابة بنجاح', 'success');
@@ -204,7 +186,6 @@ function syncToCloud() {
             addAuditLog('edit', 'cloud', 'رفع البيانات للسحابة');
         })
         .catch((err) => {
-            console.error(err);
             showToast('❌ فشل الرفع: ' + err.message, 'error');
             updateSyncStatus('❌ فشل الرفع: ' + err.message, 'error');
         });
@@ -214,20 +195,15 @@ function syncFromCloud() {
     const ref = getFirebaseRef();
     if (!ref) {
         showToast('⚠️ Firebase غير متصل', 'error');
-        updateSyncStatus('❌ Firebase غير متصل', 'error');
         return;
     }
-
-    if (!confirm('⚠️ سيتم استبدال البيانات الحالية ببيانات السحابة. متابعة؟')) return;
-
+    if (!confirm('⚠️ سيتم استبدال البيانات الحالية. متابعة؟')) return;
     updateSyncStatus('⏳ جاري الجلب...', 'info');
-    showToast('⏳ جاري الجلب من السحابة...', 'info');
-
+    showToast('⏳ جاري الجلب...', 'info');
     ref.once('value')
         .then((snapshot) => {
             if (!snapshot.exists()) {
                 showToast('⚠️ لا توجد بيانات في السحابة', 'warning');
-                updateSyncStatus('⚠️ لا توجد بيانات في السحابة', 'warning');
                 return;
             }
             const data = snapshot.val();
@@ -243,7 +219,6 @@ function syncFromCloud() {
             if (data.companyData) companyData = data.companyData;
             if (data.users) users = data.users;
             if (data.auditLog) auditLog = data.auditLog;
-
             saveAll();
             populateAllDropdowns();
             renderProducts(); renderCashier(); renderPurchases();
@@ -251,14 +226,11 @@ function syncFromCloud() {
             renderTreasury(); renderCustomers(); renderSuppliers();
             renderPayments(); renderUsers(); renderAudit();
             updateDashboard();
-
             showToast('✅ تم الجلب من السحابة بنجاح', 'success');
-            updateSyncStatus('✅ تم الجلب بنجاح - ' + new Date().toLocaleTimeString('ar'), 'success');
+            updateSyncStatus('✅ تم الجلب بنجاح', 'success');
         })
         .catch((err) => {
-            console.error(err);
             showToast('❌ فشل الجلب: ' + err.message, 'error');
-            updateSyncStatus('❌ فشل الجلب: ' + err.message, 'error');
         });
 }
 
@@ -293,18 +265,9 @@ function checkLogin() {
     const userId = $('loginUsername').value;
     const password = $('loginPassword').value;
     const error = $('loginError');
-    
-    if (!userId) {
-        if (error) error.classList.add('show');
-        return;
-    }
-    
+    if (!userId) { if (error) error.classList.add('show'); return; }
     const user = users.find(u => u.id == userId);
-    if (!user) {
-        if (error) error.classList.add('show');
-        return;
-    }
-    
+    if (!user) { if (error) error.classList.add('show'); return; }
     if (user.password !== password) {
         if (error) error.classList.add('show');
         $('loginPassword').value = '';
@@ -312,67 +275,43 @@ function checkLogin() {
         setTimeout(() => { if (error) error.classList.remove('show'); }, 3000);
         return;
     }
-    
-    // نجح الدخول
     currentUser = user;
     localStorage.setItem(STORAGE_KEY + 'current_user', JSON.stringify({ id: user.id, name: user.name, role: user.role }));
-    
     if (error) error.classList.remove('show');
     $('loginPassword').value = '';
-    
     $('loginContainer').classList.add('hidden');
     $('appContent').style.display = 'block';
-    
-    // تحديث واجهة المستخدم
     updateUserUI();
     applyPermissions();
-    
-    addAuditLog('login', 'user', `تسجيل دخول: ${user.name}`);
-    
+    addAuditLog('login', 'user', `تسجيل دخول: ${user.name}`, { userId: user.id, role: user.role });
     showToast(`🔓 مرحباً ${user.name}!`, 'success');
     navigateTo('dashboard');
 }
 
 function lockApp() {
     if (currentUser) {
-        addAuditLog('login', 'user', `تسجيل خروج: ${currentUser.name}`);
+        addAuditLog('login', 'user', `تسجيل خروج: ${currentUser.name}`, { userId: currentUser.id });
     }
     currentUser = null;
     localStorage.removeItem(STORAGE_KEY + 'current_user');
     $('loginContainer').classList.remove('hidden');
     $('appContent').style.display = 'none';
     populateLoginUsers();
-    $('loginUsername')?.focus();
 }
 
 function updateUserUI() {
     if (!currentUser) return;
-    const nameEl = $('currentUserName');
-    if (nameEl) nameEl.textContent = currentUser.name;
-    const passwordUserEl = $('currentUserForPassword');
-    if (passwordUserEl) passwordUserEl.textContent = currentUser.name;
+    if ($('currentUserName')) $('currentUserName').textContent = currentUser.name;
+    if ($('currentUserForPassword')) $('currentUserForPassword').textContent = currentUser.name;
 }
 
-// تطبيق الصلاحيات على الواجهة
 function applyPermissions() {
     const role = currentUser ? currentUser.role : 'viewer';
-    
-    // إخفاء عناصر admin-only
     document.querySelectorAll('.admin-only').forEach(el => {
         el.style.display = (role === 'admin') ? '' : 'none';
     });
-    
-    // إخفاء أزرار الإضافة لو مش مصرح
-    const addButtons = document.querySelectorAll('[data-permission="add"]');
-    addButtons.forEach(el => {
-        el.style.display = canAdd() ? '' : 'none';
-    });
-    
-    // إخفاء منطقة الخطر لو مش أدمن
     const dangerZone = $('dangerZone');
     if (dangerZone) dangerZone.style.display = isAdmin() ? '' : 'none';
-    
-    // إخفاء المستخدمين لو مش أدمن
     const userForm = $('userFormCard');
     if (userForm) userForm.style.display = isAdmin() ? '' : 'none';
 }
@@ -381,16 +320,9 @@ function applyPermissions() {
 // التنقل
 // ============================================================
 function navigateTo(page) {
-    // التحقق من الصلاحيات
-    if (page === 'users' && !canManageUsers()) {
-        showToast('⚠️ ليس لديك صلاحية', 'error');
-        return;
-    }
-    if (page === 'audit' && !canViewAudit()) {
-        showToast('⚠️ ليس لديك صلاحية', 'error');
-        return;
-    }
-    
+    if (page === 'users' && !canManageUsers()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    if (page === 'audit' && !canViewAudit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+
     document.querySelectorAll('.page-container').forEach(el => el.classList.remove('active'));
     const target = $('page-' + page);
     if (target) target.classList.add('active');
@@ -435,14 +367,21 @@ function saveProduct() {
         if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
         const idx = products.findIndex(p => p.id == id);
         if (idx > -1) {
+            const old = { ...products[idx] };
             products[idx] = { ...products[idx], name, barcode, buy, sell, qty, min };
-            addAuditLog('edit', 'product', `تعديل منتج: ${name}`);
+            addAuditLog('edit', 'product', `تعديل منتج: ${name}`, {
+                before: { name: old.name, buy: old.buy, sell: old.sell, qty: old.qty, min: old.min, barcode: old.barcode },
+                after: { name, buy, sell, qty, min, barcode }
+            });
             showToast('✅ تم تعديل المنتج', 'success');
         }
     } else {
         if (products.find(p => p.name === name)) { showToast('⚠️ المنتج موجود', 'warning'); return; }
-        products.push({ id: Date.now(), name, barcode, buy, sell, qty, min, createdAt: new Date().toISOString() });
-        addAuditLog('add', 'product', `إضافة منتج: ${name}`);
+        const newP = { id: Date.now(), name, barcode, buy, sell, qty, min, createdAt: new Date().toISOString() };
+        products.push(newP);
+        addAuditLog('add', 'product', `إضافة منتج: ${name}`, {
+            product: { name, buy, sell, qty, min, barcode }
+        });
         showToast('✅ تم إضافة المنتج', 'success');
     }
     setData('products', products);
@@ -467,7 +406,9 @@ function deleteProduct(id) {
     if (!confirm(`⚠️ حذف "${p.name}"؟`)) return;
     products = products.filter(pr => pr.id != id);
     setData('products', products);
-    addAuditLog('delete', 'product', `حذف منتج: ${p.name}`);
+    addAuditLog('delete', 'product', `حذف منتج: ${p.name}`, {
+        product: { name: p.name, buy: p.buy, sell: p.sell, qty: p.qty }
+    });
     renderProducts(); populateAllDropdowns(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
@@ -499,12 +440,10 @@ function renderProducts() {
             <span>${formatMoney(p.buy)}</span>
             <span style="color:#2D8F5E;font-weight:700;">${formatMoney(p.sell)}</span>
             <span style="${low ? 'color:#E06060;font-weight:700;' : ''}">${p.qty}${low ? ' ⚠️' : ''}</span>
-            ${showActions ? `
-                <div style="display:flex;gap:4px;">
-                    ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editProduct(${p.id})"><i class="fas fa-edit"></i></button>` : ''}
-                    ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>` : ''}
-                </div>
-            ` : ''}
+            ${showActions ? `<div style="display:flex;gap:4px;">
+                ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editProduct(${p.id})"><i class="fas fa-edit"></i></button>` : ''}
+                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>` : ''}
+            </div>` : ''}
         </div>`;
     });
     container.innerHTML = html;
@@ -596,10 +535,7 @@ function saveSale() {
 
     currentSaleItems.forEach(it => {
         const p = products.find(pr => pr.id == it.productId);
-        if (p) {
-            it.costPrice = p.buy;
-            p.qty -= it.qty;
-        }
+        if (p) { it.costPrice = p.buy; p.qty -= it.qty; }
     });
 
     const inv = {
@@ -630,7 +566,25 @@ function saveSale() {
     }
 
     setData('products', products); setData('sales', sales); setData('treasury', treasury);
-    addAuditLog('add', 'sale', `فاتورة بيع #${inv.number} - ${customer} - ${formatMoney(total)} ج.م`);
+    
+    // ✅ سجل النشاطات مع التفاصيل الكاملة
+    addAuditLog('add', 'sale', 
+        `فاتورة بيع #${inv.number} - ${customer} - ${formatMoney(total)} ج.م`,
+        {
+            invoiceNumber: inv.number,
+            customer: customer,
+            paymentMethod: paymentMethod === 'cash' ? 'نقدي' : 'آجل',
+            total: total,
+            date: inv.date,
+            time: inv.time,
+            items: inv.items.map(it => ({
+                name: it.name,
+                qty: it.qty,
+                price: it.price,
+                total: it.total
+            }))
+        }
+    );
     
     currentSaleItems = []; $('saleCustomer').value = '';
     document.querySelector('input[name="salePaymentMethod"][value="cash"]').checked = true;
@@ -750,7 +704,26 @@ function savePurchase() {
         });
     }
     setData('products', products); setData('purchases', purchases); setData('treasury', treasury);
-    addAuditLog('add', 'purchase', `فاتورة شراء #${inv.number} - ${supplier.name} - ${formatMoney(total)} ج.م`);
+    
+    // ✅ سجل النشاطات مع التفاصيل الكاملة
+    addAuditLog('add', 'purchase', 
+        `فاتورة شراء #${inv.number} - ${supplier.name} - ${formatMoney(total)} ج.م`,
+        {
+            invoiceNumber: inv.number,
+            supplier: supplier.name,
+            payment: payment === 'cash' ? 'نقدي' : 'آجل',
+            total: total,
+            date: inv.date,
+            time: inv.time,
+            items: inv.items.map(it => ({
+                name: it.name,
+                qty: it.qty,
+                price: it.price,
+                total: it.total
+            }))
+        }
+    );
+    
     currentPurItems = []; $('purSupplier').value = '';
     renderPurItems(); renderPurchases(); populatePurProducts(); updateDashboard();
     showToast(`✅ فاتورة شراء #${inv.number} بمبلغ ${formatMoney(total)} 🇪🇬 (${payment === 'cash' ? 'نقدي' : 'آجل'})`, 'success');
@@ -843,7 +816,26 @@ function deletePurchase(id) {
     treasury = treasury.filter(t => !((t.refType === 'purchase' || t.refType === 'purchase_credit') && t.refId === id));
     purchases = purchases.filter(p => p.id !== id);
     setData('products', products); setData('purchases', purchases); setData('treasury', treasury);
-    addAuditLog('delete', 'purchase', `حذف فاتورة شراء #${inv.number}`);
+    
+    // ✅ سجل النشاطات
+    addAuditLog('delete', 'purchase', 
+        `حذف فاتورة شراء #${inv.number} - ${inv.supplierName} - ${formatMoney(inv.total)} ج.م`,
+        {
+            invoiceNumber: inv.number,
+            supplier: inv.supplierName,
+            payment: inv.payment === 'cash' ? 'نقدي' : 'آجل',
+            total: inv.total,
+            date: inv.date,
+            time: inv.time,
+            items: inv.items.map(it => ({
+                name: it.name,
+                qty: it.qty,
+                price: it.price,
+                total: it.total
+            }))
+        }
+    );
+    
     renderPurchases(); renderProducts(); updateDashboard();
     showToast(`🗑️ تم حذف فاتورة #${inv.number}`, 'info');
 }
@@ -964,7 +956,18 @@ function saveReturn() {
         });
     }
     setData('products', products); setData('returns', returns); setData('treasury', treasury);
-    addAuditLog('add', 'return', `مرتجع ${type === 'sale' ? 'بيع' : 'شراء'} #${ret.number} - ${party} - ${formatMoney(total)} ج.م`);
+    
+    addAuditLog('add', 'return', 
+        `مرتجع ${type === 'sale' ? 'بيع' : 'شراء'} #${ret.number} - ${party} - ${formatMoney(total)} ج.م`,
+        {
+            returnNumber: ret.number,
+            type: type === 'sale' ? 'مرتجع بيع' : 'مرتجع شراء',
+            party: party,
+            total: total,
+            items: ret.items.map(it => ({ name: it.name, qty: it.qty, price: it.price, total: it.total }))
+        }
+    );
+    
     currentRetItems = []; $('retParty').value = '';
     renderRetItems(); renderReturns(); populateRetProducts(); updateDashboard();
     showToast(`✅ مرتجع #${ret.number} بمبلغ ${formatMoney(total)} 🇪🇬`, 'success');
@@ -1014,7 +1017,18 @@ function deleteReturn(id) {
     treasury = treasury.filter(t => !(t.refType === 'return' && t.refId === id));
     returns = returns.filter(x => x.id !== id);
     setData('products', products); setData('returns', returns); setData('treasury', treasury);
-    addAuditLog('delete', 'return', `حذف مرتجع #${r.number}`);
+    
+    addAuditLog('delete', 'return', 
+        `حذف مرتجع ${r.type === 'sale' ? 'بيع' : 'شراء'} #${r.number} - ${r.party}`,
+        {
+            returnNumber: r.number,
+            type: r.type === 'sale' ? 'مرتجع بيع' : 'مرتجع شراء',
+            party: r.party,
+            total: r.total,
+            items: r.items.map(it => ({ name: it.name, qty: it.qty, price: it.price, total: it.total }))
+        }
+    );
+    
     renderReturns(); renderProducts(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
@@ -1044,7 +1058,11 @@ function saveExpense() {
         refType: 'expense', refId: exp.id
     });
     setData('expenses', expenses); setData('treasury', treasury);
-    addAuditLog('add', 'expense', `مصروف: ${note} - ${formatMoney(amount)} ج.م`);
+    
+    addAuditLog('add', 'expense', `مصروف: ${note} - ${formatMoney(amount)} ج.م`, {
+        note: note, amount: amount, category: category, date: date
+    });
+    
     $('expNote').value = ''; $('expAmount').value = '';
     renderExpenses(); updateDashboard();
     showToast(`✅ تم إضافة مصروف ${formatMoney(amount)} 🇪🇬`, 'success');
@@ -1086,7 +1104,11 @@ function deleteExpense(id) {
     treasury = treasury.filter(t => !(t.refType === 'expense' && t.refId === id));
     expenses = expenses.filter(x => x.id !== id);
     setData('expenses', expenses); setData('treasury', treasury);
-    addAuditLog('delete', 'expense', `حذف مصروف: ${e.note}`);
+    
+    addAuditLog('delete', 'expense', `حذف مصروف: ${e.note} - ${formatMoney(e.amount)} ج.م`, {
+        note: e.note, amount: e.amount, category: e.category
+    });
+    
     renderExpenses(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
@@ -1178,7 +1200,25 @@ function deleteInvoice(id) {
     treasury = treasury.filter(t => !((t.refType === 'sale' || t.refType === 'sale_credit') && t.refId === id));
     sales = sales.filter(s => s.id !== id);
     setData('products', products); setData('sales', sales); setData('treasury', treasury);
-    addAuditLog('delete', 'sale', `حذف فاتورة بيع #${inv.number}`);
+    
+    addAuditLog('delete', 'sale', 
+        `حذف فاتورة بيع #${inv.number} - ${inv.customer} - ${formatMoney(inv.total)} ج.م`,
+        {
+            invoiceNumber: inv.number,
+            customer: inv.customer,
+            paymentMethod: inv.paymentMethod === 'cash' ? 'نقدي' : 'آجل',
+            total: inv.total,
+            date: inv.date,
+            time: inv.time,
+            items: inv.items.map(it => ({
+                name: it.name,
+                qty: it.qty,
+                price: it.price,
+                total: it.total
+            }))
+        }
+    );
+    
     renderInvoices(); renderProducts(); updateDashboard();
     showToast(`🗑️ تم الحذف`, 'info');
 }
@@ -1204,7 +1244,9 @@ function addTreasuryTransaction() {
         refType: 'manual',
         createdBy: currentUser ? currentUser.name : 'unknown' });
     setData('treasury', treasury);
-    addAuditLog('add', 'treasury', `${type === 'deposit' ? 'إيداع' : 'سحب'} ${formatMoney(amount)} ج.م - ${note}`);
+    addAuditLog('add', 'treasury', `${type === 'deposit' ? 'إيداع' : 'سحب'} ${formatMoney(amount)} ج.م - ${note}`, {
+        type: type, amount: amount, note: note
+    });
     $('treasuryAmount').value = ''; $('treasuryNote').value = '';
     renderTreasury(); updateDashboard();
     showToast(type === 'deposit' ? `✅ إيداع ${formatMoney(amount)}` : `✅ سحب ${formatMoney(amount)}`, 'success');
@@ -1247,10 +1289,12 @@ function deleteTreasury(id) {
     if (!confirm('⚠️ حذف الحركة؟')) return;
     treasury = treasury.filter(tr => tr.id !== id);
     setData('treasury', treasury);
-    addAuditLog('delete', 'treasury', `حذف حركة خزنة: ${t.note}`);
+    addAuditLog('delete', 'treasury', `حذف حركة خزنة: ${t.note} - ${formatMoney(t.amount)} ج.م`);
     renderTreasury(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
+
+
 
 // ============================================================
 // لوحة التحكم
@@ -1261,7 +1305,6 @@ function updateDashboard() {
     const totalExpenses = expenses.reduce((s, i) => s + (i.amount || 0), 0);
     const totalReturns = returns.reduce((s, i) => s + (i.total || 0), 0);
     
-    // حساب COGS
     const cogs = getCOGS(sales);
     const returnsCOGS = getReturnsCOGS(returns);
     const returnsPurchase = returns.filter(r => r.type === 'purchase')
@@ -1311,7 +1354,6 @@ function updateDashboard() {
     container.innerHTML = html;
 }
 
-// حساب COGS
 function getCOGS(salesArr) {
     let totalCOGS = 0;
     (salesArr || []).forEach(inv => {
@@ -1364,7 +1406,6 @@ function renderMiniChart() {
     }).join('');
 }
 
-// حساب رصيد العميل (المديونية)
 function getCustomerBalance(customerName) {
     if (!customerName || customerName === 'عميل نقدي') return 0;
     const creditSales = sales.filter(s =>
@@ -1379,7 +1420,6 @@ function getCustomerBalance(customerName) {
     return Math.max(0, creditSales - creditReturns - collected);
 }
 
-// حساب رصيد المورد (الالتزام)
 function getSupplierBalance(supplierName) {
     if (!supplierName) return 0;
     const creditPurchases = purchases.filter(p =>
@@ -1409,14 +1449,18 @@ function saveCustomer() {
         if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
         const idx = customers.findIndex(c => c.id == id);
         if (idx > -1) {
+            const old = { ...customers[idx] };
             customers[idx] = { ...customers[idx], name, phone, whatsapp, address };
-            addAuditLog('edit', 'customer', `تعديل عميل: ${name}`);
+            addAuditLog('edit', 'customer', `تعديل عميل: ${name}`, {
+                before: { name: old.name, phone: old.phone, whatsapp: old.whatsapp, address: old.address },
+                after: { name, phone, whatsapp, address }
+            });
             showToast('✅ تم تعديل العميل', 'success');
         }
     } else {
         if (customers.find(c => c.name === name)) { showToast('⚠️ العميل موجود', 'warning'); return; }
         customers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() });
-        addAuditLog('add', 'customer', `إضافة عميل: ${name}`);
+        addAuditLog('add', 'customer', `إضافة عميل: ${name}`, { name, phone, whatsapp, address });
         showToast('✅ تم إضافة العميل', 'success');
     }
     setData('customers', customers);
@@ -1447,7 +1491,9 @@ function deleteCustomer(id) {
     }
     customers = customers.filter(cu => cu.id != id);
     setData('customers', customers);
-    addAuditLog('delete', 'customer', `حذف عميل: ${c.name}`);
+    addAuditLog('delete', 'customer', `حذف عميل: ${c.name}`, {
+        customer: { name: c.name, phone: c.phone, whatsapp: c.whatsapp, address: c.address, balance: balance }
+    });
     renderCustomers(); populateSaleCustomers(); populateRetCustomers(); populateCollectCustomers();
     showToast('🗑️ تم حذف العميل', 'info');
 }
@@ -1482,14 +1528,12 @@ function renderCustomers() {
             <span><strong>${cu.name}</strong>${cu.whatsapp ? `<br><small style="color:#25D366;font-size:10px;">📱 ${cu.whatsapp}</small>` : ''}</span>
             <span style="font-size:11px;">${cu.phone || '-'}</span>
             <span style="color:${bcolor};font-weight:900;">${formatMoney(balance)}</span>
-            ${showActions ? `
-                <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                    ${balance > 0 && canAdd() ? `<button class="btn btn-success btn-sm" onclick="openCollectModal('${cu.name}')" title="تحصيل"><i class="fas fa-hand-holding-usd"></i></button>` : ''}
-                    <button class="btn btn-info btn-sm" onclick="viewCustomerStatement('${cu.name}')" title="كشف حساب"><i class="fas fa-file-invoice-dollar"></i></button>
-                    ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editCustomer(${cu.id})" title="تعديل"><i class="fas fa-edit"></i></button>` : ''}
-                    ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomer(${cu.id})" title="حذف"><i class="fas fa-trash"></i></button>` : ''}
-                </div>
-            ` : ''}
+            ${showActions ? `<div style="display:flex;gap:4px;flex-wrap:wrap;">
+                ${balance > 0 && canAdd() ? `<button class="btn btn-success btn-sm" onclick="openCollectModal('${cu.name}')" title="تحصيل"><i class="fas fa-hand-holding-usd"></i></button>` : ''}
+                <button class="btn btn-info btn-sm" onclick="viewCustomerStatement('${cu.name}')" title="كشف حساب"><i class="fas fa-file-invoice-dollar"></i></button>
+                ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editCustomer(${cu.id})" title="تعديل"><i class="fas fa-edit"></i></button>` : ''}
+                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomer(${cu.id})" title="حذف"><i class="fas fa-trash"></i></button>` : ''}
+            </div>` : ''}
         </div>`;
     });
     c.innerHTML = html;
@@ -1501,10 +1545,7 @@ function openCollectModal(customerName) {
     setTimeout(() => {
         switchPayTab('collect', document.querySelectorAll('.tab-btn')[0]);
         const sel = $('collectCustomer');
-        if (sel) {
-            sel.value = customerName;
-            updateCollectInfo();
-        }
+        if (sel) { sel.value = customerName; updateCollectInfo(); }
         $('collectAmount').focus();
     }, 200);
 }
@@ -1580,14 +1621,18 @@ function saveSupplier() {
         if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
         const idx = suppliers.findIndex(s => s.id == id);
         if (idx > -1) {
+            const old = { ...suppliers[idx] };
             suppliers[idx] = { ...suppliers[idx], name, phone, whatsapp, address };
-            addAuditLog('edit', 'supplier', `تعديل مورد: ${name}`);
+            addAuditLog('edit', 'supplier', `تعديل مورد: ${name}`, {
+                before: { name: old.name, phone: old.phone, whatsapp: old.whatsapp, address: old.address },
+                after: { name, phone, whatsapp, address }
+            });
             showToast('✅ تم تعديل المورد', 'success');
         }
     } else {
         if (suppliers.find(s => s.name === name)) { showToast('⚠️ المورد موجود', 'warning'); return; }
         suppliers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() });
-        addAuditLog('add', 'supplier', `إضافة مورد: ${name}`);
+        addAuditLog('add', 'supplier', `إضافة مورد: ${name}`, { name, phone, whatsapp, address });
         showToast('✅ تم إضافة المورد', 'success');
     }
     setData('suppliers', suppliers);
@@ -1618,7 +1663,9 @@ function deleteSupplier(id) {
     }
     suppliers = suppliers.filter(su => su.id != id);
     setData('suppliers', suppliers);
-    addAuditLog('delete', 'supplier', `حذف مورد: ${s.name}`);
+    addAuditLog('delete', 'supplier', `حذف مورد: ${s.name}`, {
+        supplier: { name: s.name, phone: s.phone, whatsapp: s.whatsapp, address: s.address, balance: balance }
+    });
     renderSuppliers(); populatePurSuppliers(); populateRetSuppliers(); populatePaySuppliers();
     showToast('🗑️ تم حذف المورد', 'info');
 }
@@ -1652,14 +1699,12 @@ function renderSuppliers() {
             <span><strong>${s.name}</strong>${s.whatsapp ? `<br><small style="color:#25D366;font-size:10px;">📱 ${s.whatsapp}</small>` : ''}</span>
             <span style="font-size:11px;">${s.phone || '-'}</span>
             <span style="color:${bcolor};font-weight:900;">${formatMoney(balance)}</span>
-            ${showActions ? `
-                <div style="display:flex;gap:4px;flex-wrap:wrap;">
-                    ${balance > 0 && canAdd() ? `<button class="btn btn-danger btn-sm" onclick="openPayModal('${s.name}')" title="سداد"><i class="fas fa-money-bill-wave"></i></button>` : ''}
-                    <button class="btn btn-info btn-sm" onclick="viewSupplierStatement('${s.name}')" title="كشف حساب"><i class="fas fa-file-invoice"></i></button>
-                    ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editSupplier(${s.id})" title="تعديل"><i class="fas fa-edit"></i></button>` : ''}
-                    ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})" title="حذف"><i class="fas fa-trash"></i></button>` : ''}
-                </div>
-            ` : ''}
+            ${showActions ? `<div style="display:flex;gap:4px;flex-wrap:wrap;">
+                ${balance > 0 && canAdd() ? `<button class="btn btn-danger btn-sm" onclick="openPayModal('${s.name}')" title="سداد"><i class="fas fa-money-bill-wave"></i></button>` : ''}
+                <button class="btn btn-info btn-sm" onclick="viewSupplierStatement('${s.name}')" title="كشف حساب"><i class="fas fa-file-invoice"></i></button>
+                ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editSupplier(${s.id})" title="تعديل"><i class="fas fa-edit"></i></button>` : ''}
+                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})" title="حذف"><i class="fas fa-trash"></i></button>` : ''}
+            </div>` : ''}
         </div>`;
     });
     c.innerHTML = html;
@@ -1671,10 +1716,7 @@ function openPayModal(supplierName) {
     setTimeout(() => {
         switchPayTab('pay', document.querySelectorAll('.tab-btn')[1]);
         const sel = $('paySupplier');
-        if (sel) {
-            sel.value = supplierName;
-            updatePayInfo();
-        }
+        if (sel) { sel.value = supplierName; updatePayInfo(); }
         $('payAmount').focus();
     }, 200);
 }
@@ -1823,13 +1865,17 @@ function saveCollect() {
     });
 
     setData('payments', payments); setData('treasury', treasury);
-    addAuditLog('add', 'payment', `تحصيل من ${party} - ${formatMoney(amount)} ج.م`);
+    
+    addAuditLog('add', 'payment', 
+        `تحصيل من ${party} - ${formatMoney(amount)} ج.م`,
+        { party, amount, type: 'collect', note, date }
+    );
+    
     $('collectAmount').value = ''; $('collectNote').value = '';
     $('collectCustomer').value = ''; $('collectInfoBox').style.display = 'none';
 
     renderPayments(); renderTreasury(); renderCustomers(); updateDashboard();
     showToast(`✅ تم تحصيل ${formatMoney(amount)} 🇪🇬 من ${party}`, 'success');
-
     setTimeout(() => showReceipt(pay), 300);
 }
 
@@ -1871,13 +1917,17 @@ function savePay() {
     });
 
     setData('payments', payments); setData('treasury', treasury);
-    addAuditLog('add', 'payment', `سداد لـ ${party} - ${formatMoney(amount)} ج.م`);
+    
+    addAuditLog('add', 'payment', 
+        `سداد لـ ${party} - ${formatMoney(amount)} ج.م`,
+        { party, amount, type: 'pay', note, date }
+    );
+    
     $('payAmount').value = ''; $('payNote').value = '';
     $('paySupplier').value = ''; $('payInfoBox').style.display = 'none';
 
     renderPayments(); renderTreasury(); renderSuppliers(); updateDashboard();
     showToast(`✅ تم سداد ${formatMoney(amount)} 🇪🇬 لـ ${party}`, 'success');
-
     setTimeout(() => showReceipt(pay), 300);
 }
 
@@ -1963,7 +2013,9 @@ function deletePayment(id) {
     treasury = treasury.filter(t => !(t.refType === (pay.type === 'collect' ? 'collect' : 'pay') && t.refId === id));
     payments = payments.filter(p => p.id !== id);
     setData('payments', payments); setData('treasury', treasury);
-    addAuditLog('delete', 'payment', `حذف ${pay.type === 'collect' ? 'تحصيل' : 'سداد'} - ${pay.party}`);
+    addAuditLog('delete', 'payment', `حذف ${pay.type === 'collect' ? 'تحصيل' : 'سداد'} - ${pay.party} - ${formatMoney(pay.amount)} ج.م`, {
+        party: pay.party, amount: pay.amount, type: pay.type
+    });
     renderPayments(); renderTreasury(); renderCustomers(); renderSuppliers(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
@@ -2184,13 +2236,17 @@ function removeLogo() {
 
 function saveCompanySettings() {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    const oldData = { ...companyData };
     companyData.name = $('setCompanyName').value.trim();
     companyData.phone = $('setCompanyPhone').value.trim();
     companyData.address = $('setCompanyAddress').value.trim();
     companyData.tax = $('setCompanyTax').value.trim();
     companyData.footer = $('setCompanyFooter').value.trim();
     setData('companyData', companyData);
-    addAuditLog('edit', 'company', 'تعديل بيانات الشركة');
+    addAuditLog('edit', 'company', 'تعديل بيانات الشركة', {
+        before: { name: oldData.name, phone: oldData.phone, address: oldData.address, tax: oldData.tax },
+        after: { name: companyData.name, phone: companyData.phone, address: companyData.address, tax: companyData.tax }
+    });
     renderCompanyPage();
     showToast('✅ تم حفظ بيانات الشركة', 'success');
 }
@@ -2201,7 +2257,7 @@ function updateHeaderCompanyName() {
 }
 
 // ============================================================
-// إدارة المستخدمين (للمدير فقط)
+// إدارة المستخدمين
 // ============================================================
 function saveUser() {
     if (!canManageUsers()) { showToast('⚠️ المدير فقط', 'error'); return; }
@@ -2209,15 +2265,13 @@ function saveUser() {
     const name = $('userName').value.trim();
     const password = $('userPassword').value.trim();
     const role = $('userRole').value;
-    
+
     if (!name) { showToast('⚠️ أدخل اسم المستخدم', 'error'); return; }
     if (!password || password.length < 4) { showToast('⚠️ كلمة المرور 4 أحرف على الأقل', 'error'); return; }
-    
+
     if (id) {
-        // تعديل
         const idx = users.findIndex(u => u.id == id);
         if (idx > -1) {
-            // منع تغيير دور المدير الأخير
             if (users[idx].role === 'admin' && role !== 'admin') {
                 const otherAdmins = users.filter(u => u.role === 'admin' && u.id != id);
                 if (otherAdmins.length === 0) {
@@ -2225,24 +2279,27 @@ function saveUser() {
                     return;
                 }
             }
+            const old = { ...users[idx] };
             users[idx] = { ...users[idx], name, password, role };
-            addAuditLog('edit', 'user', `تعديل مستخدم: ${name} (${ROLES[role]?.name || role})`);
+            addAuditLog('edit', 'user', `تعديل مستخدم: ${name}`, {
+                before: { name: old.name, role: old.role },
+                after: { name, role }
+            });
             showToast('✅ تم تعديل المستخدم', 'success');
         }
     } else {
-        // إضافة
         if (users.find(u => u.name === name)) { showToast('⚠️ اسم المستخدم موجود', 'warning'); return; }
         users.push({
-            id: Date.now(),
-            name, password, role,
-            active: true,
+            id: Date.now(), name, password, role, active: true,
             createdAt: new Date().toISOString(),
             createdBy: currentUser ? currentUser.name : 'unknown'
         });
-        addAuditLog('add', 'user', `إضافة مستخدم: ${name} (${ROLES[role]?.name || role})`);
+        addAuditLog('add', 'user', `إضافة مستخدم: ${name} (${ROLES[role]?.name || role})`, {
+            user: { name, role }
+        });
         showToast('✅ تم إضافة المستخدم', 'success');
     }
-    
+
     setData('users', users);
     resetUserForm();
     renderUsers();
@@ -2280,13 +2337,12 @@ function toggleUserActive(id) {
 function deleteUser(id) {
     if (!canManageUsers()) { showToast('⚠️ المدير فقط', 'error'); return; }
     const u = users.find(us => us.id == id); if (!u) return;
-    
+
     if (u.id === (currentUser ? currentUser.id : null)) {
         showToast('⚠️ لا يمكنك حذف حسابك', 'error');
         return;
     }
-    
-    // منع حذف آخر مدير
+
     if (u.role === 'admin') {
         const otherAdmins = users.filter(us => us.role === 'admin' && us.id != id);
         if (otherAdmins.length === 0) {
@@ -2294,11 +2350,13 @@ function deleteUser(id) {
             return;
         }
     }
-    
+
     if (!confirm(`⚠️ حذف المستخدم "${u.name}"؟`)) return;
     users = users.filter(us => us.id !== id);
     setData('users', users);
-    addAuditLog('delete', 'user', `حذف مستخدم: ${u.name}`);
+    addAuditLog('delete', 'user', `حذف مستخدم: ${u.name}`, {
+        user: { name: u.name, role: u.role }
+    });
     renderUsers();
     populateLoginUsers();
     renderSettings();
@@ -2323,18 +2381,18 @@ function renderUsers() {
     const search = ($('userSearch')?.value || '').trim().toLowerCase();
     let filtered = users;
     if (search) filtered = users.filter(u => u.name.toLowerCase().includes(search));
-    
+
     if (filtered.length === 0) {
         c.innerHTML = `<div class="empty-state"><i class="fas fa-users-cog"></i><span>لا يوجد مستخدمين</span></div>`;
         return;
     }
-    
+
     let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1fr 0.8fr 1.3fr;"><span>الاسم</span><span>الدور</span><span>الحالة</span><span></span></div>`;
     filtered.forEach(u => {
         const roleInfo = ROLES[u.role] || { name: u.role, icon: '❓', color: '#5D5D5D' };
         const isMe = u.id === (currentUser ? currentUser.id : null);
         const isActive = u.active !== false;
-        
+
         html += `<div class="table-row" style="grid-template-columns: 1.5fr 1fr 0.8fr 1.3fr;">
             <span><strong>${u.name}</strong>${isMe ? ' <small style="color:#C9A94E;">(أنت)</small>' : ''}</span>
             <span><span class="role-badge ${u.role}">${roleInfo.icon} ${roleInfo.name}</span></span>
@@ -2356,22 +2414,47 @@ function renderUsers() {
 }
 
 // ============================================================
-// سجل النشاطات
+// سجل النشاطات - النسخة الكاملة
 // ============================================================
 function renderAudit() {
     const c = $('auditList'); if (!c) return;
-    if (!canViewAudit()) {
-        c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>ليس لديك صلاحية لعرض السجل</span></div>`;
+    
+    // ✅ للمدير فقط
+    if (!isAdmin()) {
+        c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>المدير فقط يمكنه عرض سجل النشاطات</span></div>`;
         return;
     }
+    
     const search = ($('auditSearch')?.value || '').trim().toLowerCase();
     let filtered = auditLog;
+    
+    // الفلترة حسب النوع
+    if (currentAuditFilter !== 'all') {
+        if (['add', 'edit', 'delete'].includes(currentAuditFilter)) {
+            filtered = filtered.filter(l => l.action === currentAuditFilter);
+        } else if (currentAuditFilter === 'sale') {
+            filtered = filtered.filter(l => l.type === 'sale');
+        } else if (currentAuditFilter === 'purchase') {
+            filtered = filtered.filter(l => l.type === 'purchase');
+        } else if (currentAuditFilter === 'payment') {
+            filtered = filtered.filter(l => l.type === 'payment');
+        }
+    }
+    
+    // البحث
     if (search) {
-        filtered = auditLog.filter(l =>
+        filtered = filtered.filter(l =>
             (l.details || '').toLowerCase().includes(search) ||
             (l.userName || '').toLowerCase().includes(search)
         );
     }
+    
+    // الإحصائيات
+    const totalCount = auditLog.length;
+    const today = getTodayDate();
+    const todayCount = auditLog.filter(l => l.date === today).length;
+    if ($('auditTotalCount')) $('auditTotalCount').textContent = totalCount;
+    if ($('auditTodayCount')) $('auditTodayCount').textContent = todayCount;
     
     if (filtered.length === 0) {
         c.innerHTML = `<div class="empty-state"><i class="fas fa-history"></i><span>${search ? 'لا توجد نتائج' : 'لا توجد نشاطات'}</span></div>`;
@@ -2379,43 +2462,288 @@ function renderAudit() {
     }
     
     const actionIcons = {
-        'add': { icon: 'fa-plus-circle', color: '#2D8F5E' },
-        'edit': { icon: 'fa-edit', color: '#E6A830' },
-        'delete': { icon: 'fa-trash-alt', color: '#E06060' },
-        'login': { icon: 'fa-sign-in-alt', color: '#4A8AB5' }
+        'add': { icon: 'fa-plus-circle', color: '#2D8F5E', name: 'إضافة' },
+        'edit': { icon: 'fa-edit', color: '#E6A830', name: 'تعديل' },
+        'delete': { icon: 'fa-trash-alt', color: '#E06060', name: 'حذف' },
+        'login': { icon: 'fa-sign-in-alt', color: '#4A8AB5', name: 'دخول/خروج' }
     };
     
-    const actionNames = {
-        'add': 'إضافة',
-        'edit': 'تعديل',
-        'delete': 'حذف',
-        'login': 'دخول/خروج'
+    const typeIcons = {
+        'sale': '💰',
+        'purchase': '🛒',
+        'product': '📦',
+        'customer': '👤',
+        'supplier': '🚚',
+        'payment': '💳',
+        'expense': '💸',
+        'return': '🔄',
+        'treasury': '🏦',
+        'user': '👥',
+        'company': '🏢',
+        'cloud': '☁️',
+        'backup': '💾'
     };
     
-    let html = `<div style="text-align:center;margin-bottom:10px;font-size:12px;color:#A89070;">
-        📊 إجمالي النشاطات: <strong style="color:#C9A94E;">${auditLog.length}</strong>
-    </div>`;
+    let html = '';
     
-    filtered.slice(0, 100).forEach(log => {
-        const info = actionIcons[log.action] || { icon: 'fa-circle', color: '#A89070' };
-        const actionName = actionNames[log.action] || log.action;
+    filtered.slice(0, 200).forEach(log => {
+        const info = actionIcons[log.action] || { icon: 'fa-circle', color: '#A89070', name: log.action };
+        const typeIcon = typeIcons[log.type] || '📋';
+        const hasDetails = log.extraData !== null && log.extraData !== undefined;
         
-        html += `<div class="audit-item ${log.action}">
-            <div class="audit-icon" style="background:${info.color}20; color:${info.color};">
-                <i class="fas ${info.icon}"></i>
-            </div>
-            <div class="audit-content">
-                <div class="audit-title" style="color:${info.color};">${actionName}</div>
-                <div class="audit-details">${log.details || '-'}</div>
-                <div class="audit-meta">
-                    <span><i class="fas fa-user"></i> ${log.userName || '-'}</span>
-                    <span><i class="fas fa-clock"></i> ${log.date} ${log.time || ''}</span>
+        html += `<div class="audit-item ${log.action}" id="audit-${log.id}">
+            <div class="audit-header" onclick="toggleAuditItem('${log.id}')">
+                <div class="audit-icon" style="background:${info.color}20; color:${info.color};">
+                    <i class="fas ${info.icon}"></i>
                 </div>
+                <div class="audit-main">
+                    <div class="audit-title" style="color:${info.color};">
+                        ${typeIcon} ${info.name}
+                    </div>
+                    <div class="audit-details-text" style="padding:0;border:none;font-size:11px;color:#A89070;">${log.details || '-'}</div>
+                    <div class="audit-meta">
+                        <span><i class="fas fa-user"></i> ${log.userName || '-'}</span>
+                        <span><i class="fas fa-clock"></i> ${log.date} ${log.time || ''}</span>
+                    </div>
+                </div>
+                ${hasDetails ? `<div class="audit-expand"><i class="fas fa-chevron-down"></i></div>` : ''}
             </div>
+            ${hasDetails ? `<div class="audit-body">${renderAuditDetails(log)}</div>` : ''}
         </div>`;
     });
     
     c.innerHTML = html;
+}
+
+function renderAuditDetails(log) {
+    const data = log.extraData;
+    if (!data) return '';
+    
+    let html = '';
+    
+    // لو فيه أصناف
+    if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+        html += `<div class="audit-items-title">📋 الأصناف (${data.items.length}):</div>`;
+        html += `<div class="audit-items-table">
+            <div class="audit-items-header">
+                <span>الصنف</span>
+                <span>الكمية</span>
+                <span>السعر</span>
+                <span>الإجمالي</span>
+            </div>`;
+        data.items.forEach(it => {
+            html += `<div class="audit-item-row">
+                <span>${it.name}</span>
+                <span>${it.qty}</span>
+                <span>${formatMoney(it.price)}</span>
+                <span style="color:#C9A94E;font-weight:700;">${formatMoney(it.total)}</span>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+    
+    // لو فيه إجمالي
+    if (data.total !== undefined) {
+        html += `<div class="audit-total">
+            <span>💰 الإجمالي:</span>
+            <span>${formatMoney(data.total)} 🇪🇬</span>
+        </div>`;
+    }
+    
+    // تفاصيل إضافية عامة
+    const extraFields = [
+        { key: 'customer', label: '👤 العميل' },
+        { key: 'supplier', label: '🚚 المورد' },
+        { key: 'party', label: '👥 الجهة' },
+        { key: 'paymentMethod', label: '💳 طريقة الدفع' },
+        { key: 'payment', label: '💳 الدفع' },
+        { key: 'amount', label: '💰 المبلغ' },
+        { key: 'note', label: '📝 ملاحظات' },
+        { key: 'category', label: '📂 التصنيف' },
+        { key: 'role', label: '🎯 الدور' },
+        { key: 'date', label: '📅 التاريخ' }
+    ];
+    
+    let extraHtml = '';
+    extraFields.forEach(f => {
+        if (data[f.key] !== undefined && data[f.key] !== null && data[f.key] !== '') {
+            let value = data[f.key];
+            if (f.key === 'amount' || f.key === 'total') {
+                value = formatMoney(value) + ' 🇪🇬';
+            }
+            extraHtml += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2D2D2D;font-size:11px;">
+                <span style="color:#A89070;font-weight:700;">${f.label}:</span>
+                <span style="color:#F5E6C8;">${value}</span>
+            </div>`;
+        }
+    });
+    
+    if (extraHtml) {
+        html += `<div style="margin-top:8px;">${extraHtml}</div>`;
+    }
+    
+    // لو فيه before/after (تعديل)
+    if (data.before && data.after) {
+        html += `<div class="audit-items-title">🔄 التغييرات:</div>`;
+        html += `<div style="background:#1C1C1C;border-radius:8px;padding:8px;font-size:11px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div>
+                    <div style="color:#E06060;font-weight:800;margin-bottom:4px;text-align:center;">❌ قبل</div>
+                    ${Object.entries(data.before).map(([k, v]) => `
+                        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2D2D2D;">
+                            <span style="color:#A89070;">${k}:</span>
+                            <span style="color:#F5E6C8;">${v !== null && v !== undefined ? v : '-'}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div>
+                    <div style="color:#2D8F5E;font-weight:800;margin-bottom:4px;text-align:center;">✅ بعد</div>
+                    ${Object.entries(data.after).map(([k, v]) => `
+                        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2D2D2D;">
+                            <span style="color:#A89070;">${k}:</span>
+                            <span style="color:#F5E6C8;">${v !== null && v !== undefined ? v : '-'}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>`;
+    }
+    
+    // لو فيه بيانات منتج/عميل/مورد
+    if (data.product) {
+        html += `<div class="audit-items-title">📦 المنتج:</div>`;
+        html += `<div style="background:#1C1C1C;border-radius:8px;padding:8px;font-size:11px;">
+            ${data.product.name ? `<div><span style="color:#A89070;">الاسم:</span> <span style="color:#F5E6C8;">${data.product.name}</span></div>` : ''}
+            ${data.product.buy !== undefined ? `<div><span style="color:#A89070;">سعر الشراء:</span> <span style="color:#E06060;">${formatMoney(data.product.buy)}</span></div>` : ''}
+            ${data.product.sell !== undefined ? `<div><span style="color:#A89070;">سعر البيع:</span> <span style="color:#2D8F5E;">${formatMoney(data.product.sell)}</span></div>` : ''}
+            ${data.product.qty !== undefined ? `<div><span style="color:#A89070;">الكمية:</span> <span style="color:#C9A94E;">${data.product.qty}</span></div>` : ''}
+        </div>`;
+    }
+    
+    if (data.customer) {
+        html += `<div class="audit-items-title">👤 العميل:</div>`;
+        html += `<div style="background:#1C1C1C;border-radius:8px;padding:8px;font-size:11px;">
+            ${data.customer.name ? `<div><span style="color:#A89070;">الاسم:</span> <span style="color:#F5E6C8;">${data.customer.name}</span></div>` : ''}
+            ${data.customer.phone ? `<div><span style="color:#A89070;">الهاتف:</span> <span style="color:#F5E6C8;">${data.customer.phone}</span></div>` : ''}
+            ${data.customer.balance !== undefined ? `<div><span style="color:#A89070;">المديونية:</span> <span style="color:#E06060;">${formatMoney(data.customer.balance)}</span></div>` : ''}
+        </div>`;
+    }
+    
+    if (data.supplier) {
+        html += `<div class="audit-items-title">🚚 المورد:</div>`;
+        html += `<div style="background:#1C1C1C;border-radius:8px;padding:8px;font-size:11px;">
+            ${data.supplier.name ? `<div><span style="color:#A89070;">الاسم:</span> <span style="color:#F5E6C8;">${data.supplier.name}</span></div>` : ''}
+            ${data.supplier.phone ? `<div><span style="color:#A89070;">الهاتف:</span> <span style="color:#F5E6C8;">${data.supplier.phone}</span></div>` : ''}
+            ${data.supplier.balance !== undefined ? `<div><span style="color:#A89070;">المديونية:</span> <span style="color:#E6A830;">${formatMoney(data.supplier.balance)}</span></div>` : ''}
+        </div>`;
+    }
+    
+    if (data.user) {
+        html += `<div class="audit-items-title">👥 المستخدم:</div>`;
+        html += `<div style="background:#1C1C1C;border-radius:8px;padding:8px;font-size:11px;">
+            ${data.user.name ? `<div><span style="color:#A89070;">الاسم:</span> <span style="color:#F5E6C8;">${data.user.name}</span></div>` : ''}
+            ${data.user.role ? `<div><span style="color:#A89070;">الدور:</span> <span style="color:#C9A94E;">${ROLES[data.user.role]?.name || data.user.role}</span></div>` : ''}
+        </div>`;
+    }
+    
+    return html || '<div style="padding:10px 0;color:#A89070;font-size:11px;">لا توجد تفاصيل إضافية</div>';
+}
+
+function toggleAuditItem(id) {
+    const el = document.getElementById('audit-' + id);
+    if (el) {
+        el.classList.toggle('expanded');
+    }
+}
+
+function filterAudit(filter, btn) {
+    currentAuditFilter = filter;
+    document.querySelectorAll('.filter-chips .filter-chip').forEach(chip => {
+        chip.classList.remove('active');
+    });
+    if (btn) btn.classList.add('active');
+    renderAudit();
+}
+
+function exportAuditLog() {
+    if (!isAdmin()) { showToast('⚠️ المدير فقط', 'error'); return; }
+    if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; }
+    
+    const data = {
+        exportDate: new Date().toISOString(),
+        totalCount: auditLog.length,
+        logs: auditLog
+    };
+    
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const date = new Date().toISOString().split('T')[0];
+    a.download = `mizan_audit_log_${date}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('✅ تم تصدير السجل', 'success');
+    addAuditLog('edit', 'backup', 'تصدير سجل النشاطات');
+}
+
+function exportAuditLogText() {
+    if (!isAdmin()) { showToast('⚠️ المدير فقط', 'error'); return; }
+    if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; }
+    
+    let text = '========================================\n';
+    text += 'سجل نشاطات الميزان\n';
+    text += '========================================\n';
+    text += `تاريخ التصدير: ${new Date().toLocaleString('ar')}\n`;
+    text += `إجمالي النشاطات: ${auditLog.length}\n`;
+    text += '========================================\n\n';
+    
+    auditLog.forEach((log, i) => {
+        text += `[${i + 1}] ${log.date} ${log.time}\n`;
+        text += `    المستخدم: ${log.userName} (${ROLES[log.userRole]?.name || log.userRole})\n`;
+        text += `    النوع: ${log.type}\n`;
+        text += `    العملية: ${log.action}\n`;
+        text += `    التفاصيل: ${log.details}\n`;
+        
+        if (log.extraData && log.extraData.items) {
+            text += `    الأصناف:\n`;
+            log.extraData.items.forEach(it => {
+                text += `      • ${it.name} × ${it.qty} = ${formatMoney(it.total)} ج.م\n`;
+            });
+        }
+        if (log.extraData && log.extraData.total !== undefined) {
+            text += `    الإجمالي: ${formatMoney(log.extraData.total)} ج.م\n`;
+        }
+        
+        text += '\n----------------------------------------\n';
+    });
+    
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const date = new Date().toISOString().split('T')[0];
+    a.download = `mizan_audit_log_${date}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('✅ تم تصدير السجل النصي', 'success');
+    addAuditLog('edit', 'backup', 'تصدير سجل النشاطات (نصي)');
+}
+
+function clearAuditLog() {
+    if (!isAdmin()) { showToast('⚠️ المدير فقط', 'error'); return; }
+    if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; }
+    if (!confirm(`⚠️ مسح كامل السجل؟ (${auditLog.length} عملية)`)) return;
+    if (!confirm('⚠️ تأكيد نهائي؟ لا يمكن التراجع!')) return;
+    
+    auditLog = [];
+    setData('auditLog', auditLog);
+    addAuditLog('delete', 'audit', 'مسح سجل النشاطات بالكامل');
+    renderAudit();
+    showToast('🗑️ تم مسح السجل', 'info');
 }
 
 // ============================================================
@@ -2438,11 +2766,11 @@ function changePassword() {
     const oldP = $('oldPassword').value;
     const newP = $('newPassword').value;
     const conP = $('confirmPassword').value;
-    
+
     if (oldP !== currentUser.password) { showToast('❌ كلمة المرور الحالية خاطئة', 'error'); return; }
     if (newP.length < 4) { showToast('❌ 4 أحرف على الأقل', 'error'); return; }
     if (newP !== conP) { showToast('❌ كلمتا المرور غير متطابقتين', 'error'); return; }
-    
+
     const idx = users.findIndex(u => u.id === currentUser.id);
     if (idx > -1) {
         users[idx].password = newP;
@@ -2451,7 +2779,7 @@ function changePassword() {
         localStorage.setItem(STORAGE_KEY + 'current_user', JSON.stringify({ id: currentUser.id, name: currentUser.name, role: currentUser.role }));
         addAuditLog('edit', 'user', `تغيير كلمة المرور: ${currentUser.name}`);
     }
-    
+
     $('oldPassword').value = ''; $('newPassword').value = ''; $('confirmPassword').value = '';
     showToast('✅ تم تغيير كلمة المرور', 'success');
 }
@@ -2459,7 +2787,7 @@ function changePassword() {
 function exportData() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const data = {
-        version: '10.0.0', exportDate: new Date().toISOString(),
+        version: '10.1.0', exportDate: new Date().toISOString(),
         products, sales, purchases, returns, expenses,
         customers, suppliers, treasury, payments, users, auditLog, companyData
     };
@@ -2507,6 +2835,7 @@ function importData(event) {
             renderTreasury(); renderCustomers(); renderSuppliers();
             renderPayments(); renderUsers(); renderAudit();
             updateDashboard(); renderSettings();
+            addAuditLog('edit', 'backup', 'استيراد نسخة احتياطية');
             showToast('✅ تم استيراد البيانات بنجاح', 'success');
         } catch (err) {
             showToast('❌ ملف غير صالح', 'error');
@@ -2520,23 +2849,21 @@ function clearAllData() {
     if (!canClearData()) { showToast('⚠️ المدير فقط', 'error'); return; }
     if (!confirm('⚠️ هل أنت متأكد من مسح جميع البيانات؟')) return;
     if (!confirm('✅ تأكيد نهائي؟ لا يمكن التراجع!')) return;
-    
+
     const keys = ['products', 'sales', 'purchases', 'returns', 'expenses',
         'customers', 'suppliers', 'treasury', 'payments', 'companyData'];
     keys.forEach(k => localStorage.removeItem(STORAGE_KEY + k));
     localStorage.removeItem('mizan_seeded');
-    
+
     products = []; sales = []; purchases = []; returns = []; expenses = [];
     customers = []; suppliers = []; treasury = []; payments = []; companyData = {};
-    
-    // لا نمسح المستخدمين ولا السجل (الا لو المستخدم عايز)
+
     if (confirm('⚠️ هل تريد أيضاً مسح المستخدمين وسجل النشاطات؟')) {
         users = []; auditLog = [];
         localStorage.removeItem(STORAGE_KEY + 'users');
         localStorage.removeItem(STORAGE_KEY + 'auditLog');
     }
-    
-    addAuditLog('delete', 'backup', 'مسح جميع البيانات');
+
     saveAll();
     showToast('🗑️ تم مسح جميع البيانات', 'warning');
     setTimeout(() => location.reload(), 1500);
@@ -2598,11 +2925,10 @@ function populateAllDropdowns() {
 // Init
 // ============================================================
 function init() {
-    console.log('🚀 الميزان 10.0.0 - المستخدمين والصلاحيات');
+    console.log('🚀 الميزان 10.1.0 - سجل النشاطات الكامل');
 
     initFirebase();
 
-    // تحميل البيانات
     const rawProducts = getData('products', []);
     sales = getData('sales', []);
     purchases = getData('purchases', []);
@@ -2614,8 +2940,7 @@ function init() {
     payments = getData('payments', []);
     companyData = getData('companyData', {});
     auditLog = getData('auditLog', []);
-    
-    // تحميل المستخدمين (مع إنشاء الافتراضي لو مش موجود)
+
     users = getData('users', []);
     if (users.length === 0) {
         users = [
@@ -2643,10 +2968,8 @@ function init() {
         setData('products', products);
     }
 
-    // تعبئة قائمة المستخدمين في شاشة الدخول
     populateLoginUsers();
 
-    // التواريخ الافتراضية
     if ($('expDate')) $('expDate').value = getTodayDate();
     if ($('collectDate')) $('collectDate').value = getTodayDate();
     if ($('payDate')) $('payDate').value = getTodayDate();
@@ -2663,7 +2986,7 @@ function init() {
 
     console.log('✅ الميزان جاهز');
     console.log('👥 المستخدمين:', users.map(u => `${u.name} (${u.role})`).join(', '));
-    console.log('🔒 كلمة المرور الافتراضية: 123456');
+    console.log('📋 إجمالي النشاطات:', auditLog.length);
 }
 
 document.addEventListener('DOMContentLoaded', init);
@@ -2747,6 +3070,12 @@ window.editUser = editUser;
 window.deleteUser = deleteUser;
 window.toggleUserActive = toggleUserActive;
 window.resetUserForm = resetUserForm;
+
+window.toggleAuditItem = toggleAuditItem;
+window.filterAudit = filterAudit;
+window.exportAuditLog = exportAuditLog;
+window.exportAuditLogText = exportAuditLogText;
+window.clearAuditLog = clearAuditLog;
 
 window.changePassword = changePassword;
 window.exportData = exportData;
