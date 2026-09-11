@@ -1,5 +1,5 @@
 /* ============================================================
-   الميزان - الإصدار 11.0.0 (الضريبة VAT)
+   الميزان - الإصدار 12.0.0 (الحسابات المحاسبية)
    ============================================================ */
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
@@ -153,46 +153,36 @@ body {
 
 /* ============ Tax Summary ============ */
 .tax-summary {
-    background: #1C1C1C;
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 12px;
-    border: 1px solid #2D2D2D;
+    background: #1C1C1C; border-radius: 10px;
+    padding: 12px; margin-bottom: 12px; border: 1px solid #2D2D2D;
 }
 .tax-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 0;
-    font-size: 13px;
-    color: #F5E6C8;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0; font-size: 13px; color: #F5E6C8;
     border-bottom: 1px solid #2D2D2D;
 }
 .tax-row:last-child { border-bottom: none; }
 .tax-row span:last-child { font-weight: 700; }
 .tax-row.total {
     border-top: 2px solid #C9A94E;
-    padding-top: 10px;
-    margin-top: 6px;
-    font-size: 17px;
-    font-weight: 900;
+    padding-top: 10px; margin-top: 6px;
+    font-size: 17px; font-weight: 900;
 }
-.tax-row.total span:last-child {
-    color: #C9A94E;
-    font-size: 20px;
-}
+.tax-row.total span:last-child { color: #C9A94E; font-size: 20px; }
 
 /* ============ Tabs Row ============ */
 .tabs-row {
     display: flex; gap: 6px; margin-bottom: 14px;
     background: #0D0D0D; padding: 5px;
     border-radius: 12px; border: 1px solid #2D2D2D;
+    flex-wrap: wrap;
 }
 .tab-btn {
     flex: 1; padding: 12px 8px; border-radius: 8px;
     background: transparent; border: none; color: #A89070;
-    font-size: 13px; font-weight: 700; cursor: pointer;
+    font-size: 12px; font-weight: 700; cursor: pointer;
     transition: 0.2s; font-family: inherit;
+    min-width: 70px;
 }
 .tab-btn.active { background: #C9A94E; color: #0D0D0D; }
 .tab-btn:hover:not(.active) { background: #2A2A2A; }
@@ -373,19 +363,11 @@ body {
     border-radius: 10px; border: 1px solid #3D3D3D;
     margin-bottom: 12px; font-size: 12px;
 }
-.invoice-print.tax-invoice {
-    border: 2px solid #C9A94E;
-    background: #0D0D0D;
-}
+.invoice-print.tax-invoice { border: 2px solid #C9A94E; background: #0D0D0D; }
 .invoice-print .tax-badge {
-    display: inline-block;
-    background: #C9A94E;
-    color: #0D0D0D;
-    padding: 3px 12px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 900;
-    margin-bottom: 8px;
+    display: inline-block; background: #C9A94E; color: #0D0D0D;
+    padding: 3px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 900; margin-bottom: 8px;
 }
 .invoice-print .inv-header {
     text-align: center; padding-bottom: 10px;
@@ -411,23 +393,14 @@ body {
 .invoice-print table td {
     color: #F5E6C8; padding: 6px 4px; text-align: center; border: 1px solid #3D3D3D;
 }
-.invoice-print .inv-totals {
-    padding-top: 10px;
-    border-top: 2px solid #C9A94E;
-}
+.invoice-print .inv-totals { padding-top: 10px; border-top: 2px solid #C9A94E; }
 .invoice-print .inv-total-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 0;
-    font-size: 13px;
-    color: #F5E6C8;
+    display: flex; justify-content: space-between;
+    padding: 4px 0; font-size: 13px; color: #F5E6C8;
 }
 .invoice-print .inv-total-row.grand {
-    font-size: 18px;
-    font-weight: 900;
-    color: #C9A94E;
-    padding-top: 8px;
-    margin-top: 6px;
+    font-size: 18px; font-weight: 900; color: #C9A94E;
+    padding-top: 8px; margin-top: 6px;
     border-top: 2px solid #C9A94E;
 }
 .invoice-print .inv-footer {
@@ -476,16 +449,12 @@ body {
     .invoice-print, .invoice-print *,
     .receipt-print, .receipt-print * { visibility: visible !important; }
     #modalOverlay {
-        position: absolute !important;
-        top: 0 !important; left: 0 !important;
+        position: absolute !important; top: 0 !important; left: 0 !important;
         right: 0 !important; bottom: 0 !important;
         width: 100% !important; height: auto !important;
-        min-height: 100vh !important;
-        background: #fff !important;
-        padding: 10px !important;
-        display: block !important;
-        overflow: visible !important;
-        z-index: 99999 !important;
+        min-height: 100vh !important; background: #fff !important;
+        padding: 10px !important; display: block !important;
+        overflow: visible !important; z-index: 99999 !important;
     }
     .modal-box {
         background: #fff !important; border: none !important;
@@ -575,15 +544,13 @@ body {
 .report-tabs {
     display: flex; gap: 6px; margin-bottom: 14px;
     background: #0D0D0D; padding: 5px; border-radius: 12px;
-    border: 1px solid #2D2D2D;
-    flex-wrap: wrap;
+    border: 1px solid #2D2D2D; flex-wrap: wrap;
 }
 .report-tab {
     flex: 1; padding: 10px; border-radius: 8px;
     background: transparent; border: none; color: #A89070;
     font-size: 12px; font-weight: 700; cursor: pointer;
-    transition: 0.2s; font-family: inherit;
-    min-width: 70px;
+    transition: 0.2s; font-family: inherit; min-width: 70px;
 }
 .report-tab.active { background: #C9A94E; color: #0D0D0D; }
 .report-tab:hover:not(.active) { background: #2A2A2A; }
@@ -645,39 +612,24 @@ body {
 /* ============ VAT Report ============ */
 .vat-report-card {
     background: linear-gradient(135deg, #1C1C1C, #2A2A2A);
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 14px;
-    border: 2px solid #9B59B6;
-    text-align: center;
+    border-radius: 14px; padding: 20px; margin-bottom: 14px;
+    border: 2px solid #9B59B6; text-align: center;
 }
 .vat-report-card .vat-big {
-    font-size: 32px;
-    font-weight: 900;
-    color: #9B59B6;
-    margin-bottom: 6px;
+    font-size: 32px; font-weight: 900; color: #9B59B6; margin-bottom: 6px;
 }
 .vat-report-card .vat-label {
-    font-size: 13px;
-    color: #A89070;
-    font-weight: 700;
+    font-size: 13px; color: #A89070; font-weight: 700;
 }
 .vat-report-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid #2D2D2D;
-    font-size: 14px;
-    color: #F5E6C8;
+    display: flex; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid #2D2D2D;
+    font-size: 14px; color: #F5E6C8;
 }
 .vat-report-row:last-child {
-    border-bottom: none;
-    border-top: 2px solid #9B59B6;
-    padding-top: 12px;
-    margin-top: 6px;
-    font-weight: 900;
-    font-size: 17px;
-    color: #9B59B6;
+    border-bottom: none; border-top: 2px solid #9B59B6;
+    padding-top: 12px; margin-top: 6px;
+    font-weight: 900; font-size: 17px; color: #9B59B6;
 }
 
 /* ============ Company Preview ============ */
@@ -842,6 +794,239 @@ body {
 .payment-badge.cash { background: #2D8F5E; color: #fff; }
 .payment-badge.credit { background: #E6A830; color: #0D0D0D; }
 
+/* ============ Accounting Grid (جديد) ============ */
+.accounting-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.accounting-card {
+    background: #0D0D0D;
+    border-radius: 10px;
+    padding: 12px 6px;
+    text-align: center;
+    border: 2px solid #2D2D2D;
+    cursor: pointer;
+    transition: 0.25s;
+}
+.accounting-card:hover {
+    border-color: #C9A94E;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(201, 169, 78, 0.10);
+}
+.accounting-card i {
+    font-size: 22px;
+    color: #C9A94E;
+    display: block;
+    margin-bottom: 4px;
+}
+.accounting-card h4 {
+    font-size: 11px;
+    font-weight: 700;
+    color: #F5E6C8;
+    margin-bottom: 2px;
+}
+.accounting-card p {
+    font-size: 9px;
+    color: #A89070;
+}
+
+/* ============ Accounts Tree (جديد) ============ */
+.acc-type-header {
+    background: #1C1C1C;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin: 10px 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-right: 4px solid #C9A94E;
+    font-weight: 800;
+    font-size: 13px;
+    color: #C9A94E;
+}
+.acc-type-header.assets { border-right-color: #2D8F5E; color: #2D8F5E; }
+.acc-type-header.liabilities { border-right-color: #E06060; color: #E06060; }
+.acc-type-header.equity { border-right-color: #C9A94E; color: #C9A94E; }
+.acc-type-header.revenue { border-right-color: #4A8AB5; color: #4A8AB5; }
+.acc-type-header.expenses { border-right-color: #E6A830; color: #E6A830; }
+
+.acc-item {
+    background: #0D0D0D;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    color: #F5E6C8;
+    border-right: 3px solid #2D2D2D;
+    transition: 0.2s;
+}
+.acc-item:hover { background: #1A1A1A; }
+.acc-item.child { margin-right: 20px; }
+.acc-item .acc-name { flex: 1; font-weight: 600; }
+.acc-item .acc-balance {
+    font-weight: 900;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #1C1C1C;
+    min-width: 70px;
+    text-align: center;
+}
+.acc-item .acc-balance.debit { color: #2D8F5E; }
+.acc-item .acc-balance.credit { color: #E06060; }
+.acc-item .acc-actions {
+    display: flex;
+    gap: 3px;
+}
+
+/* ============ Journal Entry Check (جديد) ============ */
+.journal-check {
+    background: #1C1C1C;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    font-size: 12px;
+    text-align: center;
+    font-weight: 700;
+    color: #A89070;
+    border: 1px dashed #3D3D3D;
+}
+.journal-check.balanced {
+    border-color: #2D8F5E;
+    background: rgba(45, 143, 94, 0.1);
+    color: #2D8F5E;
+}
+.journal-check.unbalanced {
+    border-color: #E06060;
+    background: rgba(224, 96, 96, 0.1);
+    color: #E06060;
+}
+
+/* ============ Journal List (جديد) ============ */
+.journal-item {
+    background: #0D0D0D;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-right: 4px solid #4A8AB5;
+    border-top: 1px solid #2D2D2D;
+    border-left: 1px solid #2D2D2D;
+    border-bottom: 1px solid #2D2D2D;
+}
+.journal-item .je-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed #2D2D2D;
+}
+.journal-item .je-num {
+    font-size: 12px;
+    font-weight: 900;
+    color: #4A8AB5;
+}
+.journal-item .je-date {
+    font-size: 10px;
+    color: #A89070;
+}
+.journal-item .je-desc {
+    font-size: 12px;
+    color: #F5E6C8;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+.journal-item .je-entries {
+    background: #1C1C1C;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 11px;
+}
+.journal-item .je-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 6px;
+    padding: 4px 0;
+    border-bottom: 1px solid #2D2D2D;
+}
+.journal-item .je-row:last-child { border-bottom: none; }
+.journal-item .je-row.debit .je-amount { color: #2D8F5E; font-weight: 700; }
+.journal-item .je-row.credit .je-amount { color: #E06060; font-weight: 700; }
+.journal-item .je-row .je-account { color: #F5E6C8; }
+.journal-item .je-row .je-indent { padding-right: 12px; }
+.journal-item .je-actions {
+    margin-top: 6px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+/* ============ Accounting Report (جديد) ============ */
+.acc-report-title {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 900;
+    color: #C9A94E;
+    margin-bottom: 4px;
+}
+.acc-report-subtitle {
+    text-align: center;
+    font-size: 11px;
+    color: #A89070;
+    margin-bottom: 14px;
+}
+.acc-report-section {
+    background: #0D0D0D;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #2D2D2D;
+}
+.acc-report-section h4 {
+    font-size: 14px;
+    color: #C9A94E;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #2D2D2D;
+}
+.acc-report-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #1A1A1A;
+    font-size: 12px;
+    color: #F5E6C8;
+}
+.acc-report-row:last-child { border-bottom: none; }
+.acc-report-row.subtotal {
+    border-top: 1px solid #3D3D3D;
+    padding-top: 8px;
+    margin-top: 4px;
+    font-weight: 700;
+    color: #C9A94E;
+}
+.acc-report-row.total {
+    border-top: 2px solid #C9A94E;
+    padding-top: 10px;
+    margin-top: 6px;
+    font-weight: 900;
+    font-size: 15px;
+    color: #C9A94E;
+}
+.acc-report-row.total.profit {
+    color: #2D8F5E;
+}
+.acc-report-row.total.loss {
+    color: #E06060;
+}
+.acc-report-row.indent { padding-right: 16px; }
+
 /* ============ Scroll ============ */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: #0D0D0D; }
@@ -864,4 +1049,5 @@ body {
     .user-badge span { display: none; }
     .user-badge { padding: 4px 8px; }
     .report-tab { font-size: 10px; padding: 8px 4px; min-width: 60px; }
+    .accounting-grid { grid-template-columns: 1fr 1fr; }
 }

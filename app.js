@@ -1,5 +1,5 @@
 // ============================================================
-// الميزان - الإصدار 11.0.1 (الضريبة VAT - إصلاحات)
+// الميزان - الإصدار 12.0.0 (الحسابات المحاسبية)
 // ============================================================
 
 const STORAGE_KEY = 'mizan_';
@@ -23,6 +23,7 @@ const CLOUD_PATH = 'mizan_data';
 let products = [], sales = [], purchases = [], returns = [], expenses = [];
 let customers = [], suppliers = [], treasury = [];
 let payments = [], users = [], auditLog = [];
+let accounts = [], journalEntries = [];
 let currentUser = null;
 let currentSaleItems = [], currentPurItems = [], currentRetItems = [];
 let companyData = {};
@@ -57,13 +58,11 @@ function showToast(msg, type = 'info') {
 function getTodayDate() { return new Date().toISOString().split('T')[0]; }
 function formatMoney(n) { return Number(n || 0).toFixed(2); }
 
-// ✅ إصلاح: دالة آمنة للـ radio buttons
 function getRadioValue(name, defaultValue = '') {
     const el = document.querySelector(`input[name="${name}"]:checked`);
     return el ? el.value : defaultValue;
 }
 
-// ✅ إصلاح: دالة آمنة لتعيين radio button
 function setRadioValue(name, value) {
     const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
     if (el) el.checked = true;
@@ -144,7 +143,56 @@ function addAuditLog(action, type, details, extraData = null) {
 }
 
 // ============================================================
-// Firebase Init
+// شجرة الحسابات الافتراضية
+// ============================================================
+const DEFAULT_ACCOUNTS = [
+    // ============ الأصول (1) ============
+    { id: 1, code: '1000', name: 'الأصول', type: 'assets', parentId: null, isParent: true },
+    { id: 2, code: '1100', name: 'الأصول المتداولة', type: 'assets', parentId: 1, isParent: true },
+    { id: 3, code: '1101', name: 'النقدية بالخزنة', type: 'assets', parentId: 2, isParent: false },
+    { id: 4, code: '1102', name: 'النقدية بالبنك', type: 'assets', parentId: 2, isParent: false },
+    { id: 5, code: '1103', name: 'العملاء (المدينون)', type: 'assets', parentId: 2, isParent: false },
+    { id: 6, code: '1104', name: 'المخزون', type: 'assets', parentId: 2, isParent: false },
+    { id: 7, code: '1105', name: 'ضريبة القيمة المضافة (مدين)', type: 'assets', parentId: 2, isParent: false },
+    { id: 8, code: '1200', name: 'الأصول الثابتة', type: 'assets', parentId: 1, isParent: true },
+    { id: 9, code: '1201', name: 'أثاث ومفروشات', type: 'assets', parentId: 8, isParent: false },
+    { id: 10, code: '1202', name: 'أجهزة وحاسبات', type: 'assets', parentId: 8, isParent: false },
+    { id: 11, code: '1203', name: 'وسائل نقل', type: 'assets', parentId: 8, isParent: false },
+
+    // ============ الخصوم (2) ============
+    { id: 12, code: '2000', name: 'الخصوم', type: 'liabilities', parentId: null, isParent: true },
+    { id: 13, code: '2100', name: 'الخصوم المتداولة', type: 'liabilities', parentId: 12, isParent: true },
+    { id: 14, code: '2101', name: 'الموردين (الدائنون)', type: 'liabilities', parentId: 13, isParent: false },
+    { id: 15, code: '2102', name: 'ضريبة القيمة المضافة (دائن)', type: 'liabilities', parentId: 13, isParent: false },
+    { id: 16, code: '2103', name: 'مصروفات مستحقة', type: 'liabilities', parentId: 13, isParent: false },
+    { id: 17, code: '2200', name: 'الخصوم طويلة الأجل', type: 'liabilities', parentId: 12, isParent: true },
+    { id: 18, code: '2201', name: 'قروض طويلة الأجل', type: 'liabilities', parentId: 17, isParent: false },
+
+    // ============ حقوق الملكية (3) ============
+    { id: 19, code: '3000', name: 'حقوق الملكية', type: 'equity', parentId: null, isParent: true },
+    { id: 20, code: '3001', name: 'رأس المال', type: 'equity', parentId: 19, isParent: false },
+    { id: 21, code: '3002', name: 'الأرباح المحتجزة', type: 'equity', parentId: 19, isParent: false },
+    { id: 22, code: '3003', name: 'المسحوبات الشخصية', type: 'equity', parentId: 19, isParent: false },
+
+    // ============ الإيرادات (4) ============
+    { id: 23, code: '4000', name: 'الإيرادات', type: 'revenue', parentId: null, isParent: true },
+    { id: 24, code: '4001', name: 'إيرادات المبيعات', type: 'revenue', parentId: 23, isParent: false },
+    { id: 25, code: '4002', name: 'إيرادات أخرى', type: 'revenue', parentId: 23, isParent: false },
+    { id: 26, code: '4003', name: 'خصم مسموح به', type: 'revenue', parentId: 23, isParent: false },
+
+    // ============ المصروفات (5) ============
+    { id: 27, code: '5000', name: 'المصروفات', type: 'expenses', parentId: null, isParent: true },
+    { id: 28, code: '5001', name: 'تكلفة البضاعة المباعة', type: 'expenses', parentId: 27, isParent: false },
+    { id: 29, code: '5002', name: 'رواتب وأجور', type: 'expenses', parentId: 27, isParent: false },
+    { id: 30, code: '5003', name: 'إيجار', type: 'expenses', parentId: 27, isParent: false },
+    { id: 31, code: '5004', name: 'كهرباء ومياه', type: 'expenses', parentId: 27, isParent: false },
+    { id: 32, code: '5005', name: 'مصروفات تسويق', type: 'expenses', parentId: 27, isParent: false },
+    { id: 33, code: '5006', name: 'صيانة وإصلاح', type: 'expenses', parentId: 27, isParent: false },
+    { id: 34, code: '5007', name: 'مصروفات متنوعة', type: 'expenses', parentId: 27, isParent: false }
+];
+
+// ============================================================
+// Firebase
 // ============================================================
 function initFirebase() {
     try {
@@ -185,9 +233,9 @@ function syncToCloud() {
     const data = {
         products, sales, purchases, returns, expenses,
         customers, suppliers, treasury, payments, companyData,
-        users, auditLog, vatSettings,
+        users, auditLog, vatSettings, accounts, journalEntries,
         lastSync: new Date().toISOString(),
-        version: '11.0.1'
+        version: '12.0.0'
     };
     updateSyncStatus('⏳ جاري الرفع...', 'info');
     showToast('⏳ جاري الرفع...', 'info');
@@ -223,12 +271,15 @@ function syncFromCloud() {
             if (data.users) users = data.users;
             if (data.auditLog) auditLog = data.auditLog;
             if (data.vatSettings) vatSettings = data.vatSettings;
+            if (data.accounts) accounts = data.accounts;
+            if (data.journalEntries) journalEntries = data.journalEntries;
             saveAll();
             populateAllDropdowns();
             renderProducts(); renderCashier(); renderPurchases();
             renderReturns(); renderExpenses(); renderInvoices();
             renderTreasury(); renderCustomers(); renderSuppliers();
             renderPayments(); renderUsers(); renderAudit();
+            renderAccounts(); renderJournal();
             updateDashboard();
             showToast('✅ تم الجلب من السحابة', 'success');
         })
@@ -348,6 +399,7 @@ function navigateTo(page) {
     if (page === 'suppliers') renderSuppliers();
     if (page === 'payments') renderPayments();
     if (page === 'reports') renderReport(currentReport);
+    if (page === 'accounts') { renderAccounts(); renderJournal(); populateAccountDropdowns(); }
     if (page === 'company') renderCompanyPage();
     if (page === 'users') renderUsers();
     if (page === 'audit') renderAudit();
@@ -462,7 +514,230 @@ function renderProducts() {
 }
 
 // ============================================================
-// الكاشير (مع الضريبة - مصلح)
+// شجرة الحسابات - CRUD
+// ============================================================
+function saveAccount() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    const id = $('accId').value;
+    const name = $('accName').value.trim();
+    const type = $('accType').value;
+    const parentId = parseInt($('accParent').value) || null;
+    if (!name) { showToast('⚠️ أدخل اسم الحساب', 'error'); return; }
+    if (id) {
+        if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+        const idx = accounts.findIndex(a => a.id == id);
+        if (idx > -1) {
+            accounts[idx] = { ...accounts[idx], name, type, parentId };
+            addAuditLog('edit', 'account', `تعديل حساب: ${name}`);
+            showToast('✅ تم تعديل الحساب', 'success');
+        }
+    } else {
+        const newId = Date.now();
+        const parent = accounts.find(a => a.id === parentId);
+        const code = generateAccountCode(type, parent);
+        accounts.push({
+            id: newId, code, name, type, parentId,
+            isParent: false,
+            createdAt: new Date().toISOString()
+        });
+        addAuditLog('add', 'account', `إضافة حساب: ${name}`, {
+            account: { name, type, code, parentId }
+        });
+        showToast('✅ تم إضافة الحساب', 'success');
+    }
+    setData('accounts', accounts);
+    resetAccountForm();
+    renderAccounts();
+    populateAccountDropdowns();
+    renderSettings();
+}
+
+function generateAccountCode(type, parent) {
+    const prefix = { assets: '1', liabilities: '2', equity: '3', revenue: '4', expenses: '5' }[type] || '9';
+    if (parent && parent.code) {
+        const siblings = accounts.filter(a => a.parentId === parent.id);
+        const nextNum = String(siblings.length + 1).padStart(2, '0');
+        return parent.code.substring(0, 2) + nextNum;
+    }
+    const topLevel = accounts.filter(a => a.type === type && !a.parentId);
+    const nextNum = String(topLevel.length * 100 + 1000).padStart(4, '0');
+    return nextNum;
+}
+
+function editAccount(id) {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    const a = accounts.find(acc => acc.id == id); if (!a) return;
+    $('accId').value = a.id;
+    $('accName').value = a.name;
+    $('accType').value = a.type;
+    $('accParent').value = a.parentId || '';
+    $('accFormTitle').textContent = '✏️ تعديل الحساب';
+    $('accSaveBtnText').textContent = 'حفظ التعديل';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteAccount(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    const a = accounts.find(acc => acc.id == id); if (!a) return;
+
+    const hasChildren = accounts.some(acc => acc.parentId === id);
+    if (hasChildren) {
+        if (!confirm(`⚠️ الحساب "${a.name}" له حسابات فرعية. سيتم حذف كل الفروع. متابعة؟`)) return;
+    } else {
+        if (!confirm(`⚠️ حذف الحساب "${a.name}"؟`)) return;
+    }
+
+    const toDelete = [id];
+    const findChildren = (parentId) => {
+        accounts.filter(acc => acc.parentId === parentId).forEach(c => {
+            toDelete.push(c.id);
+            findChildren(c.id);
+        });
+    };
+    findChildren(id);
+
+    accounts = accounts.filter(acc => !toDelete.includes(acc.id));
+    setData('accounts', accounts);
+    addAuditLog('delete', 'account', `حذف حساب: ${a.name}`);
+    renderAccounts();
+    populateAccountDropdowns();
+    renderSettings();
+    showToast('🗑️ تم الحذف', 'info');
+}
+
+function resetAccountForm() {
+    $('accId').value = '';
+    $('accName').value = '';
+    $('accType').value = 'assets';
+    $('accParent').value = '';
+    $('accFormTitle').textContent = '➕ إضافة حساب جديد';
+    $('accSaveBtnText').textContent = 'إضافة';
+}
+
+function renderAccounts() {
+    const container = $('accountsTree'); if (!container) return;
+    const typeNames = { assets: '🏛️ الأصول', liabilities: '💳 الخصوم', equity: '👑 حقوق الملكية', revenue: '💰 الإيرادات', expenses: '💸 المصروفات' };
+    const typeOrder = ['assets', 'liabilities', 'equity', 'revenue', 'expenses'];
+
+    let html = '';
+
+    typeOrder.forEach(type => {
+        const typeAccounts = accounts.filter(a => a.type === type);
+        if (typeAccounts.length === 0) return;
+
+        html += `<div class="acc-type-header ${type}">${typeNames[type]}</div>`;
+
+        const renderTree = (parentId, level) => {
+            const children = accounts.filter(a => a.type === type && a.parentId === parentId);
+            children.forEach(a => {
+                const balance = calculateAccountBalance(a.id);
+                const balanceClass = balance > 0 ? 'debit' : balance < 0 ? 'credit' : '';
+                html += `<div class="acc-item ${level > 0 ? 'child' : ''}">
+                    <span class="acc-name">${a.code ? `<small style="color:#A89070;">${a.code}</small> - ` : ''}${a.name}${a.isParent ? ' <small style="color:#C9A94E;">(رئيسي)</small>' : ''}</span>
+                    <span class="acc-balance ${balanceClass}">${formatMoney(Math.abs(balance))}</span>
+                    <div class="acc-actions">
+                        ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editAccount(${a.id})"><i class="fas fa-edit"></i></button>` : ''}
+                        ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})"><i class="fas fa-trash"></i></button>` : ''}
+                    </div>
+                </div>`;
+                renderTree(a.id, level + 1);
+            });
+        };
+        renderTree(null, 0);
+    });
+
+    if (!html) html = '<div class="empty-state"><i class="fas fa-sitemap"></i><span>لا توجد حسابات</span></div>';
+    container.innerHTML = html;
+}
+
+function calculateAccountBalance(accountId) {
+    let balance = 0;
+    journalEntries.forEach(entry => {
+        (entry.lines || []).forEach(line => {
+            if (line.accountId === accountId) {
+                balance += (line.debit || 0) - (line.credit || 0);
+            }
+        });
+    });
+    return balance;
+}
+
+function populateAccountParents() {
+    const sel = $('accParent');
+    if (!sel) return;
+    const cv = sel.value;
+    sel.innerHTML = '<option value="">لا يوجد (حساب رئيسي)</option>';
+    accounts.filter(a => !a.parentId || a.isParent).forEach(a => {
+        sel.innerHTML += `<option value="${a.id}">${a.code ? a.code + ' - ' : ''}${a.name}</option>`;
+    });
+    sel.value = cv;
+}
+
+function populateAccountDropdowns() {
+    populateAccountParents();
+    const jeDebitEl = $('jeDebitAccount');
+    const jeCreditEl = $('jeCreditAccount');
+    if (jeDebitEl) {
+        const cv = jeDebitEl.value;
+        jeDebitEl.innerHTML = '<option value="">اختر حساب...</option>';
+        accounts.filter(a => !a.isParent).forEach(a => {
+            jeDebitEl.innerHTML += `<option value="${a.id}">${a.code ? a.code + ' - ' : ''}${a.name}</option>`;
+        });
+        jeDebitEl.value = cv;
+    }
+    if (jeCreditEl) {
+        const cv = jeCreditEl.value;
+        jeCreditEl.innerHTML = '<option value="">اختر حساب...</option>';
+        accounts.filter(a => !a.isParent).forEach(a => {
+            jeCreditEl.innerHTML += `<option value="${a.id}">${a.code ? a.code + ' - ' : ''}${a.name}</option>`;
+        });
+        jeCreditEl.value = cv;
+    }
+}
+
+// ============================================================
+// القيود المحاسبية - Journal Entries
+// ============================================================
+
+// إنشاء قيد محاسبي تلقائي
+function createJournalEntry(description, reference, date, lines) {
+    if (!lines || lines.length < 2) return null;
+    const totalDebit = lines.reduce((s, l) => s + (l.debit || 0), 0);
+    const totalCredit = lines.reduce((s, l) => s + (l.credit || 0), 0);
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+        console.warn('⚠️ القيد غير متوازن:', description, totalDebit, totalCredit);
+        return null;
+    }
+    const entry = {
+        id: Date.now() + Math.random(),
+        number: journalEntries.length + 1,
+        date: date || getTodayDate(),
+        description: description,
+        reference: reference || '',
+        lines: lines,
+        totalDebit: totalDebit,
+        totalCredit: totalCredit,
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser ? currentUser.name : 'system'
+    };
+    journalEntries.push(entry);
+    if (journalEntries.length > 5000) journalEntries = journalEntries.slice(-5000);
+    setData('journalEntries', journalEntries);
+    return entry;
+}
+
+// إيجاد حساب بالكود
+function getAccountByCode(code) {
+    return accounts.find(a => a.code === code);
+}
+
+// البحث عن حساب باسم يحتوي على كلمة
+function getAccountByNameContains(name) {
+    return accounts.find(a => a.name.includes(name) && !a.isParent);
+}
+
+// ============================================================
+// الكاشير (مع الضريبة + القيود التلقائية)
 // ============================================================
 function populateSaleProducts() {
     const sel = $('saleProduct'); if (!sel) return;
@@ -583,9 +858,11 @@ function saveSale() {
         return;
     }
 
+    // حساب COGS
+    let cogsTotal = 0;
     currentSaleItems.forEach(it => {
         const p = products.find(pr => pr.id == it.productId);
-        if (p) { it.costPrice = p.buy; p.qty -= it.qty; }
+        if (p) { it.costPrice = p.buy; cogsTotal += (p.buy * it.qty); p.qty -= it.qty; }
     });
 
     const inv = {
@@ -594,6 +871,7 @@ function saveSale() {
         invoiceType: isTaxInvoice ? 'tax' : 'simple',
         subtotal: subtotal,
         vatTotal: finalVAT,
+        cogs: cogsTotal,
         items: JSON.parse(JSON.stringify(currentSaleItems)),
         total, date: today,
         time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }),
@@ -602,6 +880,7 @@ function saveSale() {
     };
     sales.push(inv);
 
+    // الخزنة
     if (paymentMethod === 'cash') {
         treasury.push({
             id: Date.now() + 1, type: 'deposit', amount: total,
@@ -617,6 +896,36 @@ function saveSale() {
             refType: 'sale_credit', refId: inv.id
         });
     }
+
+    // ✅ القيد المحاسبي التلقائي
+    try {
+        const lines = [];
+        const cashAcc = getAccountByNameContains('النقدية بالخزنة');
+        const arAcc = getAccountByNameContains('العملاء');
+        const salesAcc = getAccountByNameContains('إيرادات المبيعات');
+        const vatAcc = getAccountByNameContains('ضريبة القيمة المضافة (دائن)');
+        const cogsAcc = getAccountByNameContains('تكلفة البضاعة');
+        const invAcc = getAccountByNameContains('المخزون');
+
+        if (paymentMethod === 'cash' && cashAcc) {
+            lines.push({ accountId: cashAcc.id, accountName: cashAcc.name, debit: total, credit: 0 });
+        } else if (arAcc) {
+            lines.push({ accountId: arAcc.id, accountName: arAcc.name, debit: total, credit: 0 });
+        }
+        if (salesAcc) lines.push({ accountId: salesAcc.id, accountName: salesAcc.name, debit: 0, credit: subtotal });
+        if (finalVAT > 0 && vatAcc) lines.push({ accountId: vatAcc.id, accountName: vatAcc.name, debit: 0, credit: finalVAT });
+        if (cogsAcc) lines.push({ accountId: cogsAcc.id, accountName: cogsAcc.name, debit: cogsTotal, credit: 0 });
+        if (invAcc) lines.push({ accountId: invAcc.id, accountName: invAcc.name, debit: 0, credit: cogsTotal });
+
+        if (lines.length >= 2) {
+            createJournalEntry(
+                `فاتورة بيع ${isTaxInvoice ? 'ضريبية' : 'عادية'} #${inv.number} - ${customer}`,
+                `SALE-${inv.number}`,
+                today,
+                lines
+            );
+        }
+    } catch (e) { console.warn('⚠️ فشل القيد التلقائي:', e); }
 
     setData('products', products); setData('sales', sales); setData('treasury', treasury);
     
@@ -654,7 +963,7 @@ function clearSale() {
 }
 
 // ============================================================
-// الشراء (مع الضريبة - مصلح)
+// الشراء (مع الضريبة + القيود التلقائية)
 // ============================================================
 function populatePurSuppliers() {
     const sel = $('purSupplier'); if (!sel) return;
@@ -803,6 +1112,31 @@ function savePurchase() {
         });
     }
     
+    // ✅ القيد التلقائي
+    try {
+        const lines = [];
+        const cashAcc = getAccountByNameContains('النقدية بالخزنة');
+        const apAcc = getAccountByNameContains('الموردين');
+        const invAcc = getAccountByNameContains('المخزون');
+        const vatAcc = getAccountByNameContains('ضريبة القيمة المضافة (مدين)');
+
+        if (invAcc) lines.push({ accountId: invAcc.id, accountName: invAcc.name, debit: subtotal, credit: 0 });
+        if (finalVAT > 0 && vatAcc) lines.push({ accountId: vatAcc.id, accountName: vatAcc.name, debit: finalVAT, credit: 0 });
+        if (payment === 'cash' && cashAcc) {
+            lines.push({ accountId: cashAcc.id, accountName: cashAcc.name, debit: 0, credit: total });
+        } else if (apAcc) {
+            lines.push({ accountId: apAcc.id, accountName: apAcc.name, debit: 0, credit: total });
+        }
+        if (lines.length >= 2) {
+            createJournalEntry(
+                `فاتورة شراء ${isTaxInvoice ? 'ضريبية' : 'عادية'} #${inv.number} - ${supplier.name}`,
+                `PUR-${inv.number}`,
+                today,
+                lines
+            );
+        }
+    } catch (e) { console.warn('⚠️ فشل القيد التلقائي:', e); }
+
     setData('products', products); setData('purchases', purchases); setData('treasury', treasury);
     
     addAuditLog('add', 'purchase', 
@@ -859,7 +1193,7 @@ function renderPurchases() {
         html += `<div class="table-row" style="grid-template-columns: 0.5fr 1.3fr 1fr 0.6fr 0.8fr 1.2fr;">
             <span>#${inv.number}</span><span>${inv.supplierName}</span>
             <span style="color:#E06060;font-weight:700;">${formatMoney(inv.total)}</span>
-            <span style="color:${isTax ? '#9B59B6' : '#5D5D5D'};font-size:10px;font-weight:700;">${isTax ? '🧾 ضريبية' : '📋 عادية'}</span>
+            <span style="color:${isTax ? '#9B59B6' : '#5D5D5D'};font-size:10px;font-weight:700;">${isTax ? '🧾' : '📋'}</span>
             <span style="color:${sc};font-weight:700;font-size:10px;">${st}</span>
             <div style="display:flex;gap:4px;">
                 <button class="btn btn-info btn-sm" onclick="viewPurchase(${inv.id})"><i class="fas fa-eye"></i></button>
@@ -887,13 +1221,11 @@ function viewPurchase(id) {
         <h3>🛒 فاتورة شراء #${inv.number}</h3>
         <div class="invoice-print ${isTax ? 'tax-invoice' : ''}">
             <div class="inv-header">
-                ${taxBadge}
-                ${logoHtml}
+                ${taxBadge}${logoHtml}
                 <h2>${companyData.name || 'الميزان'}</h2>
                 <p>فاتورة شراء</p>
                 ${companyData.phone ? `<p>📞 ${companyData.phone}</p>` : ''}
                 ${companyData.address ? `<p>📍 ${companyData.address}</p>` : ''}
-                ${companyData.tax && isTax ? `<p>🆔 الرقم الضريبي: ${companyData.tax}</p>` : ''}
             </div>
             <div class="inv-info">
                 <div><span class="lbl">رقم:</span> #${inv.number}</div>
@@ -904,7 +1236,7 @@ function viewPurchase(id) {
             </div>
             <table><thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>${itemsHtml}</tbody></table>
             <div class="inv-totals">
-                <div class="inv-total-row"><span>المجموع (بدون ضريبة):</span><span>${formatMoney(subtotal)} ج.م</span></div>
+                <div class="inv-total-row"><span>المجموع:</span><span>${formatMoney(subtotal)} ج.م</span></div>
                 ${isTax ? `<div class="inv-total-row"><span>الضريبة:</span><span style="color:#9B59B6;">${formatMoney(vatTotal)} ج.م</span></div>` : ''}
                 <div class="inv-total-row grand"><span>الإجمالي:</span><span>${formatMoney(inv.total)} 🇪🇬</span></div>
             </div>
@@ -1115,9 +1447,7 @@ function deleteReturn(id) {
     treasury = treasury.filter(t => !(t.refType === 'return' && t.refId === id));
     returns = returns.filter(x => x.id !== id);
     setData('products', products); setData('returns', returns); setData('treasury', treasury);
-    addAuditLog('delete', 'return', `حذف مرتجع #${r.number} - ${r.party}`, {
-        returnNumber: r.number, party: r.party, total: r.total
-    });
+    addAuditLog('delete', 'return', `حذف مرتجع #${r.number} - ${r.party}`);
     renderReturns(); renderProducts(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
@@ -1191,7 +1521,7 @@ function deleteExpense(id) {
     treasury = treasury.filter(t => !(t.refType === 'expense' && t.refId === id));
     expenses = expenses.filter(x => x.id !== id);
     setData('expenses', expenses); setData('treasury', treasury);
-    addAuditLog('delete', 'expense', `حذف مصروف: ${e.note} - ${formatMoney(e.amount)} ج.م`);
+    addAuditLog('delete', 'expense', `حذف مصروف: ${e.note}`);
     renderExpenses(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
@@ -1224,7 +1554,7 @@ function renderInvoices() {
             <span>#${inv.number}</span>
             <span>${inv.customer} <small style="color:#A89070;">${badge}</small></span>
             <span style="color:#2D8F5E;font-weight:700;">${formatMoney(inv.total)}</span>
-            <span style="color:${isTax ? '#9B59B6' : '#5D5D5D'};font-size:10px;font-weight:700;">${isTax ? '🧾 ضريبية' : '📋 عادية'}</span>
+            <span style="color:${isTax ? '#9B59B6' : '#5D5D5D'};font-size:10px;font-weight:700;">${isTax ? '🧾' : '📋'}</span>
             <span style="font-size:10px;color:#A89070;">${inv.date}</span>
             <div style="display:flex;gap:4px;">
                 <button class="btn btn-info btn-sm" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i></button>
@@ -1253,8 +1583,7 @@ function viewInvoice(id) {
         <h3>📄 فاتورة #${inv.number}</h3>
         <div class="invoice-print ${isTax ? 'tax-invoice' : ''}">
             <div class="inv-header">
-                ${taxBadge}
-                ${logoHtml}
+                ${taxBadge}${logoHtml}
                 <h2>${companyData.name || 'الميزان'}</h2>
                 <p>فاتورة بيع</p>
                 ${companyData.phone ? `<p>📞 ${companyData.phone}</p>` : ''}
@@ -1270,7 +1599,7 @@ function viewInvoice(id) {
             </div>
             <table><thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>${itemsHtml}</tbody></table>
             <div class="inv-totals">
-                <div class="inv-total-row"><span>المجموع (بدون ضريبة):</span><span>${formatMoney(subtotal)} ج.م</span></div>
+                <div class="inv-total-row"><span>المجموع:</span><span>${formatMoney(subtotal)} ج.م</span></div>
                 ${isTax ? `<div class="inv-total-row"><span>الضريبة:</span><span style="color:#9B59B6;">${formatMoney(vatTotal)} ج.م</span></div>` : ''}
                 <div class="inv-total-row grand"><span>الإجمالي:</span><span>${formatMoney(inv.total)} 🇪🇬</span></div>
             </div>
@@ -1294,11 +1623,7 @@ function deleteInvoice(id) {
     treasury = treasury.filter(t => !((t.refType === 'sale' || t.refType === 'sale_credit') && t.refId === id));
     sales = sales.filter(s => s.id !== id);
     setData('products', products); setData('sales', sales); setData('treasury', treasury);
-    addAuditLog('delete', 'sale', 
-        `حذف فاتورة بيع #${inv.number} - ${inv.customer} - ${formatMoney(inv.total)} ج.م`,
-        { invoiceNumber: inv.number, customer: inv.customer, total: inv.total,
-          items: inv.items.map(it => ({ name: it.name, qty: it.qty, price: it.price, total: it.total })) }
-    );
+    addAuditLog('delete', 'sale', `حذف فاتورة بيع #${inv.number} - ${inv.customer}`);
     renderInvoices(); renderProducts(); updateDashboard();
     showToast(`🗑️ تم الحذف`, 'info');
 }
@@ -1381,12 +1706,9 @@ function updateDashboard() {
     const totalPurchases = purchases.reduce((s, i) => s + (i.total || 0), 0);
     const totalExpenses = expenses.reduce((s, i) => s + (i.amount || 0), 0);
     const totalReturns = returns.reduce((s, i) => s + (i.total || 0), 0);
-    
     const cogs = getCOGS(sales);
     const returnsCOGS = getReturnsCOGS(returns);
-    const returnsPurchase = returns.filter(r => r.type === 'purchase')
-        .reduce((s, r) => s + (r.total || 0), 0);
-    
+    const returnsPurchase = returns.filter(r => r.type === 'purchase').reduce((s, r) => s + (r.total || 0), 0);
     const profit = totalSales - cogs - totalExpenses + returnsPurchase - returnsCOGS;
     
     if ($('dashSales')) $('dashSales').textContent = formatMoney(totalSales);
@@ -1397,8 +1719,7 @@ function updateDashboard() {
         $('dashProfit').textContent = formatMoney(profit);
         $('dashProfit').style.color = profit >= 0 ? '#2D8F5E' : '#E06060';
     }
-    const balance = getTreasuryBalance();
-    if ($('dashTreasury')) $('dashTreasury').textContent = formatMoney(balance);
+    if ($('dashTreasury')) $('dashTreasury').textContent = formatMoney(getTreasuryBalance());
     if ($('dashProducts')) $('dashProducts').textContent = products.length;
     const totalQty = products.reduce((s, p) => s + (p.qty || 0), 0);
     if ($('dashInventory')) $('dashInventory').textContent = totalQty;
@@ -1411,7 +1732,6 @@ function updateDashboard() {
     suppliers.forEach(s => { totalSupplierDebt += getSupplierBalance(s.name); });
     if ($('dashSupplierDebt')) $('dashSupplierDebt').textContent = formatMoney(totalSupplierDebt);
 
-    // الضريبة
     const vatStats = calculateVATStats();
     if ($('dashVATSales')) $('dashVATSales').textContent = formatMoney(vatStats.salesVAT);
     if ($('dashVATDue')) $('dashVATDue').textContent = formatMoney(vatStats.vatDue);
@@ -1437,24 +1757,11 @@ function updateDashboard() {
 }
 
 function calculateVATStats(dateFilter = null) {
-    let salesVAT = 0;
-    let purchasesVAT = 0;
-    const filterFn = (item) => {
-        if (!dateFilter) return true;
-        return (item.date || '').startsWith(dateFilter);
-    };
-    sales.forEach(s => {
-        if (s.invoiceType === 'tax' && filterFn(s)) {
-            salesVAT += (s.vatTotal || 0);
-        }
-    });
-    purchases.forEach(p => {
-        if (p.invoiceType === 'tax' && filterFn(p)) {
-            purchasesVAT += (p.vatTotal || 0);
-        }
-    });
-    const vatDue = salesVAT - purchasesVAT;
-    return { salesVAT, purchasesVAT, vatDue };
+    let salesVAT = 0, purchasesVAT = 0;
+    const filterFn = (item) => !dateFilter || (item.date || '').startsWith(dateFilter);
+    sales.forEach(s => { if (s.invoiceType === 'tax' && filterFn(s)) salesVAT += (s.vatTotal || 0); });
+    purchases.forEach(p => { if (p.invoiceType === 'tax' && filterFn(p)) purchasesVAT += (p.vatTotal || 0); });
+    return { salesVAT, purchasesVAT, vatDue: salesVAT - purchasesVAT };
 }
 
 function getCOGS(salesArr) {
@@ -1462,9 +1769,7 @@ function getCOGS(salesArr) {
     (salesArr || []).forEach(inv => {
         (inv.items || []).forEach(item => {
             const p = products.find(pr => pr.id == item.productId);
-            const costPrice = (item.costPrice !== undefined && item.costPrice > 0)
-                ? item.costPrice
-                : (p ? p.buy : 0);
+            const costPrice = (item.costPrice !== undefined && item.costPrice > 0) ? item.costPrice : (p ? p.buy : 0);
             totalCOGS += costPrice * (item.qty || 0);
         });
     });
@@ -1477,9 +1782,7 @@ function getReturnsCOGS(returnsArr) {
         if (ret.type !== 'sale') return;
         (ret.items || []).forEach(item => {
             const p = products.find(pr => pr.id == item.productId);
-            const costPrice = (item.costPrice !== undefined && item.costPrice > 0)
-                ? item.costPrice
-                : (p ? p.buy : 0);
+            const costPrice = (item.costPrice !== undefined && item.costPrice > 0) ? item.costPrice : (p ? p.buy : 0);
             total += costPrice * (item.qty || 0);
         });
     });
@@ -1511,29 +1814,17 @@ function renderMiniChart() {
 
 function getCustomerBalance(customerName) {
     if (!customerName || customerName === 'عميل نقدي') return 0;
-    const creditSales = sales.filter(s =>
-        s.customer === customerName && s.paymentMethod === 'credit'
-    ).reduce((sum, s) => sum + (s.total || 0), 0);
-    const creditReturns = returns.filter(r =>
-        r.type === 'sale' && r.party === customerName
-    ).reduce((sum, r) => sum + (r.total || 0), 0);
-    const collected = payments.filter(p =>
-        p.type === 'collect' && p.party === customerName
-    ).reduce((sum, p) => sum + (p.amount || 0), 0);
+    const creditSales = sales.filter(s => s.customer === customerName && s.paymentMethod === 'credit').reduce((sum, s) => sum + (s.total || 0), 0);
+    const creditReturns = returns.filter(r => r.type === 'sale' && r.party === customerName).reduce((sum, r) => sum + (r.total || 0), 0);
+    const collected = payments.filter(p => p.type === 'collect' && p.party === customerName).reduce((sum, p) => sum + (p.amount || 0), 0);
     return Math.max(0, creditSales - creditReturns - collected);
 }
 
 function getSupplierBalance(supplierName) {
     if (!supplierName) return 0;
-    const creditPurchases = purchases.filter(p =>
-        p.supplierName === supplierName && p.payment === 'credit'
-    ).reduce((sum, p) => sum + (p.total || 0), 0);
-    const creditReturns = returns.filter(r =>
-        r.type === 'purchase' && r.party === supplierName
-    ).reduce((sum, r) => sum + (r.total || 0), 0);
-    const paid = payments.filter(p =>
-        p.type === 'pay' && p.party === supplierName
-    ).reduce((sum, p) => sum + (p.amount || 0), 0);
+    const creditPurchases = purchases.filter(p => p.supplierName === supplierName && p.payment === 'credit').reduce((sum, p) => sum + (p.total || 0), 0);
+    const creditReturns = returns.filter(r => r.type === 'purchase' && r.party === supplierName).reduce((sum, r) => sum + (r.total || 0), 0);
+    const paid = payments.filter(p => p.type === 'pay' && p.party === supplierName).reduce((sum, p) => sum + (p.amount || 0), 0);
     return Math.max(0, creditPurchases - creditReturns - paid);
 }
 
@@ -1552,18 +1843,14 @@ function saveCustomer() {
         if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
         const idx = customers.findIndex(c => c.id == id);
         if (idx > -1) {
-            const old = { ...customers[idx] };
             customers[idx] = { ...customers[idx], name, phone, whatsapp, address };
-            addAuditLog('edit', 'customer', `تعديل عميل: ${name}`, {
-                before: { name: old.name, phone: old.phone },
-                after: { name, phone, whatsapp, address }
-            });
+            addAuditLog('edit', 'customer', `تعديل عميل: ${name}`);
             showToast('✅ تم تعديل العميل', 'success');
         }
     } else {
         if (customers.find(c => c.name === name)) { showToast('⚠️ العميل موجود', 'warning'); return; }
         customers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() });
-        addAuditLog('add', 'customer', `إضافة عميل: ${name}`, { name, phone, whatsapp, address });
+        addAuditLog('add', 'customer', `إضافة عميل: ${name}`);
         showToast('✅ تم إضافة العميل', 'success');
     }
     setData('customers', customers);
@@ -1594,9 +1881,7 @@ function deleteCustomer(id) {
     }
     customers = customers.filter(cu => cu.id != id);
     setData('customers', customers);
-    addAuditLog('delete', 'customer', `حذف عميل: ${c.name}`, {
-        customer: { name: c.name, phone: c.phone, balance: balance }
-    });
+    addAuditLog('delete', 'customer', `حذف عميل: ${c.name}`);
     renderCustomers(); populateSaleCustomers(); populateRetCustomers(); populateCollectCustomers();
     showToast('🗑️ تم حذف العميل', 'info');
 }
@@ -1632,10 +1917,10 @@ function renderCustomers() {
             <span style="font-size:11px;">${cu.phone || '-'}</span>
             <span style="color:${bcolor};font-weight:900;">${formatMoney(balance)}</span>
             ${showActions ? `<div style="display:flex;gap:4px;flex-wrap:wrap;">
-                ${balance > 0 && canAdd() ? `<button class="btn btn-success btn-sm" onclick="openCollectModal('${cu.name}')" title="تحصيل"><i class="fas fa-hand-holding-usd"></i></button>` : ''}
-                <button class="btn btn-info btn-sm" onclick="viewCustomerStatement('${cu.name}')" title="كشف حساب"><i class="fas fa-file-invoice-dollar"></i></button>
-                ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editCustomer(${cu.id})" title="تعديل"><i class="fas fa-edit"></i></button>` : ''}
-                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomer(${cu.id})" title="حذف"><i class="fas fa-trash"></i></button>` : ''}
+                ${balance > 0 && canAdd() ? `<button class="btn btn-success btn-sm" onclick="openCollectModal('${cu.name}')"><i class="fas fa-hand-holding-usd"></i></button>` : ''}
+                <button class="btn btn-info btn-sm" onclick="viewCustomerStatement('${cu.name}')"><i class="fas fa-file-invoice-dollar"></i></button>
+                ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editCustomer(${cu.id})"><i class="fas fa-edit"></i></button>` : ''}
+                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomer(${cu.id})"><i class="fas fa-trash"></i></button>` : ''}
             </div>` : ''}
         </div>`;
     });
@@ -1658,7 +1943,6 @@ function viewCustomerStatement(customerName) {
     const custReturns = returns.filter(r => r.type === 'sale' && r.party === customerName);
     const custPayments = payments.filter(p => p.type === 'collect' && p.party === customerName);
     const balance = getCustomerBalance(customerName);
-
     const allOps = [
         ...custSales.map(s => ({ date: s.date, time: s.time, type: 'sale', desc: `فاتورة #${s.number} (${s.paymentMethod === 'credit' ? 'آجل' : 'نقدي'})`, amount: s.total })),
         ...custReturns.map(r => ({ date: r.date, time: r.time, type: 'return', desc: `مرتجع #${r.number}`, amount: -r.total })),
@@ -1667,7 +1951,7 @@ function viewCustomerStatement(customerName) {
 
     let rowsHtml = '';
     if (allOps.length === 0) {
-        rowsHtml = `<tr><td colspan="4" style="text-align:center;color:#A89070;padding:12px;">لا توجد حركات</td></tr>`;
+        rowsHtml = `<tr><td colspan="3" style="text-align:center;color:#A89070;padding:12px;">لا توجد حركات</td></tr>`;
     } else {
         allOps.forEach(op => {
             const color = op.amount > 0 ? '#E06060' : '#2D8F5E';
@@ -1680,15 +1964,11 @@ function viewCustomerStatement(customerName) {
             </tr>`;
         });
     }
-
     const html = `
         <button class="modal-close" onclick="closeModal()">&times;</button>
         <h3>📋 كشف حساب: ${customerName}</h3>
         <div class="invoice-print">
-            <div class="inv-header">
-                <h2>${companyData.name || 'الميزان'}</h2>
-                <p>كشف حساب عميل</p>
-            </div>
+            <div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب عميل</p></div>
             <div class="inv-info">
                 <div><span class="lbl">العميل:</span> ${customerName}</div>
                 <div><span class="lbl">التاريخ:</span> ${getTodayDate()}</div>
@@ -1697,10 +1977,7 @@ function viewCustomerStatement(customerName) {
                     <span style="color:${balance > 0 ? '#E06060' : '#2D8F5E'};font-weight:900;font-size:18px;">${formatMoney(balance)} 🇪🇬</span>
                 </div>
             </div>
-            <table style="margin-top:10px;">
-                <thead><tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th></tr></thead>
-                <tbody>${rowsHtml}</tbody>
-            </table>
+            <table style="margin-top:10px;"><thead><tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th></tr></thead><tbody>${rowsHtml}</tbody></table>
         </div>
         <div style="display:flex;gap:6px;margin-top:12px;">
             <button class="btn btn-primary btn-block" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button>
@@ -1724,18 +2001,14 @@ function saveSupplier() {
         if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
         const idx = suppliers.findIndex(s => s.id == id);
         if (idx > -1) {
-            const old = { ...suppliers[idx] };
             suppliers[idx] = { ...suppliers[idx], name, phone, whatsapp, address };
-            addAuditLog('edit', 'supplier', `تعديل مورد: ${name}`, {
-                before: { name: old.name, phone: old.phone },
-                after: { name, phone, whatsapp, address }
-            });
+            addAuditLog('edit', 'supplier', `تعديل مورد: ${name}`);
             showToast('✅ تم تعديل المورد', 'success');
         }
     } else {
         if (suppliers.find(s => s.name === name)) { showToast('⚠️ المورد موجود', 'warning'); return; }
         suppliers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() });
-        addAuditLog('add', 'supplier', `إضافة مورد: ${name}`, { name, phone, whatsapp, address });
+        addAuditLog('add', 'supplier', `إضافة مورد: ${name}`);
         showToast('✅ تم إضافة المورد', 'success');
     }
     setData('suppliers', suppliers);
@@ -1766,9 +2039,7 @@ function deleteSupplier(id) {
     }
     suppliers = suppliers.filter(su => su.id != id);
     setData('suppliers', suppliers);
-    addAuditLog('delete', 'supplier', `حذف مورد: ${s.name}`, {
-        supplier: { name: s.name, phone: s.phone, balance: balance }
-    });
+    addAuditLog('delete', 'supplier', `حذف مورد: ${s.name}`);
     renderSuppliers(); populatePurSuppliers(); populateRetSuppliers(); populatePaySuppliers();
     showToast('🗑️ تم حذف المورد', 'info');
 }
@@ -1803,10 +2074,10 @@ function renderSuppliers() {
             <span style="font-size:11px;">${s.phone || '-'}</span>
             <span style="color:${bcolor};font-weight:900;">${formatMoney(balance)}</span>
             ${showActions ? `<div style="display:flex;gap:4px;flex-wrap:wrap;">
-                ${balance > 0 && canAdd() ? `<button class="btn btn-danger btn-sm" onclick="openPayModal('${s.name}')" title="سداد"><i class="fas fa-money-bill-wave"></i></button>` : ''}
-                <button class="btn btn-info btn-sm" onclick="viewSupplierStatement('${s.name}')" title="كشف حساب"><i class="fas fa-file-invoice"></i></button>
-                ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editSupplier(${s.id})" title="تعديل"><i class="fas fa-edit"></i></button>` : ''}
-                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})" title="حذف"><i class="fas fa-trash"></i></button>` : ''}
+                ${balance > 0 && canAdd() ? `<button class="btn btn-danger btn-sm" onclick="openPayModal('${s.name}')"><i class="fas fa-money-bill-wave"></i></button>` : ''}
+                <button class="btn btn-info btn-sm" onclick="viewSupplierStatement('${s.name}')"><i class="fas fa-file-invoice"></i></button>
+                ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button>` : ''}
+                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button>` : ''}
             </div>` : ''}
         </div>`;
     });
@@ -1829,7 +2100,6 @@ function viewSupplierStatement(supplierName) {
     const supReturns = returns.filter(r => r.type === 'purchase' && r.party === supplierName);
     const supPayments = payments.filter(p => p.type === 'pay' && p.party === supplierName);
     const balance = getSupplierBalance(supplierName);
-
     const allOps = [
         ...supPurchases.map(p => ({ date: p.date, time: p.time, type: 'purchase', desc: `فاتورة شراء #${p.number} (${p.payment === 'credit' ? 'آجل' : 'نقدي'})`, amount: p.total })),
         ...supReturns.map(r => ({ date: r.date, time: r.time, type: 'return', desc: `مرتجع شراء #${r.number}`, amount: -r.total })),
@@ -1838,7 +2108,7 @@ function viewSupplierStatement(supplierName) {
 
     let rowsHtml = '';
     if (allOps.length === 0) {
-        rowsHtml = `<tr><td colspan="4" style="text-align:center;color:#A89070;padding:12px;">لا توجد حركات</td></tr>`;
+        rowsHtml = `<tr><td colspan="3" style="text-align:center;color:#A89070;padding:12px;">لا توجد حركات</td></tr>`;
     } else {
         allOps.forEach(op => {
             const color = op.amount > 0 ? '#E6A830' : '#2D8F5E';
@@ -1851,15 +2121,11 @@ function viewSupplierStatement(supplierName) {
             </tr>`;
         });
     }
-
     const html = `
         <button class="modal-close" onclick="closeModal()">&times;</button>
         <h3>📋 كشف حساب: ${supplierName}</h3>
         <div class="invoice-print">
-            <div class="inv-header">
-                <h2>${companyData.name || 'الميزان'}</h2>
-                <p>كشف حساب مورد</p>
-            </div>
+            <div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب مورد</p></div>
             <div class="inv-info">
                 <div><span class="lbl">المورد:</span> ${supplierName}</div>
                 <div><span class="lbl">التاريخ:</span> ${getTodayDate()}</div>
@@ -1868,10 +2134,7 @@ function viewSupplierStatement(supplierName) {
                     <span style="color:${balance > 0 ? '#E6A830' : '#2D8F5E'};font-weight:900;font-size:18px;">${formatMoney(balance)} 🇪🇬</span>
                 </div>
             </div>
-            <table style="margin-top:10px;">
-                <thead><tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th></tr></thead>
-                <tbody>${rowsHtml}</tbody>
-            </table>
+            <table style="margin-top:10px;"><thead><tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th></tr></thead><tbody>${rowsHtml}</tbody></table>
         </div>
         <div style="display:flex;gap:6px;margin-top:12px;">
             <button class="btn btn-primary btn-block" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button>
@@ -1968,10 +2231,9 @@ function saveCollect() {
         refType: 'collect', refId: pay.id
     });
     setData('payments', payments); setData('treasury', treasury);
-    addAuditLog('add', 'payment', `تحصيل من ${party} - ${formatMoney(amount)} ج.م`,
-        { party, amount, type: 'collect', note, date });
+    addAuditLog('add', 'payment', `تحصيل من ${party} - ${formatMoney(amount)} ج.م`);
     $('collectAmount').value = ''; $('collectNote').value = '';
-    $('collectCustomer').value = ''; 
+    $('collectCustomer').value = '';
     const box = $('collectInfoBox'); if (box) box.style.display = 'none';
     renderPayments(); renderTreasury(); renderCustomers(); updateDashboard();
     showToast(`✅ تم تحصيل ${formatMoney(amount)} 🇪🇬 من ${party}`, 'success');
@@ -2004,8 +2266,7 @@ function savePay() {
         refType: 'pay', refId: pay.id
     });
     setData('payments', payments); setData('treasury', treasury);
-    addAuditLog('add', 'payment', `سداد لـ ${party} - ${formatMoney(amount)} ج.م`,
-        { party, amount, type: 'pay', note, date });
+    addAuditLog('add', 'payment', `سداد لـ ${party} - ${formatMoney(amount)} ج.م`);
     $('payAmount').value = ''; $('payNote').value = '';
     $('paySupplier').value = '';
     const box = $('payInfoBox'); if (box) box.style.display = 'none';
@@ -2037,8 +2298,8 @@ function renderPayments() {
             <span style="font-size:11px;">${p.party}${p.note ? `<br><small style="color:#5D5D5D;font-size:9px;">${p.note}</small>` : ''}</span>
             <span style="color:${color};font-weight:700;">${formatMoney(p.amount)}</span>
             <div style="display:flex;gap:4px;">
-                <button class="btn btn-info btn-sm" onclick="showReceiptById(${p.id})" title="إيصال"><i class="fas fa-receipt"></i></button>
-                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deletePayment(${p.id})" title="حذف"><i class="fas fa-trash"></i></button>` : ''}
+                <button class="btn btn-info btn-sm" onclick="showReceiptById(${p.id})"><i class="fas fa-receipt"></i></button>
+                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deletePayment(${p.id})"><i class="fas fa-trash"></i></button>` : ''}
             </div>
         </div>`;
     });
@@ -2064,7 +2325,6 @@ function showReceipt(pay) {
                 <h2 style="color:${color};">${companyData.name || 'الميزان'}</h2>
                 <p>${label}</p>
                 ${companyData.phone ? `<p>📞 ${companyData.phone}</p>` : ''}
-                ${companyData.address ? `<p>📍 ${companyData.address}</p>` : ''}
             </div>
             <div class="rec-info">
                 <div><span class="lbl">رقم الإيصال:</span> #${pay.id.toString().slice(-6)}</div>
@@ -2080,7 +2340,7 @@ function showReceipt(pay) {
             <div class="rec-footer">${companyData.footer || 'شكراً لتعاملكم معنا 🌟'}</div>
         </div>
         <div style="display:flex;gap:6px;margin-top:12px;">
-            <button class="btn btn-primary btn-block" onclick="window.print()"><i class="fas fa-print"></i> طباعة الإيصال</button>
+            <button class="btn btn-primary btn-block" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button>
             <button class="btn btn-secondary btn-block" onclick="closeModal()"><i class="fas fa-times"></i> إغلاق</button>
         </div>`;
     openModal(html);
@@ -2099,7 +2359,143 @@ function deletePayment(id) {
 }
 
 // ============================================================
-// التقارير
+// القيود اليدوية (Journal Entries)
+// ============================================================
+function updateJournalCheck() {
+    const debit = parseFloat($('jeDebitAmount')?.value) || 0;
+    const credit = parseFloat($('jeCreditAmount')?.value) || 0;
+    const checkEl = $('jeCheck');
+    const statusEl = $('jeBalanceStatus');
+    if (!checkEl || !statusEl) return;
+    
+    if (debit === 0 && credit === 0) {
+        checkEl.className = 'journal-check';
+        statusEl.textContent = 'أدخل المبالغ';
+        statusEl.style.color = '#A89070';
+    } else if (Math.abs(debit - credit) < 0.01 && debit > 0) {
+        checkEl.className = 'journal-check balanced';
+        statusEl.textContent = 'متوازن ✅';
+        statusEl.style.color = '#2D8F5E';
+    } else {
+        checkEl.className = 'journal-check unbalanced';
+        statusEl.textContent = `غير متوازن (فرق: ${formatMoney(Math.abs(debit - credit))})`;
+        statusEl.style.color = '#E06060';
+    }
+}
+
+function saveJournalEntry() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    const date = $('jeDate').value || getTodayDate();
+    const ref = $('jeRef').value.trim();
+    const desc = $('jeDesc').value.trim();
+    const debitAcc = parseInt($('jeDebitAccount').value);
+    const debitAmount = parseFloat($('jeDebitAmount').value) || 0;
+    const creditAcc = parseInt($('jeCreditAccount').value);
+    const creditAmount = parseFloat($('jeCreditAmount').value) || 0;
+
+    if (!desc) { showToast('⚠️ أدخل الشرح', 'error'); return; }
+    if (!debitAcc || !creditAcc) { showToast('⚠️ اختر الحسابات', 'error'); return; }
+    if (debitAmount <= 0 || creditAmount <= 0) { showToast('⚠️ أدخل المبالغ', 'error'); return; }
+    if (Math.abs(debitAmount - creditAmount) > 0.01) {
+        showToast('⚠️ المدين ≠ الدائن', 'error'); return;
+    }
+
+    const debitAccount = accounts.find(a => a.id === debitAcc);
+    const creditAccount = accounts.find(a => a.id === creditAcc);
+
+    const lines = [
+        { accountId: debitAcc, accountName: debitAccount?.name || '-', debit: debitAmount, credit: 0 },
+        { accountId: creditAcc, accountName: creditAccount?.name || '-', credit: creditAmount, debit: 0 }
+    ];
+
+    const entry = createJournalEntry(desc, ref, date, lines);
+    if (entry) {
+        addAuditLog('add', 'account', `قيد محاسبي: ${desc} - ${formatMoney(debitAmount)} ج.م`);
+        $('jeRef').value = ''; $('jeDesc').value = '';
+        $('jeDebitAmount').value = ''; $('jeCreditAmount').value = '';
+        $('jeDebitAccount').value = ''; $('jeCreditAccount').value = '';
+        updateJournalCheck();
+        renderJournal();
+        renderAccounts();
+        renderSettings();
+        showToast('✅ تم حفظ القيد', 'success');
+    } else {
+        showToast('❌ فشل حفظ القيد', 'error');
+    }
+}
+
+function renderJournal() {
+    const c = $('journalList'); if (!c) return;
+    const search = ($('journalSearch')?.value || '').trim().toLowerCase();
+    let filtered = journalEntries;
+    if (search) {
+        filtered = journalEntries.filter(e =>
+            (e.description || '').toLowerCase().includes(search) ||
+            (e.reference || '').toLowerCase().includes(search)
+        );
+    }
+    if (filtered.length === 0) {
+        c.innerHTML = `<div class="empty-state"><i class="fas fa-book"></i><span>${search ? 'لا توجد نتائج' : 'لا توجد قيود'}</span></div>`;
+        return;
+    }
+    const sorted = [...filtered].sort((a, b) => b.id - a.id).slice(0, 100);
+    let html = '';
+    sorted.forEach(e => {
+        let rowsHtml = '';
+        e.lines.forEach(l => {
+            if (l.debit > 0) {
+                rowsHtml += `<div class="je-row debit">
+                    <span class="je-account">${l.accountName}</span>
+                    <span class="je-amount">${formatMoney(l.debit)}</span>
+                    <span></span>
+                </div>`;
+            }
+            if (l.credit > 0) {
+                rowsHtml += `<div class="je-row credit">
+                    <span class="je-account je-indent">${l.accountName}</span>
+                    <span></span>
+                    <span class="je-amount">${formatMoney(l.credit)}</span>
+                </div>`;
+            }
+        });
+        html += `<div class="journal-item">
+            <div class="je-header">
+                <span class="je-num">قيد #${e.number}</span>
+                <span class="je-date">${e.date}</span>
+            </div>
+            <div class="je-desc">${e.description}</div>
+            ${e.reference ? `<div style="font-size:10px;color:#A89070;margin-bottom:6px;">📎 ${e.reference}</div>` : ''}
+            <div class="je-entries">
+                <div class="je-row" style="color:#C9A94E;font-weight:800;font-size:10px;">
+                    <span>الحساب</span>
+                    <span>مدين</span>
+                    <span>دائن</span>
+                </div>
+                ${rowsHtml}
+            </div>
+            <div class="je-actions">
+                <button class="btn btn-danger btn-sm" onclick="deleteJournalEntry(${e.id})"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`;
+    });
+    c.innerHTML = html;
+}
+
+function deleteJournalEntry(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    const e = journalEntries.find(en => en.id === id); if (!e) return;
+    if (!confirm(`⚠️ حذف القيد #${e.number}؟`)) return;
+    journalEntries = journalEntries.filter(en => en.id !== id);
+    setData('journalEntries', journalEntries);
+    addAuditLog('delete', 'account', `حذف قيد محاسبي #${e.number}`);
+    renderJournal();
+    renderAccounts();
+    renderSettings();
+    showToast('🗑️ تم الحذف', 'info');
+}
+
+// ============================================================
+// التقارير العامة
 // ============================================================
 function switchReport(type, btn) {
     currentReport = type;
@@ -2181,7 +2577,6 @@ function renderReport(type) {
     }
     const tS = rows.reduce((s, r) => s + r.sales, 0);
     const tCOGS = rows.reduce((s, r) => s + (r.cogs || 0), 0);
-    const tP = rows.reduce((s, r) => s + r.purchases, 0);
     const tE = rows.reduce((s, r) => s + r.expenses, 0);
     const tPr = rows.reduce((s, r) => s + r.profit, 0);
     const maxV = Math.max(...rows.flatMap(r => [r.sales, r.cogs, r.expenses]), 1);
@@ -2255,7 +2650,7 @@ function renderVATReport() {
     const totalVATDue = totalSalesVAT - totalPurchasesVAT;
     const maxV = Math.max(...rows.flatMap(r => [r.salesVAT, r.purchasesVAT]), 1);
     container.innerHTML = `
-        <h3 style="font-size:14px;color:#9B59B6;margin-bottom:14px;">🧾 التقرير الضريبي - آخر 6 أشهر</h3>
+        <h3 style="font-size:14px;color:#9B59B6;margin-bottom:14px;">🧾 التقرير الضريبي</h3>
         <div class="vat-report-card">
             <div class="vat-big">${formatMoney(totalVATDue)} 🇪🇬</div>
             <div class="vat-label">${totalVATDue >= 0 ? '💰 ضريبة مستحقة للدولة' : '✅ ضريبة مستردة'}</div>
@@ -2268,14 +2663,6 @@ function renderVATReport() {
             <div class="report-stat" style="border-right-color:#E06060;">
                 <div class="num" style="color:#E06060;">${formatMoney(totalPurchasesVAT)}</div>
                 <div class="lbl">🛒 ضريبة المشتريات</div>
-            </div>
-            <div class="report-stat" style="border-right-color:${totalVATDue >= 0 ? '#E6A830' : '#2D8F5E'};">
-                <div class="num" style="color:${totalVATDue >= 0 ? '#E6A830' : '#2D8F5E'};">${formatMoney(Math.abs(totalVATDue))}</div>
-                <div class="lbl">${totalVATDue >= 0 ? '📋 المستحق' : '✅ المسترد'}</div>
-            </div>
-            <div class="report-stat" style="border-right-color:#C9A94E;">
-                <div class="num" style="color:#C9A94E;">${sales.filter(s => s.invoiceType === 'tax').length}</div>
-                <div class="lbl">📄 فواتير ضريبية</div>
             </div>
         </div>
         <div class="report-chart">
@@ -2310,13 +2697,142 @@ function renderVATReport() {
                 <span style="color:${r.vatDue >= 0 ? '#E6A830' : '#2D8F5E'};font-weight:700;">${formatMoney(r.vatDue)}</span>
             </div>
         `).join('')}
-        <div style="text-align:center;margin-top:20px;padding:14px;background:#1C1C1C;border-radius:10px;border:1px dashed #9B59B6;">
-            <div style="font-size:12px;color:#A89070;margin-bottom:6px;">📊 إجمالي الفواتير الضريبية</div>
-            <div style="font-size:11px;color:#F5E6C8;margin-bottom:4px;">مبيعات ضريبية: <strong style="color:#9B59B6;">${sales.filter(s => s.invoiceType === 'tax').length}</strong></div>
-            <div style="font-size:11px;color:#F5E6C8;">مشتريات ضريبية: <strong style="color:#E06060;">${purchases.filter(p => p.invoiceType === 'tax').length}</strong></div>
+    `;
+}
+
+// ============================================================
+// التقارير المحاسبية (Trial Balance / Income Statement / Balance Sheet)
+// ============================================================
+function switchAccountsTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const tree = $('accTabTree');
+    const journal = $('accTabJournal');
+    const reports = $('accTabReports');
+    if (tree) tree.style.display = (tab === 'tree') ? 'block' : 'none';
+    if (journal) journal.style.display = (tab === 'journal') ? 'block' : 'none';
+    if (reports) reports.style.display = (tab === 'reports') ? 'block' : 'none';
+    if (tab === 'tree') { renderAccounts(); populateAccountDropdowns(); }
+    if (tab === 'journal') { renderJournal(); populateAccountDropdowns(); }
+}
+
+function showAccountingReport(type) {
+    const c = $('accountingReportContent');
+    if (!c) return;
+    if (type === 'trial') c.innerHTML = renderTrialBalance();
+    if (type === 'income') c.innerHTML = renderIncomeStatement();
+    if (type === 'balance') c.innerHTML = renderBalanceSheet();
+}
+
+function renderTrialBalance() {
+    const rows = [];
+    let totalDebit = 0, totalCredit = 0;
+    accounts.filter(a => !a.isParent).forEach(a => {
+        const balance = calculateAccountBalance(a.id);
+        if (Math.abs(balance) < 0.01) return;
+        if (balance > 0) { rows.push({ name: a.name, code: a.code, debit: balance, credit: 0 }); totalDebit += balance; }
+        else { rows.push({ name: a.name, code: a.code, debit: 0, credit: Math.abs(balance) }); totalCredit += Math.abs(balance); }
+    });
+    if (rows.length === 0) {
+        return `<div class="empty-state"><i class="fas fa-balance-scale"></i><span>لا توجد أرصدة بعد</span></div>`;
+    }
+    let rowsHtml = '';
+    rows.forEach(r => {
+        rowsHtml += `<div class="acc-report-row">
+            <span>${r.code ? `<small style="color:#A89070;">${r.code}</small> ` : ''}${r.name}</span>
+            <span style="color:#2D8F5E;">${r.debit > 0 ? formatMoney(r.debit) : '-'}</span>
+            <span style="color:#E06060;">${r.credit > 0 ? formatMoney(r.credit) : '-'}</span>
+        </div>`;
+    });
+    const diff = totalDebit - totalCredit;
+    return `
+        <div class="acc-report-title">📊 ميزان المراجعة</div>
+        <div class="acc-report-subtitle">${getTodayDate()}</div>
+        <div class="acc-report-section">
+            <div class="acc-report-row" style="color:#C9A94E;font-weight:800;">
+                <span>الحساب</span><span>مدين</span><span>دائن</span>
+            </div>
+            ${rowsHtml}
+            <div class="acc-report-row total ${Math.abs(diff) < 0.01 ? 'profit' : 'loss'}">
+                <span>الإجمالي</span>
+                <span>${formatMoney(totalDebit)}</span>
+                <span>${formatMoney(totalCredit)}</span>
+            </div>
+            ${Math.abs(diff) > 0.01 ? `<div style="text-align:center;color:#E06060;font-size:12px;margin-top:8px;">⚠️ فرق: ${formatMoney(Math.abs(diff))}</div>` : `<div style="text-align:center;color:#2D8F5E;font-size:12px;margin-top:8px;">✅ متوازن</div>`}
         </div>
     `;
 }
+
+function renderIncomeStatement() {
+    let revenue = 0, cogs = 0, expenses = 0;
+    accounts.filter(a => a.type === 'revenue' && !a.isParent).forEach(a => {
+        const b = calculateAccountBalance(a.id);
+        revenue += -b;
+    });
+    accounts.filter(a => a.type === 'expenses' && !a.isParent).forEach(a => {
+        const b = calculateAccountBalance(a.id);
+        if (a.name.includes('تكلفة البضاعة')) cogs += b;
+        else expenses += b;
+    });
+    const grossProfit = revenue - cogs;
+    const netProfit = grossProfit - expenses;
+    return `
+        <div class="acc-report-title">📈 قائمة الدخل</div>
+        <div class="acc-report-subtitle">${getTodayDate()}</div>
+        <div class="acc-report-section">
+            <h4>💰 الإيرادات</h4>
+            <div class="acc-report-row"><span>إجمالي الإيرادات</span><span style="color:#2D8F5E;">${formatMoney(revenue)}</span></div>
+        </div>
+        <div class="acc-report-section">
+            <h4>📦 تكلفة البضاعة المباعة</h4>
+            <div class="acc-report-row"><span>COGS</span><span style="color:#E06060;">${formatMoney(cogs)}</span></div>
+            <div class="acc-report-row subtotal"><span>الربح الإجمالي</span><span>${formatMoney(grossProfit)}</span></div>
+        </div>
+        <div class="acc-report-section">
+            <h4>💸 المصروفات</h4>
+            <div class="acc-report-row"><span>إجمالي المصروفات</span><span style="color:#E06060;">${formatMoney(expenses)}</span></div>
+        </div>
+        <div class="acc-report-section">
+            <div class="acc-report-row total ${netProfit >= 0 ? 'profit' : 'loss'}">
+                <span>📊 صافي الربح</span>
+                <span>${formatMoney(netProfit)}</span>
+            </div>
+        </div>
+    `;
+}
+
+function renderBalanceSheet() {
+    let assets = 0, liabilities = 0, equity = 0;
+    accounts.filter(a => a.type === 'assets' && !a.isParent).forEach(a => { assets += calculateAccountBalance(a.id); });
+    accounts.filter(a => a.type === 'liabilities' && !a.isParent).forEach(a => { liabilities += -calculateAccountBalance(a.id); });
+    accounts.filter(a => a.type === 'equity' && !a.isParent).forEach(a => { equity += -calculateAccountBalance(a.id); });
+    const totalLiabEquity = liabilities + equity;
+    const diff = assets - totalLiabEquity;
+    return `
+        <div class="acc-report-title">📉 الميزانية العمومية</div>
+        <div class="acc-report-subtitle">${getTodayDate()}</div>
+        <div class="acc-report-section">
+            <h4>🏛️ الأصول</h4>
+            <div class="acc-report-row total"><span>إجمالي الأصول</span><span style="color:#2D8F5E;">${formatMoney(assets)}</span></div>
+        </div>
+        <div class="acc-report-section">
+            <h4>💳 الخصوم</h4>
+            <div class="acc-report-row"><span>إجمالي الخصوم</span><span style="color:#E06060;">${formatMoney(liabilities)}</span></div>
+        </div>
+        <div class="acc-report-section">
+            <h4>👑 حقوق الملكية</h4>
+            <div class="acc-report-row"><span>إجمالي حقوق الملكية</span><span style="color:#C9A94E;">${formatMoney(equity)}</span></div>
+        </div>
+        <div class="acc-report-section">
+            <div class="acc-report-row total ${Math.abs(diff) < 0.01 ? 'profit' : 'loss'}">
+                <span>الخصوم + حقوق الملكية</span>
+                <span>${formatMoney(totalLiabEquity)}</span>
+            </div>
+            ${Math.abs(diff) > 0.01 ? `<div style="text-align:center;color:#E06060;font-size:12px;margin-top:8px;">⚠️ فرق: ${formatMoney(Math.abs(diff))}</div>` : `<div style="text-align:center;color:#2D8F5E;font-size:12px;margin-top:8px;">✅ الميزانية متوازنة</div>`}
+        </div>
+    `;
+}
+
 // ============================================================
 // بيانات الشركة
 // ============================================================
@@ -2363,14 +2879,8 @@ function uploadLogo(event) {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const file = event.target.files[0];
     if (!file) return;
-    if (file.size > 500 * 1024) {
-        showToast('⚠️ الصورة كبيرة (الحد: 500KB)', 'warning');
-        event.target.value = ''; return;
-    }
-    if (!file.type.startsWith('image/')) {
-        showToast('⚠️ الملف ليس صورة', 'error');
-        event.target.value = ''; return;
-    }
+    if (file.size > 500 * 1024) { showToast('⚠️ الصورة كبيرة (الحد: 500KB)', 'warning'); event.target.value = ''; return; }
+    if (!file.type.startsWith('image/')) { showToast('⚠️ الملف ليس صورة', 'error'); event.target.value = ''; return; }
     const reader = new FileReader();
     reader.onload = function(e) {
         companyData.logo = e.target.result;
@@ -2396,7 +2906,6 @@ function removeLogo() {
 
 function saveCompanySettings() {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const oldData = { ...companyData };
     companyData.name = $('setCompanyName').value.trim();
     companyData.phone = $('setCompanyPhone').value.trim();
     companyData.address = $('setCompanyAddress').value.trim();
@@ -2404,10 +2913,7 @@ function saveCompanySettings() {
     companyData.cr = $('setCompanyCR')?.value?.trim() || '';
     companyData.footer = $('setCompanyFooter').value.trim();
     setData('companyData', companyData);
-    addAuditLog('edit', 'company', 'تعديل بيانات الشركة', {
-        before: { name: oldData.name, phone: oldData.phone, tax: oldData.tax },
-        after: { name: companyData.name, phone: companyData.phone, tax: companyData.tax }
-    });
+    addAuditLog('edit', 'company', 'تعديل بيانات الشركة');
     renderCompanyPage();
     showToast('✅ تم حفظ بيانات الشركة', 'success');
 }
@@ -2424,13 +2930,10 @@ function saveVATSettings() {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const vatEl = $('setDefaultVAT');
     const vat = parseFloat(vatEl?.value) || 14;
-    if (vat < 0 || vat > 100) {
-        showToast('⚠️ النسبة يجب أن تكون بين 0 و 100', 'error');
-        return;
-    }
+    if (vat < 0 || vat > 100) { showToast('⚠️ النسبة بين 0 و 100', 'error'); return; }
     vatSettings.defaultVAT = vat;
     setData('vatSettings', vatSettings);
-    addAuditLog('edit', 'vat', `تعديل نسبة الضريبة الافتراضية: ${vat}%`);
+    addAuditLog('edit', 'vat', `تعديل نسبة الضريبة: ${vat}%`);
     showToast(`✅ تم حفظ نسبة الضريبة: ${vat}%`, 'success');
 }
 
@@ -2450,16 +2953,10 @@ function saveUser() {
         if (idx > -1) {
             if (users[idx].role === 'admin' && role !== 'admin') {
                 const otherAdmins = users.filter(u => u.role === 'admin' && u.id != id);
-                if (otherAdmins.length === 0) {
-                    showToast('⚠️ لا يمكن تغيير دور المدير الأخير', 'error'); return;
-                }
+                if (otherAdmins.length === 0) { showToast('⚠️ لا يمكن تغيير دور المدير الأخير', 'error'); return; }
             }
-            const old = { ...users[idx] };
             users[idx] = { ...users[idx], name, password, role };
-            addAuditLog('edit', 'user', `تعديل مستخدم: ${name}`, {
-                before: { name: old.name, role: old.role },
-                after: { name, role }
-            });
+            addAuditLog('edit', 'user', `تعديل مستخدم: ${name}`);
             showToast('✅ تم تعديل المستخدم', 'success');
         }
     } else {
@@ -2469,9 +2966,7 @@ function saveUser() {
             createdAt: new Date().toISOString(),
             createdBy: currentUser ? currentUser.name : 'unknown'
         });
-        addAuditLog('add', 'user', `إضافة مستخدم: ${name} (${ROLES[role]?.name || role})`, {
-            user: { name, role }
-        });
+        addAuditLog('add', 'user', `إضافة مستخدم: ${name}`);
         showToast('✅ تم إضافة المستخدم', 'success');
     }
     setData('users', users);
@@ -2496,9 +2991,7 @@ function editUser(id) {
 function toggleUserActive(id) {
     if (!canManageUsers()) { showToast('⚠️ المدير فقط', 'error'); return; }
     const u = users.find(us => us.id == id); if (!u) return;
-    if (u.id === (currentUser ? currentUser.id : null)) {
-        showToast('⚠️ لا يمكنك تعطيل حسابك', 'error'); return;
-    }
+    if (u.id === (currentUser ? currentUser.id : null)) { showToast('⚠️ لا يمكنك تعطيل حسابك', 'error'); return; }
     u.active = !u.active;
     setData('users', users);
     addAuditLog('edit', 'user', `${u.active ? 'تفعيل' : 'تعطيل'} المستخدم: ${u.name}`);
@@ -2510,21 +3003,15 @@ function toggleUserActive(id) {
 function deleteUser(id) {
     if (!canManageUsers()) { showToast('⚠️ المدير فقط', 'error'); return; }
     const u = users.find(us => us.id == id); if (!u) return;
-    if (u.id === (currentUser ? currentUser.id : null)) {
-        showToast('⚠️ لا يمكنك حذف حسابك', 'error'); return;
-    }
+    if (u.id === (currentUser ? currentUser.id : null)) { showToast('⚠️ لا يمكنك حذف حسابك', 'error'); return; }
     if (u.role === 'admin') {
         const otherAdmins = users.filter(us => us.role === 'admin' && us.id != id);
-        if (otherAdmins.length === 0) {
-            showToast('⚠️ لا يمكن حذف المدير الأخير', 'error'); return;
-        }
+        if (otherAdmins.length === 0) { showToast('⚠️ لا يمكن حذف المدير الأخير', 'error'); return; }
     }
     if (!confirm(`⚠️ حذف المستخدم "${u.name}"؟`)) return;
     users = users.filter(us => us.id !== id);
     setData('users', users);
-    addAuditLog('delete', 'user', `حذف مستخدم: ${u.name}`, {
-        user: { name: u.name, role: u.role }
-    });
+    addAuditLog('delete', 'user', `حذف مستخدم: ${u.name}`);
     renderUsers();
     populateLoginUsers();
     renderSettings();
@@ -2543,7 +3030,7 @@ function resetUserForm() {
 function renderUsers() {
     const c = $('userList'); if (!c) return;
     if (!canManageUsers()) {
-        c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>المدير فقط يمكنه إدارة المستخدمين</span></div>`;
+        c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>المدير فقط</span></div>`;
         return;
     }
     const search = ($('userSearch')?.value || '').trim().toLowerCase();
@@ -2565,12 +3052,12 @@ function renderUsers() {
                 ${isActive ? '✅ نشط' : '⏸️ موقوف'}
             </span>
             <div style="display:flex;gap:4px;">
-                <button class="btn btn-warning btn-sm" onclick="editUser(${u.id})" title="تعديل"><i class="fas fa-edit"></i></button>
+                <button class="btn btn-warning btn-sm" onclick="editUser(${u.id})"><i class="fas fa-edit"></i></button>
                 ${!isMe ? `
-                    <button class="btn btn-info btn-sm" onclick="toggleUserActive(${u.id})" title="${isActive ? 'تعطيل' : 'تفعيل'}">
+                    <button class="btn btn-info btn-sm" onclick="toggleUserActive(${u.id})">
                         <i class="fas ${isActive ? 'fa-pause' : 'fa-play'}"></i>
                     </button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})" title="حذف"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button>
                 ` : ''}
             </div>
         </div>`;
@@ -2584,27 +3071,19 @@ function renderUsers() {
 function renderAudit() {
     const c = $('auditList'); if (!c) return;
     if (!isAdmin()) {
-        c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>المدير فقط يمكنه عرض سجل النشاطات</span></div>`;
+        c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>المدير فقط</span></div>`;
         return;
     }
     const search = ($('auditSearch')?.value || '').trim().toLowerCase();
     let filtered = auditLog;
     if (currentAuditFilter !== 'all') {
-        if (['add', 'edit', 'delete'].includes(currentAuditFilter)) {
-            filtered = filtered.filter(l => l.action === currentAuditFilter);
-        } else if (currentAuditFilter === 'sale') {
-            filtered = filtered.filter(l => l.type === 'sale');
-        } else if (currentAuditFilter === 'purchase') {
-            filtered = filtered.filter(l => l.type === 'purchase');
-        } else if (currentAuditFilter === 'payment') {
-            filtered = filtered.filter(l => l.type === 'payment');
-        }
+        if (['add', 'edit', 'delete'].includes(currentAuditFilter)) filtered = filtered.filter(l => l.action === currentAuditFilter);
+        else if (currentAuditFilter === 'sale') filtered = filtered.filter(l => l.type === 'sale');
+        else if (currentAuditFilter === 'purchase') filtered = filtered.filter(l => l.type === 'purchase');
+        else if (currentAuditFilter === 'payment') filtered = filtered.filter(l => l.type === 'payment');
     }
     if (search) {
-        filtered = filtered.filter(l =>
-            (l.details || '').toLowerCase().includes(search) ||
-            (l.userName || '').toLowerCase().includes(search)
-        );
+        filtered = filtered.filter(l => (l.details || '').toLowerCase().includes(search) || (l.userName || '').toLowerCase().includes(search));
     }
     const totalCount = auditLog.length;
     const today = getTodayDate();
@@ -2625,7 +3104,7 @@ function renderAudit() {
         'sale': '💰', 'purchase': '🛒', 'product': '📦', 'customer': '👤',
         'supplier': '🚚', 'payment': '💳', 'expense': '💸', 'return': '🔄',
         'treasury': '🏦', 'user': '👥', 'company': '🏢', 'cloud': '☁️',
-        'backup': '💾', 'vat': '🧾'
+        'backup': '💾', 'vat': '🧾', 'account': '📊'
     };
     let html = '';
     filtered.slice(0, 200).forEach(log => {
@@ -2638,10 +3117,8 @@ function renderAudit() {
                     <i class="fas ${info.icon}"></i>
                 </div>
                 <div class="audit-main">
-                    <div class="audit-title" style="color:${info.color};">
-                        ${typeIcon} ${info.name}
-                    </div>
-                    <div class="audit-details-text" style="padding:0;border:none;font-size:11px;color:#A89070;">${log.details || '-'}</div>
+                    <div class="audit-title" style="color:${info.color};">${typeIcon} ${info.name}</div>
+                    <div style="font-size:11px;color:#A89070;">${log.details || '-'}</div>
                     <div class="audit-meta">
                         <span><i class="fas fa-user"></i> ${log.userName || '-'}</span>
                         <span><i class="fas fa-clock"></i> ${log.date} ${log.time || ''}</span>
@@ -2662,13 +3139,10 @@ function renderAuditDetails(log) {
     if (data.items && Array.isArray(data.items) && data.items.length > 0) {
         html += `<div class="audit-items-title">📋 الأصناف (${data.items.length}):</div>`;
         html += `<div class="audit-items-table">
-            <div class="audit-items-header">
-                <span>الصنف</span><span>الكمية</span><span>السعر</span><span>الإجمالي</span>
-            </div>`;
+            <div class="audit-items-header"><span>الصنف</span><span>الكمية</span><span>السعر</span><span>الإجمالي</span></div>`;
         data.items.forEach(it => {
             html += `<div class="audit-item-row">
-                <span>${it.name}</span>
-                <span>${it.qty}</span>
+                <span>${it.name}</span><span>${it.qty}</span>
                 <span>${formatMoney(it.price)}</span>
                 <span style="color:#C9A94E;font-weight:700;">${formatMoney(it.total)}</span>
             </div>`;
@@ -2688,9 +3162,7 @@ function renderAuditDetails(log) {
             </div>
         </div>`;
     } else if (data.total !== undefined) {
-        html += `<div class="audit-total">
-            <span>💰 الإجمالي:</span><span>${formatMoney(data.total)} 🇪🇬</span>
-        </div>`;
+        html += `<div class="audit-total"><span>💰 الإجمالي:</span><span>${formatMoney(data.total)} 🇪🇬</span></div>`;
     }
     const extraFields = [
         { key: 'customer', label: '👤 العميل' },
@@ -2702,14 +3174,13 @@ function renderAuditDetails(log) {
         { key: 'amount', label: '💰 المبلغ' },
         { key: 'note', label: '📝 ملاحظات' },
         { key: 'category', label: '📂 التصنيف' },
-        { key: 'role', label: '🎯 الدور' },
-        { key: 'date', label: '📅 التاريخ' }
+        { key: 'role', label: '🎯 الدور' }
     ];
     let extraHtml = '';
     extraFields.forEach(f => {
         if (data[f.key] !== undefined && data[f.key] !== null && data[f.key] !== '') {
             let value = data[f.key];
-            if (f.key === 'amount' || f.key === 'total') value = formatMoney(value) + ' 🇪🇬';
+            if (f.key === 'amount') value = formatMoney(value) + ' 🇪🇬';
             extraHtml += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2D2D2D;font-size:11px;">
                 <span style="color:#A89070;font-weight:700;">${f.label}:</span>
                 <span style="color:#F5E6C8;">${value}</span>
@@ -2717,64 +3188,6 @@ function renderAuditDetails(log) {
         }
     });
     if (extraHtml) html += `<div style="margin-top:8px;">${extraHtml}</div>`;
-    if (data.before && data.after) {
-        html += `<div class="audit-items-title">🔄 التغييرات:</div>`;
-        html += `<div style="background:#1C1C1C;border-radius:8px;padding:8px;font-size:11px;">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <div>
-                    <div style="color:#E06060;font-weight:800;margin-bottom:4px;text-align:center;">❌ قبل</div>
-                    ${Object.entries(data.before).map(([k, v]) => `
-                        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2D2D2D;">
-                            <span style="color:#A89070;">${k}:</span>
-                            <span style="color:#F5E6C8;">${v !== null && v !== undefined ? v : '-'}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                <div>
-                    <div style="color:#2D8F5E;font-weight:800;margin-bottom:4px;text-align:center;">✅ بعد</div>
-                    ${Object.entries(data.after).map(([k, v]) => `
-                        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2D2D2D;">
-                            <span style="color:#A89070;">${k}:</span>
-                            <span style="color:#F5E6C8;">${v !== null && v !== undefined ? v : '-'}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        </div>`;
-    }
-    if (data.product) {
-        html += `<div class="audit-items-title">📦 المنتج:</div>`;
-        html += `<div style="background:#1C1C1C;border-radius:8px;padding:8px;font-size:11px;">
-            ${data.product.name ? `<div><span style="color:#A89070;">الاسم:</span> <span style="color:#F5E6C8;">${data.product.name}</span></div>` : ''}
-            ${data.product.buy !== undefined ? `<div><span style="color:#A89070;">سعر الشراء:</span> <span style="color:#E06060;">${formatMoney(data.product.buy)}</span></div>` : ''}
-            ${data.product.sell !== undefined ? `<div><span style="color:#A89070;">سعر البيع:</span> <span style="color:#2D8F5E;">${formatMoney(data.product.sell)}</span></div>` : ''}
-            ${data.product.vat !== undefined ? `<div><span style="color:#A89070;">الضريبة:</span> <span style="color:#9B59B6;">${data.product.vat}%</span></div>` : ''}
-            ${data.product.qty !== undefined ? `<div><span style="color:#A89070;">الكمية:</span> <span style="color:#C9A94E;">${data.product.qty}</span></div>` : ''}
-        </div>`;
-    }
-    if (data.customer) {
-        html += `<div class="audit-items-title">👤 العميل:</div>`;
-        html += `<div style="background:#1C1C1C;border-radius:8px;padding:8px;font-size:11px;">
-            ${data.customer.name ? `<div><span style="color:#A89070;">الاسم:</span> <span style="color:#F5E6C8;">${data.customer.name}</span></div>` : ''}
-            ${data.customer.phone ? `<div><span style="color:#A89070;">الهاتف:</span> <span style="color:#F5E6C8;">${data.customer.phone}</span></div>` : ''}
-            ${data.customer.balance !== undefined ? `<div><span style="color:#A89070;">المديونية:</span> <span style="color:#E06060;">${formatMoney(data.customer.balance)}</span></div>` : ''}
-        </div>`;
-    }
-    if (data.supplier) {
-        html += `<div class="audit-items-title">🚚 المورد:</div>`;
-        html += `<div style="background:#1C1C1C;border-radius:8px;padding:8px;font-size:11px;">
-            ${data.supplier.name ? `<div><span style="color:#A89070;">الاسم:</span> <span style="color:#F5E6C8;">${data.supplier.name}</span></div>` : ''}
-            ${data.supplier.phone ? `<div><span style="color:#A89070;">الهاتف:</span> <span style="color:#F5E6C8;">${data.supplier.phone}</span></div>` : ''}
-            ${data.supplier.balance !== undefined ? `<div><span style="color:#A89070;">المديونية:</span> <span style="color:#E6A830;">${formatMoney(data.supplier.balance)}</span></div>` : ''}
-        </div>`;
-    }
-    if (data.user) {
-        html += `<div class="audit-items-title">👥 المستخدم:</div>`;
-        html += `<div style="background:#1C1C1C;border-radius:8px;padding:8px;font-size:11px;">
-            ${data.user.name ? `<div><span style="color:#A89070;">الاسم:</span> <span style="color:#F5E6C8;">${data.user.name}</span></div>` : ''}
-            ${data.user.role ? `<div><span style="color:#A89070;">الدور:</span> <span style="color:#C9A94E;">${ROLES[data.user.role]?.name || data.user.role}</span></div>` : ''}
-        </div>`;
-    }
     return html || '<div style="padding:10px 0;color:#A89070;font-size:11px;">لا توجد تفاصيل إضافية</div>';
 }
 
@@ -2803,30 +3216,21 @@ function exportAuditLog() {
     a.download = `mizan_audit_log_${date}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('✅ تم تصدير السجل', 'success');
+    showToast('✅ تم التصدير', 'success');
     addAuditLog('edit', 'backup', 'تصدير سجل النشاطات');
 }
 
 function exportAuditLogText() {
     if (!isAdmin()) { showToast('⚠️ المدير فقط', 'error'); return; }
     if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; }
-    let text = '========================================\n';
-    text += 'سجل نشاطات الميزان\n';
-    text += '========================================\n';
-    text += `تاريخ التصدير: ${new Date().toLocaleString('ar')}\n`;
-    text += `إجمالي النشاطات: ${auditLog.length}\n`;
-    text += '========================================\n\n';
+    let text = '========================================\nسجل نشاطات الميزان\n========================================\n';
+    text += `تاريخ التصدير: ${new Date().toLocaleString('ar')}\nإجمالي النشاطات: ${auditLog.length}\n========================================\n\n`;
     auditLog.forEach((log, i) => {
         text += `[${i + 1}] ${log.date} ${log.time}\n`;
-        text += `    المستخدم: ${log.userName} (${ROLES[log.userRole]?.name || log.userRole})\n`;
-        text += `    النوع: ${log.type}\n`;
-        text += `    العملية: ${log.action}\n`;
-        text += `    التفاصيل: ${log.details}\n`;
+        text += `    المستخدم: ${log.userName}\n    النوع: ${log.type}\n    العملية: ${log.action}\n    التفاصيل: ${log.details}\n`;
         if (log.extraData && log.extraData.items) {
             text += `    الأصناف:\n`;
-            log.extraData.items.forEach(it => {
-                text += `      • ${it.name} × ${it.qty} = ${formatMoney(it.total)} ج.م\n`;
-            });
+            log.extraData.items.forEach(it => { text += `      • ${it.name} × ${it.qty} = ${formatMoney(it.total)} ج.م\n`; });
         }
         if (log.extraData && log.extraData.total !== undefined) {
             text += `    الإجمالي: ${formatMoney(log.extraData.total)} ج.م\n`;
@@ -2841,20 +3245,19 @@ function exportAuditLogText() {
     a.download = `mizan_audit_log_${date}.txt`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('✅ تم تصدير السجل النصي', 'success');
-    addAuditLog('edit', 'backup', 'تصدير سجل النشاطات (نصي)');
+    showToast('✅ تم التصدير', 'success');
 }
 
 function clearAuditLog() {
     if (!isAdmin()) { showToast('⚠️ المدير فقط', 'error'); return; }
     if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; }
-    if (!confirm(`⚠️ مسح كامل السجل؟ (${auditLog.length} عملية)`)) return;
-    if (!confirm('⚠️ تأكيد نهائي؟ لا يمكن التراجع!')) return;
+    if (!confirm(`⚠️ مسح السجل؟ (${auditLog.length} عملية)`)) return;
+    if (!confirm('⚠️ تأكيد نهائي؟')) return;
     auditLog = [];
     setData('auditLog', auditLog);
-    addAuditLog('delete', 'audit', 'مسح سجل النشاطات بالكامل');
+    addAuditLog('delete', 'audit', 'مسح سجل النشاطات');
     renderAudit();
-    showToast('🗑️ تم مسح السجل', 'info');
+    showToast('🗑️ تم المسح', 'info');
 }
 
 // ============================================================
@@ -2864,6 +3267,8 @@ function renderSettings() {
     if ($('setProductsCount')) $('setProductsCount').textContent = products.length;
     if ($('setSalesCount')) $('setSalesCount').textContent = sales.length;
     if ($('setUsersCount')) $('setUsersCount').textContent = users.length;
+    if ($('setAccountsCount')) $('setAccountsCount').textContent = accounts.length;
+    if ($('setJournalCount')) $('setJournalCount').textContent = journalEntries.length;
     if ($('setDefaultVAT')) $('setDefaultVAT').value = vatSettings.defaultVAT || 14;
     let size = 0;
     for (let k in localStorage) {
@@ -2880,7 +3285,7 @@ function changePassword() {
     const conP = $('confirmPassword').value;
     if (oldP !== currentUser.password) { showToast('❌ كلمة المرور الحالية خاطئة', 'error'); return; }
     if (newP.length < 4) { showToast('❌ 4 أحرف على الأقل', 'error'); return; }
-    if (newP !== conP) { showToast('❌ كلمتا المرور غير متطابقتين', 'error'); return; }
+    if (newP !== conP) { showToast('❌ غير متطابقة', 'error'); return; }
     const idx = users.findIndex(u => u.id === currentUser.id);
     if (idx > -1) {
         users[idx].password = newP;
@@ -2896,9 +3301,10 @@ function changePassword() {
 function exportData() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const data = {
-        version: '11.0.1', exportDate: new Date().toISOString(),
+        version: '12.0.0', exportDate: new Date().toISOString(),
         products, sales, purchases, returns, expenses,
-        customers, suppliers, treasury, payments, users, auditLog, companyData, vatSettings
+        customers, suppliers, treasury, payments, users, auditLog, companyData, vatSettings,
+        accounts, journalEntries
     };
     const json = JSON.stringify(data, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -2910,16 +3316,14 @@ function exportData() {
     a.click();
     URL.revokeObjectURL(url);
     addAuditLog('edit', 'backup', 'تصدير نسخة احتياطية');
-    showToast('✅ تم تصدير البيانات', 'success');
+    showToast('✅ تم التصدير', 'success');
 }
 
 function importData(event) {
     if (!isAdmin()) { showToast('⚠️ المدير فقط', 'error'); return; }
     const file = event.target.files[0];
     if (!file) return;
-    if (!confirm('⚠️ سيتم استبدال جميع البيانات الحالية. متابعة؟')) {
-        event.target.value = ''; return;
-    }
+    if (!confirm('⚠️ سيتم استبدال البيانات. متابعة؟')) { event.target.value = ''; return; }
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
@@ -2937,6 +3341,8 @@ function importData(event) {
             if (data.users) users = data.users;
             if (data.auditLog) auditLog = data.auditLog;
             if (data.vatSettings) vatSettings = data.vatSettings;
+            if (data.accounts) accounts = data.accounts;
+            if (data.journalEntries) journalEntries = data.journalEntries;
             saveAll();
             populateAllDropdowns();
             populateLoginUsers();
@@ -2944,9 +3350,10 @@ function importData(event) {
             renderReturns(); renderExpenses(); renderInvoices();
             renderTreasury(); renderCustomers(); renderSuppliers();
             renderPayments(); renderUsers(); renderAudit();
+            renderAccounts(); renderJournal();
             updateDashboard(); renderSettings();
             addAuditLog('edit', 'backup', 'استيراد نسخة احتياطية');
-            showToast('✅ تم استيراد البيانات بنجاح', 'success');
+            showToast('✅ تم الاستيراد', 'success');
         } catch (err) { showToast('❌ ملف غير صالح', 'error'); }
     };
     reader.readAsText(file);
@@ -2955,21 +3362,22 @@ function importData(event) {
 
 function clearAllData() {
     if (!canClearData()) { showToast('⚠️ المدير فقط', 'error'); return; }
-    if (!confirm('⚠️ هل أنت متأكد من مسح جميع البيانات؟')) return;
+    if (!confirm('⚠️ مسح جميع البيانات؟')) return;
     if (!confirm('✅ تأكيد نهائي؟ لا يمكن التراجع!')) return;
     const keys = ['products', 'sales', 'purchases', 'returns', 'expenses',
-        'customers', 'suppliers', 'treasury', 'payments', 'companyData'];
+        'customers', 'suppliers', 'treasury', 'payments', 'companyData', 'accounts', 'journalEntries'];
     keys.forEach(k => localStorage.removeItem(STORAGE_KEY + k));
     localStorage.removeItem('mizan_seeded');
     products = []; sales = []; purchases = []; returns = []; expenses = [];
     customers = []; suppliers = []; treasury = []; payments = []; companyData = {};
+    accounts = []; journalEntries = [];
     if (confirm('⚠️ هل تريد أيضاً مسح المستخدمين وسجل النشاطات؟')) {
         users = []; auditLog = [];
         localStorage.removeItem(STORAGE_KEY + 'users');
         localStorage.removeItem(STORAGE_KEY + 'auditLog');
     }
     saveAll();
-    showToast('🗑️ تم مسح جميع البيانات', 'warning');
+    showToast('🗑️ تم المسح', 'warning');
     setTimeout(() => location.reload(), 1500);
 }
 
@@ -2987,6 +3395,8 @@ function saveAll() {
     setData('auditLog', auditLog);
     setData('companyData', companyData);
     setData('vatSettings', vatSettings);
+    setData('accounts', accounts);
+    setData('journalEntries', journalEntries);
 }
 
 // ============================================================
@@ -3025,16 +3435,18 @@ function populateAllDropdowns() {
     populateRetProducts();
     if (typeof toggleReturnCustomer === 'function') toggleReturnCustomer();
     populateCollectCustomers(); populatePaySuppliers();
+    populateAccountDropdowns();
 }
 
 // ============================================================
 // Init
 // ============================================================
 function init() {
-    console.log('🚀 الميزان 11.0.1 - الضريبة VAT (إصلاحات)');
+    console.log('🚀 الميزان 12.0.0 - الحسابات المحاسبية');
 
     initFirebase();
 
+    // تحميل البيانات
     const rawProducts = getData('products', []);
     sales = getData('sales', []);
     purchases = getData('purchases', []);
@@ -3047,6 +3459,15 @@ function init() {
     companyData = getData('companyData', {});
     auditLog = getData('auditLog', []);
     vatSettings = getData('vatSettings', { defaultVAT: 14 });
+    accounts = getData('accounts', []);
+    journalEntries = getData('journalEntries', []);
+
+    // لو مفيش حسابات → ضيف الشجرة الافتراضية
+    if (accounts.length === 0) {
+        accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+        setData('accounts', accounts);
+        console.log('✅ تم تحميل شجرة الحسابات الافتراضية:', accounts.length, 'حساب');
+    }
 
     users = getData('users', []);
     if (users.length === 0) {
@@ -3080,6 +3501,15 @@ function init() {
     if ($('expDate')) $('expDate').value = getTodayDate();
     if ($('collectDate')) $('collectDate').value = getTodayDate();
     if ($('payDate')) $('payDate').value = getTodayDate();
+    if ($('jeDate')) $('jeDate').value = getTodayDate();
+
+    // ربط حدث التوازن في القيد
+    setTimeout(() => {
+        const debitAmt = $('jeDebitAmount');
+        const creditAmt = $('jeCreditAmount');
+        if (debitAmt) debitAmt.addEventListener('input', updateJournalCheck);
+        if (creditAmt) creditAmt.addEventListener('input', updateJournalCheck);
+    }, 500);
 
     updateClock();
     updateHeaderCompanyName();
@@ -3088,12 +3518,15 @@ function init() {
     renderReturns(); renderExpenses(); renderInvoices();
     renderTreasury(); renderCustomers(); renderSuppliers();
     renderPayments(); renderUsers(); renderAudit();
+    renderAccounts(); renderJournal();
     updateDashboard();
     renderSettings();
 
     console.log('✅ الميزان جاهز');
     console.log('👥 المستخدمين:', users.map(u => `${u.name} (${u.role})`).join(', '));
-    console.log('🧾 نسبة الضريبة الافتراضية:', vatSettings.defaultVAT + '%');
+    console.log('📊 الحسابات:', accounts.length);
+    console.log('📖 القيود:', journalEntries.length);
+    console.log('🧾 نسبة الضريبة:', vatSettings.defaultVAT + '%');
 }
 
 document.addEventListener('DOMContentLoaded', init);
@@ -3107,11 +3540,13 @@ window.navigateTo = navigateTo;
 window.syncToCloud = syncToCloud;
 window.syncFromCloud = syncFromCloud;
 
+// منتجات
 window.saveProduct = saveProduct;
 window.editProduct = editProduct;
 window.deleteProduct = deleteProduct;
 window.resetProductForm = resetProductForm;
 
+// كاشير
 window.updateSalePrice = updateSalePrice;
 window.addSaleItem = addSaleItem;
 window.removeSaleItem = removeSaleItem;
@@ -3119,6 +3554,7 @@ window.saveSale = saveSale;
 window.clearSale = clearSale;
 window.updateSaleTotals = updateSaleTotals;
 
+// شراء
 window.updatePurPrice = updatePurPrice;
 window.addPurItem = addPurItem;
 window.removePurItem = removePurItem;
@@ -3128,6 +3564,7 @@ window.viewPurchase = viewPurchase;
 window.deletePurchase = deletePurchase;
 window.updatePurTotals = updatePurTotals;
 
+// مرتجعات
 window.toggleReturnCustomer = toggleReturnCustomer;
 window.updateRetPrice = updateRetPrice;
 window.addRetItem = addRetItem;
@@ -3136,15 +3573,19 @@ window.saveReturn = saveReturn;
 window.clearReturn = clearReturn;
 window.deleteReturn = deleteReturn;
 
+// مصروفات
 window.saveExpense = saveExpense;
 window.deleteExpense = deleteExpense;
 
+// فواتير
 window.viewInvoice = viewInvoice;
 window.deleteInvoice = deleteInvoice;
 
+// خزنة
 window.addTreasuryTransaction = addTreasuryTransaction;
 window.deleteTreasury = deleteTreasury;
 
+// عملاء
 window.saveCustomer = saveCustomer;
 window.editCustomer = editCustomer;
 window.deleteCustomer = deleteCustomer;
@@ -3152,6 +3593,7 @@ window.resetCustomerForm = resetCustomerForm;
 window.viewCustomerStatement = viewCustomerStatement;
 window.openCollectModal = openCollectModal;
 
+// موردين
 window.saveSupplier = saveSupplier;
 window.editSupplier = editSupplier;
 window.deleteSupplier = deleteSupplier;
@@ -3159,6 +3601,7 @@ window.resetSupplierForm = resetSupplierForm;
 window.viewSupplierStatement = viewSupplierStatement;
 window.openPayModal = openPayModal;
 
+// تحصيل/سداد
 window.switchPayTab = switchPayTab;
 window.updateCollectInfo = updateCollectInfo;
 window.updatePayInfo = updatePayInfo;
@@ -3168,31 +3611,51 @@ window.showReceipt = showReceipt;
 window.showReceiptById = showReceiptById;
 window.deletePayment = deletePayment;
 
+// تقارير
 window.switchReport = switchReport;
 
+// ✅ الحسابات
+window.saveAccount = saveAccount;
+window.editAccount = editAccount;
+window.deleteAccount = deleteAccount;
+window.resetAccountForm = resetAccountForm;
+window.populateAccountDropdowns = populateAccountDropdowns;
+
+window.saveJournalEntry = saveJournalEntry;
+window.deleteJournalEntry = deleteJournalEntry;
+window.updateJournalCheck = updateJournalCheck;
+window.switchAccountsTab = switchAccountsTab;
+window.showAccountingReport = showAccountingReport;
+
+// شركة
 window.saveCompanySettings = saveCompanySettings;
 window.uploadLogo = uploadLogo;
 window.removeLogo = removeLogo;
 window.saveVATSettings = saveVATSettings;
 
+// مستخدمين
 window.saveUser = saveUser;
 window.editUser = editUser;
 window.deleteUser = deleteUser;
 window.toggleUserActive = toggleUserActive;
 window.resetUserForm = resetUserForm;
 
+// سجل النشاطات
 window.toggleAuditItem = toggleAuditItem;
 window.filterAudit = filterAudit;
 window.exportAuditLog = exportAuditLog;
 window.exportAuditLogText = exportAuditLogText;
 window.clearAuditLog = clearAuditLog;
 
+// إعدادات
 window.changePassword = changePassword;
 window.exportData = exportData;
 window.importData = importData;
 window.clearAllData = clearAllData;
 
+// modal
 window.openModal = openModal;
 window.closeModal = closeModal;
 
 console.log('✅ تم تحميل جميع الدوال بنجاح');
+console.log('📊 نظام الحسابات المحاسبية جاهز');
