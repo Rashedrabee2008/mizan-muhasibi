@@ -1,10 +1,10 @@
 // ============================================================
-// الميزان - الإصدار 11.0.0 (الضريبة VAT)
+// الميزان - الإصدار 11.0.1 (الضريبة VAT - إصلاحات)
 // ============================================================
 
 const STORAGE_KEY = 'mizan_';
 const DEFAULT_PASSWORD = '123456';
-const DEFAULT_VAT = 14; // النسبة الافتراضية 14% (مصر)
+const DEFAULT_VAT = 14;
 
 const firebaseConfig = {
     apiKey: "AIzaSyCP7vpqviR6A11gPkC7cO6MQJBGKWcnVWE",
@@ -56,6 +56,18 @@ function showToast(msg, type = 'info') {
 
 function getTodayDate() { return new Date().toISOString().split('T')[0]; }
 function formatMoney(n) { return Number(n || 0).toFixed(2); }
+
+// ✅ إصلاح: دالة آمنة للـ radio buttons
+function getRadioValue(name, defaultValue = '') {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : defaultValue;
+}
+
+// ✅ إصلاح: دالة آمنة لتعيين radio button
+function setRadioValue(name, value) {
+    const el = document.querySelector(`input[name="${name}"][value="${value}"]`);
+    if (el) el.checked = true;
+}
 
 function migrateOldProducts(oldProducts) {
     if (!Array.isArray(oldProducts)) return [];
@@ -175,7 +187,7 @@ function syncToCloud() {
         customers, suppliers, treasury, payments, companyData,
         users, auditLog, vatSettings,
         lastSync: new Date().toISOString(),
-        version: '11.0.0'
+        version: '11.0.1'
     };
     updateSyncStatus('⏳ جاري الرفع...', 'info');
     showToast('⏳ جاري الرفع...', 'info');
@@ -185,9 +197,7 @@ function syncToCloud() {
             updateSyncStatus('✅ تم الرفع بنجاح - ' + new Date().toLocaleTimeString('ar'), 'success');
             addAuditLog('edit', 'cloud', 'رفع البيانات للسحابة');
         })
-        .catch((err) => {
-            showToast('❌ فشل الرفع: ' + err.message, 'error');
-        });
+        .catch((err) => { showToast('❌ فشل الرفع: ' + err.message, 'error'); });
 }
 
 function syncFromCloud() {
@@ -253,25 +263,30 @@ function populateLoginUsers() {
 }
 
 function checkLogin() {
-    const userId = $('loginUsername').value;
-    const password = $('loginPassword').value;
+    const userIdEl = $('loginUsername');
+    const passwordEl = $('loginPassword');
     const error = $('loginError');
+    if (!userIdEl || !passwordEl) return;
+    const userId = userIdEl.value;
+    const password = passwordEl.value;
     if (!userId) { if (error) error.classList.add('show'); return; }
     const user = users.find(u => u.id == userId);
     if (!user) { if (error) error.classList.add('show'); return; }
     if (user.password !== password) {
         if (error) error.classList.add('show');
-        $('loginPassword').value = '';
-        $('loginPassword').focus();
+        passwordEl.value = '';
+        passwordEl.focus();
         setTimeout(() => { if (error) error.classList.remove('show'); }, 3000);
         return;
     }
     currentUser = user;
     localStorage.setItem(STORAGE_KEY + 'current_user', JSON.stringify({ id: user.id, name: user.name, role: user.role }));
     if (error) error.classList.remove('show');
-    $('loginPassword').value = '';
-    $('loginContainer').classList.add('hidden');
-    $('appContent').style.display = 'block';
+    passwordEl.value = '';
+    const loginCont = $('loginContainer');
+    const appCont = $('appContent');
+    if (loginCont) loginCont.classList.add('hidden');
+    if (appCont) appCont.style.display = 'block';
     updateUserUI();
     applyPermissions();
     addAuditLog('login', 'user', `تسجيل دخول: ${user.name}`, { userId: user.id, role: user.role });
@@ -285,8 +300,10 @@ function lockApp() {
     }
     currentUser = null;
     localStorage.removeItem(STORAGE_KEY + 'current_user');
-    $('loginContainer').classList.remove('hidden');
-    $('appContent').style.display = 'none';
+    const loginCont = $('loginContainer');
+    const appCont = $('appContent');
+    if (loginCont) loginCont.classList.remove('hidden');
+    if (appCont) appCont.style.display = 'none';
     populateLoginUsers();
 }
 
@@ -321,8 +338,8 @@ function navigateTo(page) {
 
     if (page === 'dashboard') updateDashboard();
     if (page === 'inventory') renderProducts();
-    if (page === 'cashier') renderCashier();
-    if (page === 'purchases') renderPurchases();
+    if (page === 'cashier') { renderCashier(); updateSaleTotals(); }
+    if (page === 'purchases') { renderPurchases(); updatePurTotals(); }
     if (page === 'returns') renderReturns();
     if (page === 'expenses') renderExpenses();
     if (page === 'invoices') renderInvoices();
@@ -352,11 +369,9 @@ function saveProduct() {
     const qty = parseInt($('productQty').value) || 0;
     const min = parseInt($('productMin').value) || 5;
     const vat = parseFloat($('productVAT')?.value) || vatSettings.defaultVAT;
-    
     if (!name) { showToast('⚠️ أدخل اسم المنتج', 'error'); return; }
     if (buy <= 0) { showToast('⚠️ أدخل سعر شراء صحيح', 'error'); return; }
     if (sell <= 0) { showToast('⚠️ أدخل سعر بيع صحيح', 'error'); return; }
-    
     if (id) {
         if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
         const idx = products.findIndex(p => p.id == id);
@@ -447,7 +462,7 @@ function renderProducts() {
 }
 
 // ============================================================
-// الكاشير (مع الضريبة)
+// الكاشير (مع الضريبة - مصلح)
 // ============================================================
 function populateSaleProducts() {
     const sel = $('saleProduct'); if (!sel) return;
@@ -533,7 +548,7 @@ function renderCashier() {
 function updateSaleTotals() {
     const subtotal = currentSaleItems.reduce((s, i) => s + (i.subtotal || i.total), 0);
     const vatTotal = currentSaleItems.reduce((s, i) => s + (i.vatAmount || 0), 0);
-    const invoiceType = document.querySelector('input[name="saleInvoiceType"]:checked')?.value || 'simple';
+    const invoiceType = getRadioValue('saleInvoiceType', 'simple');
     const isTaxInvoice = invoiceType === 'tax';
     const finalVAT = isTaxInvoice ? vatTotal : 0;
     const grandTotal = subtotal + finalVAT;
@@ -556,8 +571,8 @@ function saveSale() {
     const subtotal = currentSaleItems.reduce((s, i) => s + (i.subtotal || i.total), 0);
     const vatTotal = currentSaleItems.reduce((s, i) => s + (i.vatAmount || 0), 0);
     const customer = $('saleCustomer').value || 'عميل نقدي';
-    const paymentMethod = document.querySelector('input[name="salePaymentMethod"]:checked')?.value || 'cash';
-    const invoiceType = document.querySelector('input[name="saleInvoiceType"]:checked')?.value || 'simple';
+    const paymentMethod = getRadioValue('salePaymentMethod', 'cash');
+    const invoiceType = getRadioValue('saleInvoiceType', 'simple');
     const isTaxInvoice = invoiceType === 'tax';
     const finalVAT = isTaxInvoice ? vatTotal : 0;
     const total = subtotal + finalVAT;
@@ -608,15 +623,11 @@ function saveSale() {
     addAuditLog('add', 'sale', 
         `فاتورة بيع ${isTaxInvoice ? 'ضريبية' : 'عادية'} #${inv.number} - ${customer} - ${formatMoney(total)} ج.م`,
         {
-            invoiceNumber: inv.number,
-            customer: customer,
+            invoiceNumber: inv.number, customer: customer,
             paymentMethod: paymentMethod === 'cash' ? 'نقدي' : 'آجل',
             invoiceType: isTaxInvoice ? 'ضريبية' : 'عادية',
-            subtotal: subtotal,
-            vatTotal: finalVAT,
-            total: total,
-            date: inv.date,
-            time: inv.time,
+            subtotal: subtotal, vatTotal: finalVAT, total: total,
+            date: inv.date, time: inv.time,
             items: inv.items.map(it => ({
                 name: it.name, qty: it.qty, price: it.price,
                 vatPercent: it.vatPercent, vatAmount: it.vatAmount, total: it.total
@@ -624,9 +635,10 @@ function saveSale() {
         }
     );
     
-    currentSaleItems = []; $('saleCustomer').value = '';
-    document.querySelector('input[name="salePaymentMethod"][value="cash"]').checked = true;
-    document.querySelector('input[name="saleInvoiceType"][value="simple"]').checked = true;
+    currentSaleItems = [];
+    const custEl = $('saleCustomer'); if (custEl) custEl.value = '';
+    setRadioValue('salePaymentMethod', 'cash');
+    setRadioValue('saleInvoiceType', 'simple');
     renderCashier(); updateSaleTotals(); populateSaleProducts(); updateDashboard();
     showToast(`✅ فاتورة #${inv.number} بمبلغ ${formatMoney(total)} 🇪🇬`, 'success');
 }
@@ -634,14 +646,15 @@ function saveSale() {
 function clearSale() {
     if (currentSaleItems.length === 0) return;
     if (!confirm('⚠️ إلغاء الفاتورة؟')) return;
-    currentSaleItems = []; $('saleCustomer').value = '';
-    document.querySelector('input[name="salePaymentMethod"][value="cash"]').checked = true;
-    document.querySelector('input[name="saleInvoiceType"][value="simple"]').checked = true;
+    currentSaleItems = [];
+    const custEl = $('saleCustomer'); if (custEl) custEl.value = '';
+    setRadioValue('salePaymentMethod', 'cash');
+    setRadioValue('saleInvoiceType', 'simple');
     renderCashier(); updateSaleTotals(); showToast('🗑️ تم الإلغاء', 'info');
 }
 
 // ============================================================
-// الشراء (مع الضريبة)
+// الشراء (مع الضريبة - مصلح)
 // ============================================================
 function populatePurSuppliers() {
     const sel = $('purSupplier'); if (!sel) return;
@@ -724,7 +737,7 @@ function renderPurItems() {
 function updatePurTotals() {
     const subtotal = currentPurItems.reduce((s, i) => s + (i.subtotal || i.total), 0);
     const vatTotal = currentPurItems.reduce((s, i) => s + (i.vatAmount || 0), 0);
-    const invoiceType = document.querySelector('input[name="purInvoiceType"]:checked')?.value || 'simple';
+    const invoiceType = getRadioValue('purInvoiceType', 'simple');
     const isTaxInvoice = invoiceType === 'tax';
     const finalVAT = isTaxInvoice ? vatTotal : 0;
     const grandTotal = subtotal + finalVAT;
@@ -743,8 +756,9 @@ function savePurchase() {
     const sid = $('purSupplier').value;
     if (!sid) { showToast('⚠️ اختر مورد', 'error'); return; }
     const supplier = suppliers.find(s => s.id == sid); if (!supplier) return;
-    const payment = $('purPayment').value;
-    const invoiceType = document.querySelector('input[name="purInvoiceType"]:checked')?.value || 'simple';
+    const paymentEl = $('purPayment');
+    const payment = paymentEl ? paymentEl.value : 'cash';
+    const invoiceType = getRadioValue('purInvoiceType', 'simple');
     const isTaxInvoice = invoiceType === 'tax';
     const subtotal = currentPurItems.reduce((s, i) => s + (i.subtotal || i.total), 0);
     const vatTotal = currentPurItems.reduce((s, i) => s + (i.vatAmount || 0), 0);
@@ -794,15 +808,11 @@ function savePurchase() {
     addAuditLog('add', 'purchase', 
         `فاتورة شراء ${isTaxInvoice ? 'ضريبية' : 'عادية'} #${inv.number} - ${supplier.name} - ${formatMoney(total)} ج.م`,
         {
-            invoiceNumber: inv.number,
-            supplier: supplier.name,
+            invoiceNumber: inv.number, supplier: supplier.name,
             payment: payment === 'cash' ? 'نقدي' : 'آجل',
             invoiceType: isTaxInvoice ? 'ضريبية' : 'عادية',
-            subtotal: subtotal,
-            vatTotal: finalVAT,
-            total: total,
-            date: inv.date,
-            time: inv.time,
+            subtotal: subtotal, vatTotal: finalVAT, total: total,
+            date: inv.date, time: inv.time,
             items: inv.items.map(it => ({
                 name: it.name, qty: it.qty, price: it.price,
                 vatPercent: it.vatPercent, vatAmount: it.vatAmount, total: it.total
@@ -810,8 +820,9 @@ function savePurchase() {
         }
     );
     
-    currentPurItems = []; $('purSupplier').value = '';
-    document.querySelector('input[name="purInvoiceType"][value="simple"]').checked = true;
+    currentPurItems = [];
+    const supEl = $('purSupplier'); if (supEl) supEl.value = '';
+    setRadioValue('purInvoiceType', 'simple');
     renderPurItems(); updatePurTotals(); renderPurchases(); populatePurProducts(); updateDashboard();
     showToast(`✅ فاتورة شراء #${inv.number} بمبلغ ${formatMoney(total)} 🇪🇬`, 'success');
 }
@@ -819,8 +830,9 @@ function savePurchase() {
 function clearPurchase() {
     if (currentPurItems.length === 0) return;
     if (!confirm('⚠️ إلغاء الفاتورة؟')) return;
-    currentPurItems = []; $('purSupplier').value = '';
-    document.querySelector('input[name="purInvoiceType"][value="simple"]').checked = true;
+    currentPurItems = [];
+    const supEl = $('purSupplier'); if (supEl) supEl.value = '';
+    setRadioValue('purInvoiceType', 'simple');
     renderPurItems(); updatePurTotals(); showToast('🗑️ تم الإلغاء', 'info');
 }
 
@@ -929,7 +941,9 @@ function deletePurchase(id) {
 // المرتجعات
 // ============================================================
 function toggleReturnCustomer() {
-    const type = $('retType').value;
+    const typeEl = $('retType');
+    if (!typeEl) return;
+    const type = typeEl.value;
     if ($('retPartyLabel')) $('retPartyLabel').textContent = type === 'sale' ? 'العميل' : 'المورد';
     if (type === 'sale') populateRetCustomers();
     else populateRetSuppliers();
@@ -957,7 +971,8 @@ function populateRetProducts() {
 
 function updateRetPrice() {
     const id = $('retProduct').value;
-    const type = $('retType').value;
+    const typeEl = $('retType');
+    const type = typeEl ? typeEl.value : 'sale';
     if (!id) { $('retPrice').value = ''; return; }
     const p = products.find(pr => pr.id == id);
     if (p) $('retPrice').value = type === 'sale' ? p.sell : p.buy;
@@ -972,7 +987,8 @@ function addRetItem() {
     if (qty <= 0) { showToast('⚠️ أدخل كمية صحيحة', 'error'); return; }
     if (price <= 0) { showToast('⚠️ أدخل سعر صحيح', 'error'); return; }
     const p = products.find(pr => pr.id == id); if (!p) return;
-    const type = $('retType').value;
+    const typeEl = $('retType');
+    const type = typeEl ? typeEl.value : 'sale';
     if (type === 'purchase' && qty > p.qty) { showToast(`⚠️ الكمية المتاحة: ${p.qty}`, 'error'); return; }
     const ex = currentRetItems.find(i => i.productId == id);
     if (ex) { ex.qty += qty; ex.total = ex.qty * ex.price; }
@@ -1007,7 +1023,8 @@ function renderRetItems() {
 function saveReturn() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (currentRetItems.length === 0) { showToast('⚠️ لا توجد أصناف', 'error'); return; }
-    const type = $('retType').value;
+    const typeEl = $('retType');
+    const type = typeEl ? typeEl.value : 'sale';
     const party = $('retParty').value;
     if (!party) { showToast('⚠️ اختر العميل/المورد', 'error'); return; }
     const total = currentRetItems.reduce((s, i) => s + i.total, 0);
@@ -1047,7 +1064,8 @@ function saveReturn() {
           party: party, total: total,
           items: ret.items.map(it => ({ name: it.name, qty: it.qty, price: it.price, total: it.total })) }
     );
-    currentRetItems = []; $('retParty').value = '';
+    currentRetItems = [];
+    const partyEl = $('retParty'); if (partyEl) partyEl.value = '';
     renderRetItems(); renderReturns(); populateRetProducts(); updateDashboard();
     showToast(`✅ مرتجع #${ret.number} بمبلغ ${formatMoney(total)} 🇪🇬`, 'success');
 }
@@ -1055,7 +1073,8 @@ function saveReturn() {
 function clearReturn() {
     if (currentRetItems.length === 0) return;
     if (!confirm('⚠️ إلغاء المرتجع؟')) return;
-    currentRetItems = []; $('retParty').value = '';
+    currentRetItems = [];
+    const partyEl = $('retParty'); if (partyEl) partyEl.value = '';
     renderRetItems(); showToast('🗑️ تم الإلغاء', 'info');
 }
 
@@ -1293,7 +1312,8 @@ function getTreasuryBalance() {
 
 function addTreasuryTransaction() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const type = $('treasuryType').value;
+    const typeEl = $('treasuryType');
+    const type = typeEl ? typeEl.value : 'deposit';
     const amount = parseFloat($('treasuryAmount').value) || 0;
     const note = $('treasuryNote').value.trim() || (type === 'deposit' ? 'إيداع' : 'سحب');
     if (amount <= 0) { showToast('⚠️ أدخل مبلغ صحيح', 'error'); return; }
@@ -1354,7 +1374,7 @@ function deleteTreasury(id) {
 }
 
 // ============================================================
-// لوحة التحكم (مع الضريبة)
+// لوحة التحكم
 // ============================================================
 function updateDashboard() {
     const totalSales = sales.reduce((s, i) => s + (i.total || 0), 0);
@@ -1416,30 +1436,23 @@ function updateDashboard() {
     container.innerHTML = html;
 }
 
-// ============================================================
-// حساب إحصائيات الضريبة
-// ============================================================
 function calculateVATStats(dateFilter = null) {
     let salesVAT = 0;
     let purchasesVAT = 0;
-    
     const filterFn = (item) => {
         if (!dateFilter) return true;
         return (item.date || '').startsWith(dateFilter);
     };
-    
     sales.forEach(s => {
         if (s.invoiceType === 'tax' && filterFn(s)) {
             salesVAT += (s.vatTotal || 0);
         }
     });
-    
     purchases.forEach(p => {
         if (p.invoiceType === 'tax' && filterFn(p)) {
             purchasesVAT += (p.vatTotal || 0);
         }
     });
-    
     const vatDue = salesVAT - purchasesVAT;
     return { salesVAT, purchasesVAT, vatDue };
 }
@@ -1542,7 +1555,7 @@ function saveCustomer() {
             const old = { ...customers[idx] };
             customers[idx] = { ...customers[idx], name, phone, whatsapp, address };
             addAuditLog('edit', 'customer', `تعديل عميل: ${name}`, {
-                before: { name: old.name, phone: old.phone, whatsapp: old.whatsapp, address: old.address },
+                before: { name: old.name, phone: old.phone },
                 after: { name, phone, whatsapp, address }
             });
             showToast('✅ تم تعديل العميل', 'success');
@@ -1636,7 +1649,7 @@ function openCollectModal(customerName) {
         switchPayTab('collect', document.querySelectorAll('.tab-btn')[0]);
         const sel = $('collectCustomer');
         if (sel) { sel.value = customerName; updateCollectInfo(); }
-        $('collectAmount').focus();
+        const amtEl = $('collectAmount'); if (amtEl) amtEl.focus();
     }, 200);
 }
 
@@ -1807,7 +1820,7 @@ function openPayModal(supplierName) {
         switchPayTab('pay', document.querySelectorAll('.tab-btn')[1]);
         const sel = $('paySupplier');
         if (sel) { sel.value = supplierName; updatePayInfo(); }
-        $('payAmount').focus();
+        const amtEl = $('payAmount'); if (amtEl) amtEl.focus();
     }, 200);
 }
 
@@ -1889,37 +1902,45 @@ function populatePaySuppliers() {
 function switchPayTab(tab, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
+    const collect = $('payTabCollect');
+    const pay = $('payTabPay');
     if (tab === 'collect') {
-        $('payTabCollect').style.display = 'block';
-        $('payTabPay').style.display = 'none';
+        if (collect) collect.style.display = 'block';
+        if (pay) pay.style.display = 'none';
     } else {
-        $('payTabCollect').style.display = 'none';
-        $('payTabPay').style.display = 'block';
+        if (collect) collect.style.display = 'none';
+        if (pay) pay.style.display = 'block';
     }
 }
 
 function updateCollectInfo() {
     const name = $('collectCustomer').value;
     const box = $('collectInfoBox');
+    if (!box) return;
     if (!name) { box.style.display = 'none'; return; }
     const balance = getCustomerBalance(name);
     box.style.display = 'block';
-    $('collectCurrentDebt').textContent = formatMoney(balance);
+    if ($('collectCurrentDebt')) $('collectCurrentDebt').textContent = formatMoney(balance);
     const amountInput = $('collectAmount');
-    amountInput.max = balance;
-    amountInput.value = balance > 0 ? balance.toFixed(2) : '';
+    if (amountInput) {
+        amountInput.max = balance;
+        amountInput.value = balance > 0 ? balance.toFixed(2) : '';
+    }
 }
 
 function updatePayInfo() {
     const name = $('paySupplier').value;
     const box = $('payInfoBox');
+    if (!box) return;
     if (!name) { box.style.display = 'none'; return; }
     const balance = getSupplierBalance(name);
     box.style.display = 'block';
-    $('payCurrentDebt').textContent = formatMoney(balance);
+    if ($('payCurrentDebt')) $('payCurrentDebt').textContent = formatMoney(balance);
     const amountInput = $('payAmount');
-    amountInput.max = balance;
-    amountInput.value = balance > 0 ? balance.toFixed(2) : '';
+    if (amountInput) {
+        amountInput.max = balance;
+        amountInput.value = balance > 0 ? balance.toFixed(2) : '';
+    }
 }
 
 function saveCollect() {
@@ -1928,13 +1949,10 @@ function saveCollect() {
     const amount = parseFloat($('collectAmount').value) || 0;
     const date = $('collectDate').value || getTodayDate();
     const note = $('collectNote').value.trim();
-
     if (!party) { showToast('⚠️ اختر العميل', 'error'); return; }
     if (amount <= 0) { showToast('⚠️ أدخل مبلغ صحيح', 'error'); return; }
-
     const balance = getCustomerBalance(party);
     if (amount > balance) { showToast(`⚠️ المبلغ أكبر من المديونية (${formatMoney(balance)})`, 'error'); return; }
-
     const now = new Date();
     const pay = {
         id: Date.now(), type: 'collect', party, amount, date,
@@ -1943,20 +1961,18 @@ function saveCollect() {
         createdBy: currentUser ? currentUser.name : 'unknown'
     };
     payments.push(pay);
-
     treasury.push({
         id: Date.now() + 1, type: 'deposit', amount,
         note: `تحصيل من ${party}${note ? ' - ' + note : ''}`,
         date, time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }),
         refType: 'collect', refId: pay.id
     });
-
     setData('payments', payments); setData('treasury', treasury);
     addAuditLog('add', 'payment', `تحصيل من ${party} - ${formatMoney(amount)} ج.م`,
         { party, amount, type: 'collect', note, date });
     $('collectAmount').value = ''; $('collectNote').value = '';
-    $('collectCustomer').value = ''; $('collectInfoBox').style.display = 'none';
-
+    $('collectCustomer').value = ''; 
+    const box = $('collectInfoBox'); if (box) box.style.display = 'none';
     renderPayments(); renderTreasury(); renderCustomers(); updateDashboard();
     showToast(`✅ تم تحصيل ${formatMoney(amount)} 🇪🇬 من ${party}`, 'success');
     setTimeout(() => showReceipt(pay), 300);
@@ -1968,14 +1984,11 @@ function savePay() {
     const amount = parseFloat($('payAmount').value) || 0;
     const date = $('payDate').value || getTodayDate();
     const note = $('payNote').value.trim();
-
     if (!party) { showToast('⚠️ اختر المورد', 'error'); return; }
     if (amount <= 0) { showToast('⚠️ أدخل مبلغ صحيح', 'error'); return; }
-
     const balance = getSupplierBalance(party);
     if (amount > balance) { showToast(`⚠️ المبلغ أكبر من الالتزام (${formatMoney(balance)})`, 'error'); return; }
     if (getTreasuryBalance() < amount) { showToast('⚠️ رصيد الخزنة غير كافي', 'error'); return; }
-
     const now = new Date();
     const pay = {
         id: Date.now(), type: 'pay', party, amount, date,
@@ -1984,20 +1997,18 @@ function savePay() {
         createdBy: currentUser ? currentUser.name : 'unknown'
     };
     payments.push(pay);
-
     treasury.push({
         id: Date.now() + 1, type: 'withdraw', amount,
         note: `سداد لـ ${party}${note ? ' - ' + note : ''}`,
         date, time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }),
         refType: 'pay', refId: pay.id
     });
-
     setData('payments', payments); setData('treasury', treasury);
     addAuditLog('add', 'payment', `سداد لـ ${party} - ${formatMoney(amount)} ج.م`,
         { party, amount, type: 'pay', note, date });
     $('payAmount').value = ''; $('payNote').value = '';
-    $('paySupplier').value = ''; $('payInfoBox').style.display = 'none';
-
+    $('paySupplier').value = '';
+    const box = $('payInfoBox'); if (box) box.style.display = 'none';
     renderPayments(); renderTreasury(); renderSuppliers(); updateDashboard();
     showToast(`✅ تم سداد ${formatMoney(amount)} 🇪🇬 لـ ${party}`, 'success');
     setTimeout(() => showReceipt(pay), 300);
@@ -2006,10 +2017,8 @@ function savePay() {
 function renderPayments() {
     const collected = payments.filter(p => p.type === 'collect').reduce((s, p) => s + (p.amount || 0), 0);
     const paid = payments.filter(p => p.type === 'pay').reduce((s, p) => s + (p.amount || 0), 0);
-
     if ($('payTotalCollected')) $('payTotalCollected').textContent = formatMoney(collected);
     if ($('payTotalPaid')) $('payTotalPaid').textContent = formatMoney(paid);
-
     const c = $('paymentsList'); if (!c) return;
     if (payments.length === 0) {
         c.innerHTML = `<div class="empty-state"><i class="fas fa-hand-holding-usd"></i><span>لا توجد عمليات</span></div>`;
@@ -2046,7 +2055,6 @@ function showReceipt(pay) {
     const color = isCollect ? '#2D8F5E' : '#E06060';
     const label = isCollect ? 'إيصال استلام نقدية' : 'إيصال دفع نقدية';
     const logoHtml = companyData.logo ? `<img src="${companyData.logo}" class="rec-logo" alt="logo">` : '';
-
     const html = `
         <button class="modal-close" onclick="closeModal()">&times;</button>
         <h3 style="color:${color};">🧾 ${label}</h3>
@@ -2091,7 +2099,7 @@ function deletePayment(id) {
 }
 
 // ============================================================
-// التقارير (مع التقرير الضريبي)
+// التقارير
 // ============================================================
 function switchReport(type, btn) {
     currentReport = type;
@@ -2102,16 +2110,9 @@ function switchReport(type, btn) {
 
 function renderReport(type) {
     const container = $('reportContent'); if (!container) return;
-    
-    // التقرير الضريبي (مختلف)
-    if (type === 'vat') {
-        renderVATReport();
-        return;
-    }
-    
+    if (type === 'vat') { renderVATReport(); return; }
     const today = new Date();
     let title = '', rows = [];
-
     if (type === 'daily') {
         title = 'تقرير يومي - آخر 7 أيام';
         const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
@@ -2178,14 +2179,12 @@ function renderReport(type) {
             });
         }
     }
-
     const tS = rows.reduce((s, r) => s + r.sales, 0);
     const tCOGS = rows.reduce((s, r) => s + (r.cogs || 0), 0);
     const tP = rows.reduce((s, r) => s + r.purchases, 0);
     const tE = rows.reduce((s, r) => s + r.expenses, 0);
     const tPr = rows.reduce((s, r) => s + r.profit, 0);
     const maxV = Math.max(...rows.flatMap(r => [r.sales, r.cogs, r.expenses]), 1);
-
     container.innerHTML = `
         <h3 style="font-size:14px;color:#C9A94E;margin-bottom:10px;">${title}</h3>
         <div class="report-summary">
@@ -2235,15 +2234,10 @@ function renderReport(type) {
     `;
 }
 
-// ============================================================
-// التقرير الضريبي (جديد)
-// ============================================================
 function renderVATReport() {
     const container = $('reportContent'); if (!container) return;
-    
     const today = new Date();
     const monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-    
     const rows = [];
     for (let i = 5; i >= 0; i--) {
         const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
@@ -2256,21 +2250,16 @@ function renderVATReport() {
             vatDue: stats.vatDue
         });
     }
-    
     const totalSalesVAT = rows.reduce((s, r) => s + r.salesVAT, 0);
     const totalPurchasesVAT = rows.reduce((s, r) => s + r.purchasesVAT, 0);
     const totalVATDue = totalSalesVAT - totalPurchasesVAT;
-    
     const maxV = Math.max(...rows.flatMap(r => [r.salesVAT, r.purchasesVAT]), 1);
-    
     container.innerHTML = `
         <h3 style="font-size:14px;color:#9B59B6;margin-bottom:14px;">🧾 التقرير الضريبي - آخر 6 أشهر</h3>
-        
         <div class="vat-report-card">
             <div class="vat-big">${formatMoney(totalVATDue)} 🇪🇬</div>
             <div class="vat-label">${totalVATDue >= 0 ? '💰 ضريبة مستحقة للدولة' : '✅ ضريبة مستردة'}</div>
         </div>
-        
         <div class="report-summary">
             <div class="report-stat" style="border-right-color:#9B59B6;">
                 <div class="num" style="color:#9B59B6;">${formatMoney(totalSalesVAT)}</div>
@@ -2289,7 +2278,6 @@ function renderVATReport() {
                 <div class="lbl">📄 فواتير ضريبية</div>
             </div>
         </div>
-        
         <div class="report-chart">
             <h4>📊 الرسم البياني الشهري</h4>
             <div class="chart-bars">
@@ -2312,7 +2300,6 @@ function renderVATReport() {
                 <span><span class="dot" style="background:#E06060;"></span> ضريبة مشتريات</span>
             </div>
         </div>
-        
         <h3 style="font-size:14px;color:#9B59B6;margin:14px 0 10px;">📋 التفاصيل الشهرية</h3>
         <div class="table-header" style="grid-template-columns: 1.5fr 1fr 1fr 1fr;"><span>الشهر</span><span>ضريبة مبيعات</span><span>ضريبة مشتريات</span><span>المستحق</span></div>
         ${rows.map(r => `
@@ -2323,7 +2310,6 @@ function renderVATReport() {
                 <span style="color:${r.vatDue >= 0 ? '#E6A830' : '#2D8F5E'};font-weight:700;">${formatMoney(r.vatDue)}</span>
             </div>
         `).join('')}
-        
         <div style="text-align:center;margin-top:20px;padding:14px;background:#1C1C1C;border-radius:10px;border:1px dashed #9B59B6;">
             <div style="font-size:12px;color:#A89070;margin-bottom:6px;">📊 إجمالي الفواتير الضريبية</div>
             <div style="font-size:11px;color:#F5E6C8;margin-bottom:4px;">مبيعات ضريبية: <strong style="color:#9B59B6;">${sales.filter(s => s.invoiceType === 'tax').length}</strong></div>
@@ -2331,7 +2317,6 @@ function renderVATReport() {
         </div>
     `;
 }
-
 // ============================================================
 // بيانات الشركة
 // ============================================================
@@ -2437,7 +2422,8 @@ function updateHeaderCompanyName() {
 // ============================================================
 function saveVATSettings() {
     if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const vat = parseFloat($('setDefaultVAT')?.value) || 14;
+    const vatEl = $('setDefaultVAT');
+    const vat = parseFloat(vatEl?.value) || 14;
     if (vat < 0 || vat > 100) {
         showToast('⚠️ النسبة يجب أن تكون بين 0 و 100', 'error');
         return;
@@ -2910,7 +2896,7 @@ function changePassword() {
 function exportData() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const data = {
-        version: '11.0.0', exportDate: new Date().toISOString(),
+        version: '11.0.1', exportDate: new Date().toISOString(),
         products, sales, purchases, returns, expenses,
         customers, suppliers, treasury, payments, users, auditLog, companyData, vatSettings
     };
@@ -3036,7 +3022,8 @@ function closeModal() {
 function populateAllDropdowns() {
     populateSaleProducts(); populateSaleCustomers();
     populatePurSuppliers(); populatePurProducts();
-    populateRetProducts(); toggleReturnCustomer();
+    populateRetProducts();
+    if (typeof toggleReturnCustomer === 'function') toggleReturnCustomer();
     populateCollectCustomers(); populatePaySuppliers();
 }
 
@@ -3044,7 +3031,7 @@ function populateAllDropdowns() {
 // Init
 // ============================================================
 function init() {
-    console.log('🚀 الميزان 11.0.0 - الضريبة VAT');
+    console.log('🚀 الميزان 11.0.1 - الضريبة VAT (إصلاحات)');
 
     initFirebase();
 
