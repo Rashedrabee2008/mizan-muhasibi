@@ -1,5 +1,5 @@
 // ============================================================
-// الميزان - الإصدار 9.0.0 (حساب الربح الصحيح)
+// الميزان - الإصدار 10.0.0 (المستخدمين والصلاحيات)
 // ============================================================
 
 const STORAGE_KEY = 'mizan_';
@@ -24,8 +24,10 @@ const CLOUD_PATH = 'mizan_data';
 let products = [], sales = [], purchases = [], returns = [], expenses = [];
 let customers = [], suppliers = [], treasury = [];
 let payments = [];
+let users = [];
+let auditLog = [];
+let currentUser = null;
 let currentSaleItems = [], currentPurItems = [], currentRetItems = [];
-let currentPassword = localStorage.getItem('app_password') || DEFAULT_PASSWORD;
 let companyData = {};
 let currentReport = 'daily';
 
@@ -77,72 +79,61 @@ function migrateOldProducts(oldProducts) {
 }
 
 // ============================================================
-// حساب تكلفة البضاعة المباعة (COGS)
+// نظام المستخدمين والصلاحيات
 // ============================================================
-function getCOGS(salesArr) {
-    let totalCOGS = 0;
-    (salesArr || []).forEach(inv => {
-        (inv.items || []).forEach(item => {
-            const p = products.find(pr => pr.id == item.productId);
-            const costPrice = (item.costPrice !== undefined && item.costPrice > 0)
-                ? item.costPrice
-                : (p ? p.buy : 0);
-            totalCOGS += costPrice * (item.qty || 0);
-        });
-    });
-    return totalCOGS;
+
+// الأدوار
+const ROLES = {
+    admin: { name: 'مدير', icon: '👑', color: '#E06060' },
+    manager: { name: 'مشرف', icon: '📊', color: '#C9A94E' },
+    cashier: { name: 'كاشير', icon: '💰', color: '#4A8AB5' },
+    viewer: { name: 'مشاهد', icon: '👁️', color: '#5D5D5D' }
+};
+
+// التحقق من صلاحية
+function hasPermission(permission) {
+    if (!currentUser) return false;
+    const role = currentUser.role;
+    
+    const permissions = {
+        admin: ['add', 'edit', 'delete', 'view', 'manage_users', 'view_audit', 'clear_data'],
+        manager: ['add', 'edit', 'view', 'view_audit'],
+        cashier: ['add_sale', 'view'],
+        viewer: ['view']
+    };
+    
+    return (permissions[role] || []).includes(permission);
 }
 
-// ============================================================
-// حساب تكلفة المرتجعات (بيع)
-// ============================================================
-function getReturnsCOGS(returnsArr) {
-    let total = 0;
-    (returnsArr || []).forEach(ret => {
-        if (ret.type !== 'sale') return;
-        (ret.items || []).forEach(item => {
-            const p = products.find(pr => pr.id == item.productId);
-            const costPrice = (item.costPrice !== undefined && item.costPrice > 0)
-                ? item.costPrice
-                : (p ? p.buy : 0);
-            total += costPrice * (item.qty || 0);
-        });
-    });
-    return total;
-}
+function isAdmin() { return currentUser && currentUser.role === 'admin'; }
+function isManager() { return currentUser && currentUser.role === 'manager'; }
+function canAdd() { return hasPermission('add') || hasPermission('add_sale'); }
+function canEdit() { return hasPermission('edit'); }
+function canDelete() { return hasPermission('delete'); }
+function canView() { return hasPermission('view'); }
+function canManageUsers() { return hasPermission('manage_users'); }
+function canViewAudit() { return hasPermission('view_audit'); }
+function canClearData() { return hasPermission('clear_data'); }
 
 // ============================================================
-// حساب رصيد العميل (المديونية)
+// سجل النشاطات (Audit Log)
 // ============================================================
-function getCustomerBalance(customerName) {
-    if (!customerName || customerName === 'عميل نقدي') return 0;
-    const creditSales = sales.filter(s =>
-        s.customer === customerName && s.paymentMethod === 'credit'
-    ).reduce((sum, s) => sum + (s.total || 0), 0);
-    const creditReturns = returns.filter(r =>
-        r.type === 'sale' && r.party === customerName && r.paymentMethod === 'credit'
-    ).reduce((sum, r) => sum + (r.total || 0), 0);
-    const collected = payments.filter(p =>
-        p.type === 'collect' && p.party === customerName
-    ).reduce((sum, p) => sum + (p.amount || 0), 0);
-    return Math.max(0, creditSales - creditReturns - collected);
-}
-
-// ============================================================
-// حساب رصيد المورد (الالتزام)
-// ============================================================
-function getSupplierBalance(supplierName) {
-    if (!supplierName) return 0;
-    const creditPurchases = purchases.filter(p =>
-        p.supplierName === supplierName && p.payment === 'credit'
-    ).reduce((sum, p) => sum + (p.total || 0), 0);
-    const creditReturns = returns.filter(r =>
-        r.type === 'purchase' && r.party === supplierName && r.paymentMethod === 'credit'
-    ).reduce((sum, r) => sum + (r.total || 0), 0);
-    const paid = payments.filter(p =>
-        p.type === 'pay' && p.party === supplierName
-    ).reduce((sum, p) => sum + (p.amount || 0), 0);
-    return Math.max(0, creditPurchases - creditReturns - paid);
+function addAuditLog(action, type, details) {
+    const log = {
+        id: Date.now() + Math.random(),
+        action: action, // add | edit | delete | login
+        type: type, // product | customer | sale | ...
+        details: details,
+        userName: currentUser ? currentUser.name : 'غير معروف',
+        userRole: currentUser ? currentUser.role : 'unknown',
+        date: getTodayDate(),
+        time: new Date().toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        createdAt: new Date().toISOString()
+    };
+    auditLog.unshift(log);
+    // احتفظ بآخر 500 فقط
+    if (auditLog.length > 500) auditLog = auditLog.slice(0, 500);
+    setData('auditLog', auditLog);
 }
 
 // ============================================================
@@ -198,8 +189,9 @@ function syncToCloud() {
     const data = {
         products, sales, purchases, returns, expenses,
         customers, suppliers, treasury, payments, companyData,
+        users, auditLog,
         lastSync: new Date().toISOString(),
-        version: '9.0.0'
+        version: '10.0.0'
     };
 
     updateSyncStatus('⏳ جاري الرفع...', 'info');
@@ -209,6 +201,7 @@ function syncToCloud() {
         .then(() => {
             showToast('✅ تم الرفع للسحابة بنجاح', 'success');
             updateSyncStatus('✅ تم الرفع بنجاح - ' + new Date().toLocaleTimeString('ar'), 'success');
+            addAuditLog('edit', 'cloud', 'رفع البيانات للسحابة');
         })
         .catch((err) => {
             console.error(err);
@@ -248,13 +241,15 @@ function syncFromCloud() {
             if (data.treasury) treasury = data.treasury;
             if (data.payments) payments = data.payments;
             if (data.companyData) companyData = data.companyData;
+            if (data.users) users = data.users;
+            if (data.auditLog) auditLog = data.auditLog;
 
             saveAll();
             populateAllDropdowns();
             renderProducts(); renderCashier(); renderPurchases();
             renderReturns(); renderExpenses(); renderInvoices();
             renderTreasury(); renderCustomers(); renderSuppliers();
-            renderPayments();
+            renderPayments(); renderUsers(); renderAudit();
             updateDashboard();
 
             showToast('✅ تم الجلب من السحابة بنجاح', 'success');
@@ -283,35 +278,119 @@ setInterval(updateClock, 1000);
 // ============================================================
 // تسجيل الدخول
 // ============================================================
+function populateLoginUsers() {
+    const sel = $('loginUsername');
+    if (!sel) return;
+    sel.innerHTML = '';
+    users.forEach(u => {
+        if (u.active !== false) {
+            sel.innerHTML += `<option value="${u.id}">${u.name} (${ROLES[u.role]?.name || u.role})</option>`;
+        }
+    });
+}
+
 function checkLogin() {
-    const input = $('loginPassword'), error = $('loginError');
-    if (!input) return;
-    if (input.value === currentPassword) {
-        localStorage.setItem('app_unlocked', 'true');
-        $('loginContainer').classList.add('hidden');
-        $('appContent').style.display = 'block';
-        if (error) error.classList.remove('show');
-        input.value = '';
-        showToast('🔓 مرحباً بك!', 'success');
-        navigateTo('dashboard');
-    } else {
+    const userId = $('loginUsername').value;
+    const password = $('loginPassword').value;
+    const error = $('loginError');
+    
+    if (!userId) {
         if (error) error.classList.add('show');
-        input.value = ''; input.focus();
-        setTimeout(() => { if (error) error.classList.remove('show'); }, 3000);
+        return;
     }
+    
+    const user = users.find(u => u.id == userId);
+    if (!user) {
+        if (error) error.classList.add('show');
+        return;
+    }
+    
+    if (user.password !== password) {
+        if (error) error.classList.add('show');
+        $('loginPassword').value = '';
+        $('loginPassword').focus();
+        setTimeout(() => { if (error) error.classList.remove('show'); }, 3000);
+        return;
+    }
+    
+    // نجح الدخول
+    currentUser = user;
+    localStorage.setItem(STORAGE_KEY + 'current_user', JSON.stringify({ id: user.id, name: user.name, role: user.role }));
+    
+    if (error) error.classList.remove('show');
+    $('loginPassword').value = '';
+    
+    $('loginContainer').classList.add('hidden');
+    $('appContent').style.display = 'block';
+    
+    // تحديث واجهة المستخدم
+    updateUserUI();
+    applyPermissions();
+    
+    addAuditLog('login', 'user', `تسجيل دخول: ${user.name}`);
+    
+    showToast(`🔓 مرحباً ${user.name}!`, 'success');
+    navigateTo('dashboard');
 }
 
 function lockApp() {
-    localStorage.removeItem('app_unlocked');
+    if (currentUser) {
+        addAuditLog('login', 'user', `تسجيل خروج: ${currentUser.name}`);
+    }
+    currentUser = null;
+    localStorage.removeItem(STORAGE_KEY + 'current_user');
     $('loginContainer').classList.remove('hidden');
     $('appContent').style.display = 'none';
-    $('loginPassword')?.focus();
+    populateLoginUsers();
+    $('loginUsername')?.focus();
+}
+
+function updateUserUI() {
+    if (!currentUser) return;
+    const nameEl = $('currentUserName');
+    if (nameEl) nameEl.textContent = currentUser.name;
+    const passwordUserEl = $('currentUserForPassword');
+    if (passwordUserEl) passwordUserEl.textContent = currentUser.name;
+}
+
+// تطبيق الصلاحيات على الواجهة
+function applyPermissions() {
+    const role = currentUser ? currentUser.role : 'viewer';
+    
+    // إخفاء عناصر admin-only
+    document.querySelectorAll('.admin-only').forEach(el => {
+        el.style.display = (role === 'admin') ? '' : 'none';
+    });
+    
+    // إخفاء أزرار الإضافة لو مش مصرح
+    const addButtons = document.querySelectorAll('[data-permission="add"]');
+    addButtons.forEach(el => {
+        el.style.display = canAdd() ? '' : 'none';
+    });
+    
+    // إخفاء منطقة الخطر لو مش أدمن
+    const dangerZone = $('dangerZone');
+    if (dangerZone) dangerZone.style.display = isAdmin() ? '' : 'none';
+    
+    // إخفاء المستخدمين لو مش أدمن
+    const userForm = $('userFormCard');
+    if (userForm) userForm.style.display = isAdmin() ? '' : 'none';
 }
 
 // ============================================================
 // التنقل
 // ============================================================
 function navigateTo(page) {
+    // التحقق من الصلاحيات
+    if (page === 'users' && !canManageUsers()) {
+        showToast('⚠️ ليس لديك صلاحية', 'error');
+        return;
+    }
+    if (page === 'audit' && !canViewAudit()) {
+        showToast('⚠️ ليس لديك صلاحية', 'error');
+        return;
+    }
+    
     document.querySelectorAll('.page-container').forEach(el => el.classList.remove('active'));
     const target = $('page-' + page);
     if (target) target.classList.add('active');
@@ -330,6 +409,8 @@ function navigateTo(page) {
     if (page === 'payments') renderPayments();
     if (page === 'reports') renderReport(currentReport);
     if (page === 'company') renderCompanyPage();
+    if (page === 'users') renderUsers();
+    if (page === 'audit') renderAudit();
     if (page === 'settings') renderSettings();
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -339,6 +420,7 @@ function navigateTo(page) {
 // المخزون
 // ============================================================
 function saveProduct() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const id = $('productId').value;
     const name = $('productName').value.trim();
     const barcode = $('productBarcode').value.trim();
@@ -350,11 +432,17 @@ function saveProduct() {
     if (buy <= 0) { showToast('⚠️ أدخل سعر شراء صحيح', 'error'); return; }
     if (sell <= 0) { showToast('⚠️ أدخل سعر بيع صحيح', 'error'); return; }
     if (id) {
+        if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
         const idx = products.findIndex(p => p.id == id);
-        if (idx > -1) { products[idx] = { ...products[idx], name, barcode, buy, sell, qty, min }; showToast('✅ تم تعديل المنتج', 'success'); }
+        if (idx > -1) {
+            products[idx] = { ...products[idx], name, barcode, buy, sell, qty, min };
+            addAuditLog('edit', 'product', `تعديل منتج: ${name}`);
+            showToast('✅ تم تعديل المنتج', 'success');
+        }
     } else {
         if (products.find(p => p.name === name)) { showToast('⚠️ المنتج موجود', 'warning'); return; }
         products.push({ id: Date.now(), name, barcode, buy, sell, qty, min, createdAt: new Date().toISOString() });
+        addAuditLog('add', 'product', `إضافة منتج: ${name}`);
         showToast('✅ تم إضافة المنتج', 'success');
     }
     setData('products', products);
@@ -362,6 +450,7 @@ function saveProduct() {
 }
 
 function editProduct(id) {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const p = products.find(pr => pr.id == id); if (!p) return;
     $('productId').value = p.id; $('productName').value = p.name;
     $('productBarcode').value = p.barcode || ''; $('productBuy').value = p.buy;
@@ -373,10 +462,12 @@ function editProduct(id) {
 }
 
 function deleteProduct(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const p = products.find(pr => pr.id == id); if (!p) return;
     if (!confirm(`⚠️ حذف "${p.name}"؟`)) return;
     products = products.filter(pr => pr.id != id);
     setData('products', products);
+    addAuditLog('delete', 'product', `حذف منتج: ${p.name}`);
     renderProducts(); populateAllDropdowns(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
@@ -399,18 +490,21 @@ function renderProducts() {
         container.innerHTML = `<div class="empty-state"><i class="fas fa-box-open"></i><span>${search ? 'لا توجد نتائج' : 'لا توجد منتجات'}</span></div>`;
         return;
     }
-    let html = `<div class="table-header" style="grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr;"><span>المنتج</span><span>الشراء</span><span>البيع</span><span>الكمية</span><span></span></div>`;
+    const showActions = canEdit() || canDelete();
+    let html = `<div class="table-header" style="grid-template-columns: 2fr 1fr 1fr 1fr ${showActions ? '1.2fr' : '0'};"><span>المنتج</span><span>الشراء</span><span>البيع</span><span>الكمية</span>${showActions ? '<span></span>' : ''}</div>`;
     filtered.forEach(p => {
         const low = p.qty <= (p.min || 5);
-        html += `<div class="table-row" style="grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr;">
+        html += `<div class="table-row" style="grid-template-columns: 2fr 1fr 1fr 1fr ${showActions ? '1.2fr' : '0'};">
             <span><strong>${p.name}</strong>${p.barcode ? `<br><small style="color:#A89070;font-size:10px;">${p.barcode}</small>` : ''}</span>
             <span>${formatMoney(p.buy)}</span>
             <span style="color:#2D8F5E;font-weight:700;">${formatMoney(p.sell)}</span>
             <span style="${low ? 'color:#E06060;font-weight:700;' : ''}">${p.qty}${low ? ' ⚠️' : ''}</span>
-            <div style="display:flex;gap:4px;">
-                <button class="btn btn-warning btn-sm" onclick="editProduct(${p.id})"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>
-            </div>
+            ${showActions ? `
+                <div style="display:flex;gap:4px;">
+                    ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editProduct(${p.id})"><i class="fas fa-edit"></i></button>` : ''}
+                    ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>` : ''}
+                </div>
+            ` : ''}
         </div>`;
     });
     container.innerHTML = html;
@@ -443,6 +537,7 @@ function updateSalePrice() {
 }
 
 function addSaleItem() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const id = $('saleProduct').value;
     const qty = parseInt($('saleQty').value) || 0;
     const price = parseFloat($('salePrice').value) || 0;
@@ -483,6 +578,7 @@ function renderCashier() {
 }
 
 function saveSale() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (currentSaleItems.length === 0) { showToast('⚠️ لا توجد أصناف', 'error'); return; }
     for (const it of currentSaleItems) {
         const p = products.find(pr => pr.id == it.productId);
@@ -498,7 +594,6 @@ function saveSale() {
         return;
     }
 
-    // حفظ costPrice مع كل صنف
     currentSaleItems.forEach(it => {
         const p = products.find(pr => pr.id == it.productId);
         if (p) {
@@ -513,7 +608,8 @@ function saveSale() {
         items: JSON.parse(JSON.stringify(currentSaleItems)),
         total, date: today,
         time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }),
-        createdAt: now.toISOString()
+        createdAt: now.toISOString(),
+        createdBy: currentUser ? currentUser.name : 'unknown'
     };
     sales.push(inv);
 
@@ -534,6 +630,8 @@ function saveSale() {
     }
 
     setData('products', products); setData('sales', sales); setData('treasury', treasury);
+    addAuditLog('add', 'sale', `فاتورة بيع #${inv.number} - ${customer} - ${formatMoney(total)} ج.م`);
+    
     currentSaleItems = []; $('saleCustomer').value = '';
     document.querySelector('input[name="salePaymentMethod"][value="cash"]').checked = true;
     renderCashier(); populateSaleProducts(); updateDashboard();
@@ -575,6 +673,7 @@ function updatePurPrice() {
 }
 
 function addPurItem() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const id = $('purProduct').value;
     const qty = parseInt($('purQty').value) || 0;
     const price = parseFloat($('purPrice').value) || 0;
@@ -613,6 +712,7 @@ function renderPurItems() {
 }
 
 function savePurchase() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (currentPurItems.length === 0) { showToast('⚠️ لا توجد أصناف', 'error'); return; }
     const sid = $('purSupplier').value;
     if (!sid) { showToast('⚠️ اختر مورد', 'error'); return; }
@@ -630,7 +730,8 @@ function savePurchase() {
         items: JSON.parse(JSON.stringify(currentPurItems)), total, payment,
         status: payment === 'cash' ? 'paid' : 'pending', date: today,
         time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }),
-        createdAt: now.toISOString()
+        createdAt: now.toISOString(),
+        createdBy: currentUser ? currentUser.name : 'unknown'
     };
     purchases.push(inv);
     if (payment === 'cash') {
@@ -649,6 +750,7 @@ function savePurchase() {
         });
     }
     setData('products', products); setData('purchases', purchases); setData('treasury', treasury);
+    addAuditLog('add', 'purchase', `فاتورة شراء #${inv.number} - ${supplier.name} - ${formatMoney(total)} ج.م`);
     currentPurItems = []; $('purSupplier').value = '';
     renderPurItems(); renderPurchases(); populatePurProducts(); updateDashboard();
     showToast(`✅ فاتورة شراء #${inv.number} بمبلغ ${formatMoney(total)} 🇪🇬 (${payment === 'cash' ? 'نقدي' : 'آجل'})`, 'success');
@@ -687,7 +789,7 @@ function renderPurchases() {
             <span style="font-size:10px;color:#A89070;">${inv.date}</span>
             <div style="display:flex;gap:4px;">
                 <button class="btn btn-info btn-sm" onclick="viewPurchase(${inv.id})"><i class="fas fa-eye"></i></button>
-                <button class="btn btn-danger btn-sm" onclick="deletePurchase(${inv.id})"><i class="fas fa-trash"></i></button>
+                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deletePurchase(${inv.id})"><i class="fas fa-trash"></i></button>` : ''}
             </div>
         </div>`;
     });
@@ -731,6 +833,7 @@ function viewPurchase(id) {
 }
 
 function deletePurchase(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const inv = purchases.find(p => p.id === id); if (!inv) return;
     if (!confirm(`⚠️ حذف فاتورة الشراء #${inv.number}؟`)) return;
     inv.items.forEach(it => {
@@ -740,6 +843,7 @@ function deletePurchase(id) {
     treasury = treasury.filter(t => !((t.refType === 'purchase' || t.refType === 'purchase_credit') && t.refId === id));
     purchases = purchases.filter(p => p.id !== id);
     setData('products', products); setData('purchases', purchases); setData('treasury', treasury);
+    addAuditLog('delete', 'purchase', `حذف فاتورة شراء #${inv.number}`);
     renderPurchases(); renderProducts(); updateDashboard();
     showToast(`🗑️ تم حذف فاتورة #${inv.number}`, 'info');
 }
@@ -783,6 +887,7 @@ function updateRetPrice() {
 }
 
 function addRetItem() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const id = $('retProduct').value;
     const qty = parseInt($('retQty').value) || 0;
     const price = parseFloat($('retPrice').value) || 0;
@@ -823,6 +928,7 @@ function renderRetItems() {
 }
 
 function saveReturn() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (currentRetItems.length === 0) { showToast('⚠️ لا توجد أصناف', 'error'); return; }
     const type = $('retType').value;
     const party = $('retParty').value;
@@ -838,7 +944,8 @@ function saveReturn() {
         paymentMethod: 'cash',
         items: JSON.parse(JSON.stringify(currentRetItems)), total, date: today,
         time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }),
-        createdAt: now.toISOString()
+        createdAt: now.toISOString(),
+        createdBy: currentUser ? currentUser.name : 'unknown'
     };
     returns.push(ret);
     if (type === 'sale') {
@@ -857,6 +964,7 @@ function saveReturn() {
         });
     }
     setData('products', products); setData('returns', returns); setData('treasury', treasury);
+    addAuditLog('add', 'return', `مرتجع ${type === 'sale' ? 'بيع' : 'شراء'} #${ret.number} - ${party} - ${formatMoney(total)} ج.م`);
     currentRetItems = []; $('retParty').value = '';
     renderRetItems(); renderReturns(); populateRetProducts(); updateDashboard();
     showToast(`✅ مرتجع #${ret.number} بمبلغ ${formatMoney(total)} 🇪🇬`, 'success');
@@ -889,13 +997,14 @@ function renderReturns() {
             <span>${r.party}</span>
             <span style="color:#E6A830;font-weight:700;">${formatMoney(r.total)}</span>
             <span style="font-size:10px;color:#A89070;">${r.date}</span>
-            <button class="btn btn-danger btn-sm" onclick="deleteReturn(${r.id})"><i class="fas fa-trash"></i></button>
+            ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteReturn(${r.id})"><i class="fas fa-trash"></i></button>` : '<span></span>'}
         </div>`;
     });
     c.innerHTML = html;
 }
 
 function deleteReturn(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const r = returns.find(x => x.id === id); if (!r) return;
     if (!confirm(`⚠️ حذف المرتجع #${r.number}؟`)) return;
     r.items.forEach(it => {
@@ -905,6 +1014,7 @@ function deleteReturn(id) {
     treasury = treasury.filter(t => !(t.refType === 'return' && t.refId === id));
     returns = returns.filter(x => x.id !== id);
     setData('products', products); setData('returns', returns); setData('treasury', treasury);
+    addAuditLog('delete', 'return', `حذف مرتجع #${r.number}`);
     renderReturns(); renderProducts(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
@@ -913,6 +1023,7 @@ function deleteReturn(id) {
 // المصروفات
 // ============================================================
 function saveExpense() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const note = $('expNote').value.trim();
     const amount = parseFloat($('expAmount').value) || 0;
     const category = $('expCategory').value;
@@ -923,7 +1034,8 @@ function saveExpense() {
     const now = new Date();
     const exp = { id: Date.now(), note, amount, category, date,
         time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }),
-        createdAt: now.toISOString() };
+        createdAt: now.toISOString(),
+        createdBy: currentUser ? currentUser.name : 'unknown' };
     expenses.push(exp);
     treasury.push({
         id: Date.now() + 1, type: 'withdraw', amount,
@@ -932,6 +1044,7 @@ function saveExpense() {
         refType: 'expense', refId: exp.id
     });
     setData('expenses', expenses); setData('treasury', treasury);
+    addAuditLog('add', 'expense', `مصروف: ${note} - ${formatMoney(amount)} ج.م`);
     $('expNote').value = ''; $('expAmount').value = '';
     renderExpenses(); updateDashboard();
     showToast(`✅ تم إضافة مصروف ${formatMoney(amount)} 🇪🇬`, 'success');
@@ -960,18 +1073,20 @@ function renderExpenses() {
             <span style="color:#E06060;font-weight:700;">${formatMoney(e.amount)}</span>
             <span style="font-size:11px;color:#A89070;">${e.category || 'عام'}</span>
             <span style="font-size:10px;color:#A89070;">${e.date}</span>
-            <button class="btn btn-danger btn-sm" onclick="deleteExpense(${e.id})"><i class="fas fa-trash"></i></button>
+            ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteExpense(${e.id})"><i class="fas fa-trash"></i></button>` : '<span></span>'}
         </div>`;
     });
     c.innerHTML = html;
 }
 
 function deleteExpense(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const e = expenses.find(x => x.id === id); if (!e) return;
     if (!confirm('⚠️ حذف هذا المصروف؟')) return;
     treasury = treasury.filter(t => !(t.refType === 'expense' && t.refId === id));
     expenses = expenses.filter(x => x.id !== id);
     setData('expenses', expenses); setData('treasury', treasury);
+    addAuditLog('delete', 'expense', `حذف مصروف: ${e.note}`);
     renderExpenses(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
@@ -1007,7 +1122,7 @@ function renderInvoices() {
             <span style="font-size:11px;color:#A89070;">${inv.date}</span>
             <div style="display:flex;gap:4px;">
                 <button class="btn btn-info btn-sm" onclick="viewInvoice(${inv.id})"><i class="fas fa-eye"></i></button>
-                <button class="btn btn-danger btn-sm" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button>
+                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button>` : ''}
             </div>
         </div>`;
     });
@@ -1053,6 +1168,7 @@ function viewInvoice(id) {
 }
 
 function deleteInvoice(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const inv = sales.find(s => s.id === id); if (!inv) return;
     if (!confirm(`⚠️ حذف الفاتورة #${inv.number}؟`)) return;
     inv.items.forEach(it => {
@@ -1062,6 +1178,7 @@ function deleteInvoice(id) {
     treasury = treasury.filter(t => !((t.refType === 'sale' || t.refType === 'sale_credit') && t.refId === id));
     sales = sales.filter(s => s.id !== id);
     setData('products', products); setData('sales', sales); setData('treasury', treasury);
+    addAuditLog('delete', 'sale', `حذف فاتورة بيع #${inv.number}`);
     renderInvoices(); renderProducts(); updateDashboard();
     showToast(`🗑️ تم الحذف`, 'info');
 }
@@ -1074,6 +1191,7 @@ function getTreasuryBalance() {
 }
 
 function addTreasuryTransaction() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const type = $('treasuryType').value;
     const amount = parseFloat($('treasuryAmount').value) || 0;
     const note = $('treasuryNote').value.trim() || (type === 'deposit' ? 'إيداع' : 'سحب');
@@ -1083,8 +1201,10 @@ function addTreasuryTransaction() {
     treasury.push({ id: Date.now(), type, amount, note,
         date: getTodayDate(),
         time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }),
-        refType: 'manual' });
+        refType: 'manual',
+        createdBy: currentUser ? currentUser.name : 'unknown' });
     setData('treasury', treasury);
+    addAuditLog('add', 'treasury', `${type === 'deposit' ? 'إيداع' : 'سحب'} ${formatMoney(amount)} ج.م - ${note}`);
     $('treasuryAmount').value = ''; $('treasuryNote').value = '';
     renderTreasury(); updateDashboard();
     showToast(type === 'deposit' ? `✅ إيداع ${formatMoney(amount)}` : `✅ سحب ${formatMoney(amount)}`, 'success');
@@ -1108,7 +1228,7 @@ function renderTreasury() {
         const isDep = t.type === 'deposit';
         const color = isDep ? '#2D8F5E' : '#E06060';
         const sign = isDep ? '+' : '-';
-        const canDel = t.refType === 'manual';
+        const canDel = t.refType === 'manual' && canDelete();
         html += `<div class="table-row" style="grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;">
             <span style="font-size:11px;">${t.note}</span>
             <span style="color:${color};font-weight:700;">${sign}${formatMoney(t.amount)}</span>
@@ -1121,17 +1241,19 @@ function renderTreasury() {
 }
 
 function deleteTreasury(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const t = treasury.find(tr => tr.id === id); if (!t) return;
     if (t.refType !== 'manual') { showToast('⚠️ مرتبطة بفاتورة', 'warning'); return; }
     if (!confirm('⚠️ حذف الحركة؟')) return;
     treasury = treasury.filter(tr => tr.id !== id);
     setData('treasury', treasury);
+    addAuditLog('delete', 'treasury', `حذف حركة خزنة: ${t.note}`);
     renderTreasury(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
 
 // ============================================================
-// لوحة التحكم (مع حساب الربح الصحيح)
+// لوحة التحكم
 // ============================================================
 function updateDashboard() {
     const totalSales = sales.reduce((s, i) => s + (i.total || 0), 0);
@@ -1139,7 +1261,7 @@ function updateDashboard() {
     const totalExpenses = expenses.reduce((s, i) => s + (i.amount || 0), 0);
     const totalReturns = returns.reduce((s, i) => s + (i.total || 0), 0);
     
-    // ✅ الحساب الصحيح للربح
+    // حساب COGS
     const cogs = getCOGS(sales);
     const returnsCOGS = getReturnsCOGS(returns);
     const returnsPurchase = returns.filter(r => r.type === 'purchase')
@@ -1189,6 +1311,36 @@ function updateDashboard() {
     container.innerHTML = html;
 }
 
+// حساب COGS
+function getCOGS(salesArr) {
+    let totalCOGS = 0;
+    (salesArr || []).forEach(inv => {
+        (inv.items || []).forEach(item => {
+            const p = products.find(pr => pr.id == item.productId);
+            const costPrice = (item.costPrice !== undefined && item.costPrice > 0)
+                ? item.costPrice
+                : (p ? p.buy : 0);
+            totalCOGS += costPrice * (item.qty || 0);
+        });
+    });
+    return totalCOGS;
+}
+
+function getReturnsCOGS(returnsArr) {
+    let total = 0;
+    (returnsArr || []).forEach(ret => {
+        if (ret.type !== 'sale') return;
+        (ret.items || []).forEach(item => {
+            const p = products.find(pr => pr.id == item.productId);
+            const costPrice = (item.costPrice !== undefined && item.costPrice > 0)
+                ? item.costPrice
+                : (p ? p.buy : 0);
+            total += costPrice * (item.qty || 0);
+        });
+    });
+    return total;
+}
+
 function renderMiniChart() {
     const container = $('miniChart'); if (!container) return;
     const days = [];
@@ -1212,10 +1364,41 @@ function renderMiniChart() {
     }).join('');
 }
 
+// حساب رصيد العميل (المديونية)
+function getCustomerBalance(customerName) {
+    if (!customerName || customerName === 'عميل نقدي') return 0;
+    const creditSales = sales.filter(s =>
+        s.customer === customerName && s.paymentMethod === 'credit'
+    ).reduce((sum, s) => sum + (s.total || 0), 0);
+    const creditReturns = returns.filter(r =>
+        r.type === 'sale' && r.party === customerName && r.paymentMethod === 'credit'
+    ).reduce((sum, r) => sum + (r.total || 0), 0);
+    const collected = payments.filter(p =>
+        p.type === 'collect' && p.party === customerName
+    ).reduce((sum, p) => sum + (p.amount || 0), 0);
+    return Math.max(0, creditSales - creditReturns - collected);
+}
+
+// حساب رصيد المورد (الالتزام)
+function getSupplierBalance(supplierName) {
+    if (!supplierName) return 0;
+    const creditPurchases = purchases.filter(p =>
+        p.supplierName === supplierName && p.payment === 'credit'
+    ).reduce((sum, p) => sum + (p.total || 0), 0);
+    const creditReturns = returns.filter(r =>
+        r.type === 'purchase' && r.party === supplierName && r.paymentMethod === 'credit'
+    ).reduce((sum, r) => sum + (r.total || 0), 0);
+    const paid = payments.filter(p =>
+        p.type === 'pay' && p.party === supplierName
+    ).reduce((sum, p) => sum + (p.amount || 0), 0);
+    return Math.max(0, creditPurchases - creditReturns - paid);
+}
+
 // ============================================================
 // العملاء
 // ============================================================
 function saveCustomer() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const id = $('customerId').value;
     const name = $('customerName').value.trim();
     const phone = $('customerPhone').value.trim();
@@ -1223,14 +1406,17 @@ function saveCustomer() {
     const address = $('customerAddress').value.trim();
     if (!name) { showToast('⚠️ أدخل اسم العميل', 'error'); return; }
     if (id) {
+        if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
         const idx = customers.findIndex(c => c.id == id);
         if (idx > -1) {
             customers[idx] = { ...customers[idx], name, phone, whatsapp, address };
+            addAuditLog('edit', 'customer', `تعديل عميل: ${name}`);
             showToast('✅ تم تعديل العميل', 'success');
         }
     } else {
         if (customers.find(c => c.name === name)) { showToast('⚠️ العميل موجود', 'warning'); return; }
         customers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() });
+        addAuditLog('add', 'customer', `إضافة عميل: ${name}`);
         showToast('✅ تم إضافة العميل', 'success');
     }
     setData('customers', customers);
@@ -1239,6 +1425,7 @@ function saveCustomer() {
 }
 
 function editCustomer(id) {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const c = customers.find(cu => cu.id == id); if (!c) return;
     $('customerId').value = c.id; $('customerName').value = c.name;
     $('customerPhone').value = c.phone || '';
@@ -1250,6 +1437,7 @@ function editCustomer(id) {
 }
 
 function deleteCustomer(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const c = customers.find(cu => cu.id == id); if (!c) return;
     const balance = getCustomerBalance(c.name);
     if (balance > 0) {
@@ -1259,6 +1447,7 @@ function deleteCustomer(id) {
     }
     customers = customers.filter(cu => cu.id != id);
     setData('customers', customers);
+    addAuditLog('delete', 'customer', `حذف عميل: ${c.name}`);
     renderCustomers(); populateSaleCustomers(); populateRetCustomers(); populateCollectCustomers();
     showToast('🗑️ تم حذف العميل', 'info');
 }
@@ -1284,26 +1473,30 @@ function renderCustomers() {
         c.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><span>${search ? 'لا توجد نتائج' : 'لا يوجد عملاء'}</span></div>`;
         return;
     }
-    let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1.2fr 1fr 1.5fr;"><span>الاسم</span><span>الهاتف</span><span>المديونية</span><span></span></div>`;
+    const showActions = canEdit() || canDelete() || canAdd();
+    let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.5fr' : '0'};"><span>الاسم</span><span>الهاتف</span><span>المديونية</span>${showActions ? '<span></span>' : ''}</div>`;
     filtered.forEach(cu => {
         const balance = getCustomerBalance(cu.name);
         const bcolor = balance > 0 ? '#E06060' : '#2D8F5E';
-        html += `<div class="table-row" style="grid-template-columns: 1.5fr 1.2fr 1fr 1.5fr;">
+        html += `<div class="table-row" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.5fr' : '0'};">
             <span><strong>${cu.name}</strong>${cu.whatsapp ? `<br><small style="color:#25D366;font-size:10px;">📱 ${cu.whatsapp}</small>` : ''}</span>
             <span style="font-size:11px;">${cu.phone || '-'}</span>
             <span style="color:${bcolor};font-weight:900;">${formatMoney(balance)}</span>
-            <div style="display:flex;gap:4px;">
-                ${balance > 0 ? `<button class="btn btn-success btn-sm" onclick="openCollectModal('${cu.name}')" title="تحصيل"><i class="fas fa-hand-holding-usd"></i></button>` : ''}
-                <button class="btn btn-info btn-sm" onclick="viewCustomerStatement('${cu.name}')" title="كشف حساب"><i class="fas fa-file-invoice-dollar"></i></button>
-                <button class="btn btn-warning btn-sm" onclick="editCustomer(${cu.id})" title="تعديل"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-danger btn-sm" onclick="deleteCustomer(${cu.id})" title="حذف"><i class="fas fa-trash"></i></button>
-            </div>
+            ${showActions ? `
+                <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                    ${balance > 0 && canAdd() ? `<button class="btn btn-success btn-sm" onclick="openCollectModal('${cu.name}')" title="تحصيل"><i class="fas fa-hand-holding-usd"></i></button>` : ''}
+                    <button class="btn btn-info btn-sm" onclick="viewCustomerStatement('${cu.name}')" title="كشف حساب"><i class="fas fa-file-invoice-dollar"></i></button>
+                    ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editCustomer(${cu.id})" title="تعديل"><i class="fas fa-edit"></i></button>` : ''}
+                    ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomer(${cu.id})" title="حذف"><i class="fas fa-trash"></i></button>` : ''}
+                </div>
+            ` : ''}
         </div>`;
     });
     c.innerHTML = html;
 }
 
 function openCollectModal(customerName) {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     navigateTo('payments');
     setTimeout(() => {
         switchPayTab('collect', document.querySelectorAll('.tab-btn')[0]);
@@ -1376,6 +1569,7 @@ function viewCustomerStatement(customerName) {
 // الموردين
 // ============================================================
 function saveSupplier() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const id = $('supplierId').value;
     const name = $('supplierName').value.trim();
     const phone = $('supplierPhone').value.trim();
@@ -1383,14 +1577,17 @@ function saveSupplier() {
     const address = $('supplierAddress').value.trim();
     if (!name) { showToast('⚠️ أدخل اسم المورد', 'error'); return; }
     if (id) {
+        if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
         const idx = suppliers.findIndex(s => s.id == id);
         if (idx > -1) {
             suppliers[idx] = { ...suppliers[idx], name, phone, whatsapp, address };
+            addAuditLog('edit', 'supplier', `تعديل مورد: ${name}`);
             showToast('✅ تم تعديل المورد', 'success');
         }
     } else {
         if (suppliers.find(s => s.name === name)) { showToast('⚠️ المورد موجود', 'warning'); return; }
         suppliers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() });
+        addAuditLog('add', 'supplier', `إضافة مورد: ${name}`);
         showToast('✅ تم إضافة المورد', 'success');
     }
     setData('suppliers', suppliers);
@@ -1399,6 +1596,7 @@ function saveSupplier() {
 }
 
 function editSupplier(id) {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const s = suppliers.find(su => su.id == id); if (!s) return;
     $('supplierId').value = s.id; $('supplierName').value = s.name;
     $('supplierPhone').value = s.phone || '';
@@ -1410,6 +1608,7 @@ function editSupplier(id) {
 }
 
 function deleteSupplier(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const s = suppliers.find(su => su.id == id); if (!s) return;
     const balance = getSupplierBalance(s.name);
     if (balance > 0) {
@@ -1419,6 +1618,7 @@ function deleteSupplier(id) {
     }
     suppliers = suppliers.filter(su => su.id != id);
     setData('suppliers', suppliers);
+    addAuditLog('delete', 'supplier', `حذف مورد: ${s.name}`);
     renderSuppliers(); populatePurSuppliers(); populateRetSuppliers(); populatePaySuppliers();
     showToast('🗑️ تم حذف المورد', 'info');
 }
@@ -1443,26 +1643,30 @@ function renderSuppliers() {
         c.innerHTML = `<div class="empty-state"><i class="fas fa-truck"></i><span>${search ? 'لا توجد نتائج' : 'لا يوجد موردين'}</span></div>`;
         return;
     }
-    let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1.2fr 1fr 1.5fr;"><span>الاسم</span><span>الهاتف</span><span>المديونية</span><span></span></div>`;
+    const showActions = canEdit() || canDelete() || canAdd();
+    let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.5fr' : '0'};"><span>الاسم</span><span>الهاتف</span><span>المديونية</span>${showActions ? '<span></span>' : ''}</div>`;
     filtered.forEach(s => {
         const balance = getSupplierBalance(s.name);
         const bcolor = balance > 0 ? '#E6A830' : '#2D8F5E';
-        html += `<div class="table-row" style="grid-template-columns: 1.5fr 1.2fr 1fr 1.5fr;">
+        html += `<div class="table-row" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.5fr' : '0'};">
             <span><strong>${s.name}</strong>${s.whatsapp ? `<br><small style="color:#25D366;font-size:10px;">📱 ${s.whatsapp}</small>` : ''}</span>
             <span style="font-size:11px;">${s.phone || '-'}</span>
             <span style="color:${bcolor};font-weight:900;">${formatMoney(balance)}</span>
-            <div style="display:flex;gap:4px;">
-                ${balance > 0 ? `<button class="btn btn-danger btn-sm" onclick="openPayModal('${s.name}')" title="سداد"><i class="fas fa-money-bill-wave"></i></button>` : ''}
-                <button class="btn btn-info btn-sm" onclick="viewSupplierStatement('${s.name}')" title="كشف حساب"><i class="fas fa-file-invoice"></i></button>
-                <button class="btn btn-warning btn-sm" onclick="editSupplier(${s.id})" title="تعديل"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})" title="حذف"><i class="fas fa-trash"></i></button>
-            </div>
+            ${showActions ? `
+                <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                    ${balance > 0 && canAdd() ? `<button class="btn btn-danger btn-sm" onclick="openPayModal('${s.name}')" title="سداد"><i class="fas fa-money-bill-wave"></i></button>` : ''}
+                    <button class="btn btn-info btn-sm" onclick="viewSupplierStatement('${s.name}')" title="كشف حساب"><i class="fas fa-file-invoice"></i></button>
+                    ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editSupplier(${s.id})" title="تعديل"><i class="fas fa-edit"></i></button>` : ''}
+                    ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})" title="حذف"><i class="fas fa-trash"></i></button>` : ''}
+                </div>
+            ` : ''}
         </div>`;
     });
     c.innerHTML = html;
 }
 
 function openPayModal(supplierName) {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     navigateTo('payments');
     setTimeout(() => {
         switchPayTab('pay', document.querySelectorAll('.tab-btn')[1]);
@@ -1587,6 +1791,7 @@ function updatePayInfo() {
 }
 
 function saveCollect() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const party = $('collectCustomer').value;
     const amount = parseFloat($('collectAmount').value) || 0;
     const date = $('collectDate').value || getTodayDate();
@@ -1605,7 +1810,8 @@ function saveCollect() {
     const pay = {
         id: Date.now(), type: 'collect', party, amount, date,
         time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }),
-        note, createdAt: now.toISOString()
+        note, createdAt: now.toISOString(),
+        createdBy: currentUser ? currentUser.name : 'unknown'
     };
     payments.push(pay);
 
@@ -1617,6 +1823,7 @@ function saveCollect() {
     });
 
     setData('payments', payments); setData('treasury', treasury);
+    addAuditLog('add', 'payment', `تحصيل من ${party} - ${formatMoney(amount)} ج.م`);
     $('collectAmount').value = ''; $('collectNote').value = '';
     $('collectCustomer').value = ''; $('collectInfoBox').style.display = 'none';
 
@@ -1627,6 +1834,7 @@ function saveCollect() {
 }
 
 function savePay() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const party = $('paySupplier').value;
     const amount = parseFloat($('payAmount').value) || 0;
     const date = $('payDate').value || getTodayDate();
@@ -1650,7 +1858,8 @@ function savePay() {
     const pay = {
         id: Date.now(), type: 'pay', party, amount, date,
         time: now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' }),
-        note, createdAt: now.toISOString()
+        note, createdAt: now.toISOString(),
+        createdBy: currentUser ? currentUser.name : 'unknown'
     };
     payments.push(pay);
 
@@ -1662,6 +1871,7 @@ function savePay() {
     });
 
     setData('payments', payments); setData('treasury', treasury);
+    addAuditLog('add', 'payment', `سداد لـ ${party} - ${formatMoney(amount)} ج.م`);
     $('payAmount').value = ''; $('payNote').value = '';
     $('paySupplier').value = ''; $('payInfoBox').style.display = 'none';
 
@@ -1697,7 +1907,7 @@ function renderPayments() {
             <span style="color:${color};font-weight:700;">${formatMoney(p.amount)}</span>
             <div style="display:flex;gap:4px;">
                 <button class="btn btn-info btn-sm" onclick="showReceiptById(${p.id})" title="إيصال"><i class="fas fa-receipt"></i></button>
-                <button class="btn btn-danger btn-sm" onclick="deletePayment(${p.id})" title="حذف"><i class="fas fa-trash"></i></button>
+                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deletePayment(${p.id})" title="حذف"><i class="fas fa-trash"></i></button>` : ''}
             </div>
         </div>`;
     });
@@ -1747,17 +1957,19 @@ function showReceipt(pay) {
 }
 
 function deletePayment(id) {
+    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const pay = payments.find(p => p.id === id); if (!pay) return;
     if (!confirm(`⚠️ حذف هذه العملية؟ سيتم عكس تأثيرها على الخزنة.`)) return;
     treasury = treasury.filter(t => !(t.refType === (pay.type === 'collect' ? 'collect' : 'pay') && t.refId === id));
     payments = payments.filter(p => p.id !== id);
     setData('payments', payments); setData('treasury', treasury);
+    addAuditLog('delete', 'payment', `حذف ${pay.type === 'collect' ? 'تحصيل' : 'سداد'} - ${pay.party}`);
     renderPayments(); renderTreasury(); renderCustomers(); renderSuppliers(); updateDashboard();
     showToast('🗑️ تم الحذف', 'info');
 }
 
 // ============================================================
-// التقارير (بحساب الربح الصحيح)
+// التقارير
 // ============================================================
 function switchReport(type, btn) {
     currentReport = type;
@@ -1936,6 +2148,7 @@ function renderLogoPreview() {
 }
 
 function uploadLogo(event) {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const file = event.target.files[0];
     if (!file) return;
     if (file.size > 500 * 1024) {
@@ -1950,6 +2163,7 @@ function uploadLogo(event) {
     reader.onload = function(e) {
         companyData.logo = e.target.result;
         setData('companyData', companyData);
+        addAuditLog('edit', 'company', 'رفع شعار الشركة');
         renderCompanyPage();
         showToast('✅ تم رفع الشعار بنجاح', 'success');
     };
@@ -1958,21 +2172,25 @@ function uploadLogo(event) {
 }
 
 function removeLogo() {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (!companyData.logo) { showToast('⚠️ لا يوجد شعار للحذف', 'warning'); return; }
     if (!confirm('⚠️ حذف الشعار؟')) return;
     companyData.logo = null;
     setData('companyData', companyData);
+    addAuditLog('edit', 'company', 'حذف شعار الشركة');
     renderCompanyPage();
     showToast('🗑️ تم حذف الشعار', 'info');
 }
 
 function saveCompanySettings() {
+    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     companyData.name = $('setCompanyName').value.trim();
     companyData.phone = $('setCompanyPhone').value.trim();
     companyData.address = $('setCompanyAddress').value.trim();
     companyData.tax = $('setCompanyTax').value.trim();
     companyData.footer = $('setCompanyFooter').value.trim();
     setData('companyData', companyData);
+    addAuditLog('edit', 'company', 'تعديل بيانات الشركة');
     renderCompanyPage();
     showToast('✅ تم حفظ بيانات الشركة', 'success');
 }
@@ -1983,36 +2201,267 @@ function updateHeaderCompanyName() {
 }
 
 // ============================================================
+// إدارة المستخدمين (للمدير فقط)
+// ============================================================
+function saveUser() {
+    if (!canManageUsers()) { showToast('⚠️ المدير فقط', 'error'); return; }
+    const id = $('userId').value;
+    const name = $('userName').value.trim();
+    const password = $('userPassword').value.trim();
+    const role = $('userRole').value;
+    
+    if (!name) { showToast('⚠️ أدخل اسم المستخدم', 'error'); return; }
+    if (!password || password.length < 4) { showToast('⚠️ كلمة المرور 4 أحرف على الأقل', 'error'); return; }
+    
+    if (id) {
+        // تعديل
+        const idx = users.findIndex(u => u.id == id);
+        if (idx > -1) {
+            // منع تغيير دور المدير الأخير
+            if (users[idx].role === 'admin' && role !== 'admin') {
+                const otherAdmins = users.filter(u => u.role === 'admin' && u.id != id);
+                if (otherAdmins.length === 0) {
+                    showToast('⚠️ لا يمكن تغيير دور المدير الأخير', 'error');
+                    return;
+                }
+            }
+            users[idx] = { ...users[idx], name, password, role };
+            addAuditLog('edit', 'user', `تعديل مستخدم: ${name} (${ROLES[role]?.name || role})`);
+            showToast('✅ تم تعديل المستخدم', 'success');
+        }
+    } else {
+        // إضافة
+        if (users.find(u => u.name === name)) { showToast('⚠️ اسم المستخدم موجود', 'warning'); return; }
+        users.push({
+            id: Date.now(),
+            name, password, role,
+            active: true,
+            createdAt: new Date().toISOString(),
+            createdBy: currentUser ? currentUser.name : 'unknown'
+        });
+        addAuditLog('add', 'user', `إضافة مستخدم: ${name} (${ROLES[role]?.name || role})`);
+        showToast('✅ تم إضافة المستخدم', 'success');
+    }
+    
+    setData('users', users);
+    resetUserForm();
+    renderUsers();
+    populateLoginUsers();
+    renderSettings();
+}
+
+function editUser(id) {
+    if (!canManageUsers()) { showToast('⚠️ المدير فقط', 'error'); return; }
+    const u = users.find(us => us.id == id); if (!u) return;
+    $('userId').value = u.id;
+    $('userName').value = u.name;
+    $('userPassword').value = u.password;
+    $('userRole').value = u.role;
+    $('userFormTitle').textContent = '✏️ تعديل المستخدم';
+    $('userSaveBtnText').textContent = 'حفظ التعديل';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleUserActive(id) {
+    if (!canManageUsers()) { showToast('⚠️ المدير فقط', 'error'); return; }
+    const u = users.find(us => us.id == id); if (!u) return;
+    if (u.id === (currentUser ? currentUser.id : null)) {
+        showToast('⚠️ لا يمكنك تعطيل حسابك', 'error');
+        return;
+    }
+    u.active = !u.active;
+    setData('users', users);
+    addAuditLog('edit', 'user', `${u.active ? 'تفعيل' : 'تعطيل'} المستخدم: ${u.name}`);
+    renderUsers();
+    populateLoginUsers();
+    showToast(u.active ? `✅ تم تفعيل ${u.name}` : `⏸️ تم تعطيل ${u.name}`, 'info');
+}
+
+function deleteUser(id) {
+    if (!canManageUsers()) { showToast('⚠️ المدير فقط', 'error'); return; }
+    const u = users.find(us => us.id == id); if (!u) return;
+    
+    if (u.id === (currentUser ? currentUser.id : null)) {
+        showToast('⚠️ لا يمكنك حذف حسابك', 'error');
+        return;
+    }
+    
+    // منع حذف آخر مدير
+    if (u.role === 'admin') {
+        const otherAdmins = users.filter(us => us.role === 'admin' && us.id != id);
+        if (otherAdmins.length === 0) {
+            showToast('⚠️ لا يمكن حذف المدير الأخير', 'error');
+            return;
+        }
+    }
+    
+    if (!confirm(`⚠️ حذف المستخدم "${u.name}"؟`)) return;
+    users = users.filter(us => us.id !== id);
+    setData('users', users);
+    addAuditLog('delete', 'user', `حذف مستخدم: ${u.name}`);
+    renderUsers();
+    populateLoginUsers();
+    renderSettings();
+    showToast('🗑️ تم حذف المستخدم', 'info');
+}
+
+function resetUserForm() {
+    $('userId').value = '';
+    $('userName').value = '';
+    $('userPassword').value = '';
+    $('userRole').value = 'cashier';
+    $('userFormTitle').textContent = '➕ إضافة مستخدم جديد';
+    $('userSaveBtnText').textContent = 'إضافة';
+}
+
+function renderUsers() {
+    const c = $('userList'); if (!c) return;
+    if (!canManageUsers()) {
+        c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>المدير فقط يمكنه إدارة المستخدمين</span></div>`;
+        return;
+    }
+    const search = ($('userSearch')?.value || '').trim().toLowerCase();
+    let filtered = users;
+    if (search) filtered = users.filter(u => u.name.toLowerCase().includes(search));
+    
+    if (filtered.length === 0) {
+        c.innerHTML = `<div class="empty-state"><i class="fas fa-users-cog"></i><span>لا يوجد مستخدمين</span></div>`;
+        return;
+    }
+    
+    let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1fr 0.8fr 1.3fr;"><span>الاسم</span><span>الدور</span><span>الحالة</span><span></span></div>`;
+    filtered.forEach(u => {
+        const roleInfo = ROLES[u.role] || { name: u.role, icon: '❓', color: '#5D5D5D' };
+        const isMe = u.id === (currentUser ? currentUser.id : null);
+        const isActive = u.active !== false;
+        
+        html += `<div class="table-row" style="grid-template-columns: 1.5fr 1fr 0.8fr 1.3fr;">
+            <span><strong>${u.name}</strong>${isMe ? ' <small style="color:#C9A94E;">(أنت)</small>' : ''}</span>
+            <span><span class="role-badge ${u.role}">${roleInfo.icon} ${roleInfo.name}</span></span>
+            <span style="color:${isActive ? '#2D8F5E' : '#E06060'};font-size:11px;font-weight:700;">
+                ${isActive ? '✅ نشط' : '⏸️ موقوف'}
+            </span>
+            <div style="display:flex;gap:4px;">
+                <button class="btn btn-warning btn-sm" onclick="editUser(${u.id})" title="تعديل"><i class="fas fa-edit"></i></button>
+                ${!isMe ? `
+                    <button class="btn btn-info btn-sm" onclick="toggleUserActive(${u.id})" title="${isActive ? 'تعطيل' : 'تفعيل'}">
+                        <i class="fas ${isActive ? 'fa-pause' : 'fa-play'}"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})" title="حذف"><i class="fas fa-trash"></i></button>
+                ` : ''}
+            </div>
+        </div>`;
+    });
+    c.innerHTML = html;
+}
+
+// ============================================================
+// سجل النشاطات
+// ============================================================
+function renderAudit() {
+    const c = $('auditList'); if (!c) return;
+    if (!canViewAudit()) {
+        c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>ليس لديك صلاحية لعرض السجل</span></div>`;
+        return;
+    }
+    const search = ($('auditSearch')?.value || '').trim().toLowerCase();
+    let filtered = auditLog;
+    if (search) {
+        filtered = auditLog.filter(l =>
+            (l.details || '').toLowerCase().includes(search) ||
+            (l.userName || '').toLowerCase().includes(search)
+        );
+    }
+    
+    if (filtered.length === 0) {
+        c.innerHTML = `<div class="empty-state"><i class="fas fa-history"></i><span>${search ? 'لا توجد نتائج' : 'لا توجد نشاطات'}</span></div>`;
+        return;
+    }
+    
+    const actionIcons = {
+        'add': { icon: 'fa-plus-circle', color: '#2D8F5E' },
+        'edit': { icon: 'fa-edit', color: '#E6A830' },
+        'delete': { icon: 'fa-trash-alt', color: '#E06060' },
+        'login': { icon: 'fa-sign-in-alt', color: '#4A8AB5' }
+    };
+    
+    const actionNames = {
+        'add': 'إضافة',
+        'edit': 'تعديل',
+        'delete': 'حذف',
+        'login': 'دخول/خروج'
+    };
+    
+    let html = `<div style="text-align:center;margin-bottom:10px;font-size:12px;color:#A89070;">
+        📊 إجمالي النشاطات: <strong style="color:#C9A94E;">${auditLog.length}</strong>
+    </div>`;
+    
+    filtered.slice(0, 100).forEach(log => {
+        const info = actionIcons[log.action] || { icon: 'fa-circle', color: '#A89070' };
+        const actionName = actionNames[log.action] || log.action;
+        
+        html += `<div class="audit-item ${log.action}">
+            <div class="audit-icon" style="background:${info.color}20; color:${info.color};">
+                <i class="fas ${info.icon}"></i>
+            </div>
+            <div class="audit-content">
+                <div class="audit-title" style="color:${info.color};">${actionName}</div>
+                <div class="audit-details">${log.details || '-'}</div>
+                <div class="audit-meta">
+                    <span><i class="fas fa-user"></i> ${log.userName || '-'}</span>
+                    <span><i class="fas fa-clock"></i> ${log.date} ${log.time || ''}</span>
+                </div>
+            </div>
+        </div>`;
+    });
+    
+    c.innerHTML = html;
+}
+
+// ============================================================
 // الإعدادات
 // ============================================================
 function renderSettings() {
     if ($('setProductsCount')) $('setProductsCount').textContent = products.length;
     if ($('setSalesCount')) $('setSalesCount').textContent = sales.length;
+    if ($('setUsersCount')) $('setUsersCount').textContent = users.length;
     let size = 0;
     for (let k in localStorage) {
         if (k.startsWith(STORAGE_KEY)) size += (localStorage[k] || '').length;
     }
     if ($('setDataSize')) $('setDataSize').textContent = (size / 1024).toFixed(1) + ' KB';
+    if ($('currentUserForPassword')) $('currentUserForPassword').textContent = currentUser ? currentUser.name : '-';
 }
 
 function changePassword() {
+    if (!currentUser) { showToast('⚠️ غير مسجل دخول', 'error'); return; }
     const oldP = $('oldPassword').value;
     const newP = $('newPassword').value;
     const conP = $('confirmPassword').value;
-    if (oldP !== currentPassword) { showToast('❌ كلمة المرور الحالية خاطئة', 'error'); return; }
+    
+    if (oldP !== currentUser.password) { showToast('❌ كلمة المرور الحالية خاطئة', 'error'); return; }
     if (newP.length < 4) { showToast('❌ 4 أحرف على الأقل', 'error'); return; }
     if (newP !== conP) { showToast('❌ كلمتا المرور غير متطابقتين', 'error'); return; }
-    currentPassword = newP;
-    localStorage.setItem('app_password', newP);
+    
+    const idx = users.findIndex(u => u.id === currentUser.id);
+    if (idx > -1) {
+        users[idx].password = newP;
+        currentUser.password = newP;
+        setData('users', users);
+        localStorage.setItem(STORAGE_KEY + 'current_user', JSON.stringify({ id: currentUser.id, name: currentUser.name, role: currentUser.role }));
+        addAuditLog('edit', 'user', `تغيير كلمة المرور: ${currentUser.name}`);
+    }
+    
     $('oldPassword').value = ''; $('newPassword').value = ''; $('confirmPassword').value = '';
     showToast('✅ تم تغيير كلمة المرور', 'success');
 }
 
 function exportData() {
+    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const data = {
-        version: '9.0.0', exportDate: new Date().toISOString(),
+        version: '10.0.0', exportDate: new Date().toISOString(),
         products, sales, purchases, returns, expenses,
-        customers, suppliers, treasury, payments, companyData
+        customers, suppliers, treasury, payments, users, auditLog, companyData
     };
     const json = JSON.stringify(data, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -2023,10 +2472,12 @@ function exportData() {
     a.download = `mizan_backup_${date}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    addAuditLog('edit', 'backup', 'تصدير نسخة احتياطية');
     showToast('✅ تم تصدير البيانات', 'success');
 }
 
 function importData(event) {
+    if (!isAdmin()) { showToast('⚠️ المدير فقط', 'error'); return; }
     const file = event.target.files[0];
     if (!file) return;
     if (!confirm('⚠️ سيتم استبدال جميع البيانات الحالية. متابعة؟')) {
@@ -2046,12 +2497,15 @@ function importData(event) {
             if (data.treasury) treasury = data.treasury;
             if (data.payments) payments = data.payments;
             if (data.companyData) companyData = data.companyData;
+            if (data.users) users = data.users;
+            if (data.auditLog) auditLog = data.auditLog;
             saveAll();
             populateAllDropdowns();
+            populateLoginUsers();
             renderProducts(); renderCashier(); renderPurchases();
             renderReturns(); renderExpenses(); renderInvoices();
             renderTreasury(); renderCustomers(); renderSuppliers();
-            renderPayments();
+            renderPayments(); renderUsers(); renderAudit();
             updateDashboard(); renderSettings();
             showToast('✅ تم استيراد البيانات بنجاح', 'success');
         } catch (err) {
@@ -2063,24 +2517,44 @@ function importData(event) {
 }
 
 function clearAllData() {
+    if (!canClearData()) { showToast('⚠️ المدير فقط', 'error'); return; }
     if (!confirm('⚠️ هل أنت متأكد من مسح جميع البيانات؟')) return;
     if (!confirm('✅ تأكيد نهائي؟ لا يمكن التراجع!')) return;
+    
     const keys = ['products', 'sales', 'purchases', 'returns', 'expenses',
         'customers', 'suppliers', 'treasury', 'payments', 'companyData'];
     keys.forEach(k => localStorage.removeItem(STORAGE_KEY + k));
     localStorage.removeItem('mizan_seeded');
+    
     products = []; sales = []; purchases = []; returns = []; expenses = [];
     customers = []; suppliers = []; treasury = []; payments = []; companyData = {};
+    
+    // لا نمسح المستخدمين ولا السجل (الا لو المستخدم عايز)
+    if (confirm('⚠️ هل تريد أيضاً مسح المستخدمين وسجل النشاطات؟')) {
+        users = []; auditLog = [];
+        localStorage.removeItem(STORAGE_KEY + 'users');
+        localStorage.removeItem(STORAGE_KEY + 'auditLog');
+    }
+    
+    addAuditLog('delete', 'backup', 'مسح جميع البيانات');
+    saveAll();
     showToast('🗑️ تم مسح جميع البيانات', 'warning');
-    setTimeout(() => location.reload(), 1000);
+    setTimeout(() => location.reload(), 1500);
 }
 
 function saveAll() {
-    setData('products', products); setData('sales', sales);
-    setData('purchases', purchases); setData('returns', returns);
-    setData('expenses', expenses); setData('customers', customers);
-    setData('suppliers', suppliers); setData('treasury', treasury);
-    setData('payments', payments); setData('companyData', companyData);
+    setData('products', products);
+    setData('sales', sales);
+    setData('purchases', purchases);
+    setData('returns', returns);
+    setData('expenses', expenses);
+    setData('customers', customers);
+    setData('suppliers', suppliers);
+    setData('treasury', treasury);
+    setData('payments', payments);
+    setData('users', users);
+    setData('auditLog', auditLog);
+    setData('companyData', companyData);
 }
 
 // ============================================================
@@ -2124,10 +2598,11 @@ function populateAllDropdowns() {
 // Init
 // ============================================================
 function init() {
-    console.log('🚀 الميزان 9.0.0 - حساب الربح الصحيح');
+    console.log('🚀 الميزان 10.0.0 - المستخدمين والصلاحيات');
 
     initFirebase();
 
+    // تحميل البيانات
     const rawProducts = getData('products', []);
     sales = getData('sales', []);
     purchases = getData('purchases', []);
@@ -2138,6 +2613,19 @@ function init() {
     treasury = getData('treasury', []);
     payments = getData('payments', []);
     companyData = getData('companyData', {});
+    auditLog = getData('auditLog', []);
+    
+    // تحميل المستخدمين (مع إنشاء الافتراضي لو مش موجود)
+    users = getData('users', []);
+    if (users.length === 0) {
+        users = [
+            { id: 1, name: 'المدير', password: '123456', role: 'admin', active: true, createdAt: new Date().toISOString() },
+            { id: 2, name: 'مشرف', password: '123456', role: 'manager', active: true, createdAt: new Date().toISOString() },
+            { id: 3, name: 'كاشير', password: '123456', role: 'cashier', active: true, createdAt: new Date().toISOString() },
+            { id: 4, name: 'مشاهد', password: '123456', role: 'viewer', active: true, createdAt: new Date().toISOString() }
+        ];
+        setData('users', users);
+    }
 
     products = migrateOldProducts(rawProducts);
     const allZero = products.length > 0 && products.every(p => p.qty === 0);
@@ -2155,24 +2643,27 @@ function init() {
         setData('products', products);
     }
 
-    if (localStorage.getItem('app_unlocked') === 'true') {
-        $('loginContainer').classList.add('hidden');
-        $('appContent').style.display = 'block';
-    }
+    // تعبئة قائمة المستخدمين في شاشة الدخول
+    populateLoginUsers();
 
+    // التواريخ الافتراضية
     if ($('expDate')) $('expDate').value = getTodayDate();
     if ($('collectDate')) $('collectDate').value = getTodayDate();
     if ($('payDate')) $('payDate').value = getTodayDate();
 
-    updateClock(); updateHeaderCompanyName(); populateAllDropdowns();
+    updateClock();
+    updateHeaderCompanyName();
+    populateAllDropdowns();
     renderProducts(); renderCashier(); renderPurchases();
     renderReturns(); renderExpenses(); renderInvoices();
     renderTreasury(); renderCustomers(); renderSuppliers();
-    renderPayments();
+    renderPayments(); renderUsers(); renderAudit();
     updateDashboard();
+    renderSettings();
 
-    navigateTo('dashboard');
     console.log('✅ الميزان جاهز');
+    console.log('👥 المستخدمين:', users.map(u => `${u.name} (${u.role})`).join(', '));
+    console.log('🔒 كلمة المرور الافتراضية: 123456');
 }
 
 document.addEventListener('DOMContentLoaded', init);
@@ -2250,6 +2741,12 @@ window.switchReport = switchReport;
 window.saveCompanySettings = saveCompanySettings;
 window.uploadLogo = uploadLogo;
 window.removeLogo = removeLogo;
+
+window.saveUser = saveUser;
+window.editUser = editUser;
+window.deleteUser = deleteUser;
+window.toggleUserActive = toggleUserActive;
+window.resetUserForm = resetUserForm;
 
 window.changePassword = changePassword;
 window.exportData = exportData;
