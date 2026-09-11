@@ -1,4 +1,3 @@
-cd path/to/mizan
-git add index.html style.css app.js
-git commit -m "المرحلة 10: المستخدمين والصلاحيات"
+git add app.js
+git commit -m "Fix: clean undefined values before Firebase upload"
 git push
