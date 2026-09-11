@@ -1,3 +1,3 @@
-git add app.js
-git commit -m "Fix: clean undefined values before Firebase upload"
+git add .
+git commit -m "Split app.js into 3 parts"
 git push
