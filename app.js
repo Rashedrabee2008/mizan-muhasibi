@@ -257,26 +257,47 @@ function syncToCloud() {
     const ref = getFirebaseRef();
     if (!ref) { showToast('⚠️ Firebase غير متصل', 'error'); return; }
     
-    // ✅ دالة تنظيف القيم الفارغة (مهمة لـ Firebase)
-    function cleanUndefined(obj) {
+    // ✅ دالة تنظيف شاملة للقيم undefined (مهمة جداً لـ Firebase)
+    function cleanForFirebase(obj) {
         if (obj === null || obj === undefined) return null;
-        if (Array.isArray(obj)) return obj.map(cleanUndefined);
+        if (Array.isArray(obj)) return obj.map(cleanForFirebase);
         if (typeof obj === 'object') {
             const cleaned = {};
             for (const key in obj) {
-                const val = cleanUndefined(obj[key]);
-                cleaned[key] = (val === undefined) ? null : val;
+                if (!obj.hasOwnProperty(key)) continue;
+                const val = obj[key];
+                if (val === undefined || val === null) {
+                    cleaned[key] = null;
+                } else if (typeof val === 'number' && !isFinite(val)) {
+                    cleaned[key] = 0;
+                } else if (typeof val === 'object') {
+                    cleaned[key] = cleanForFirebase(val);
+                } else {
+                    cleaned[key] = val;
+                }
             }
             return cleaned;
         }
         return obj;
     }
     
-    const data = cleanUndefined({
-        products, sales, purchases, returns, expenses,
-        customers, suppliers, treasury, payments, companyData,
-        users, auditLog, vatSettings, accounts, journalEntries,
-        inventoryMovements,
+    const data = cleanForFirebase({
+        products: products || [],
+        sales: sales || [],
+        purchases: purchases || [],
+        returns: returns || [],
+        expenses: expenses || [],
+        customers: customers || [],
+        suppliers: suppliers || [],
+        treasury: treasury || [],
+        payments: payments || [],
+        companyData: companyData || {},
+        users: users || [],
+        auditLog: auditLog || [],
+        vatSettings: vatSettings || { defaultVAT: 14 },
+        accounts: accounts || [],
+        journalEntries: journalEntries || [],
+        inventoryMovements: inventoryMovements || [],
         lastSync: new Date().toISOString(),
         version: '13.0.0'
     });
@@ -291,7 +312,6 @@ function syncToCloud() {
         })
         .catch((err) => { showToast('❌ فشل الرفع: ' + err.message, 'error'); });
 }
-
 function syncFromCloud() {
     const ref = getFirebaseRef();
     if (!ref) { showToast('⚠️ Firebase غير متصل', 'error'); return; }
