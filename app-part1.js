@@ -1,6 +1,7 @@
 // ============================================================
-// الميزان 13.0.0 - الجزء 1: الأساسيات
-// المتغيرات + الأدوات + Firebase + المستخدمين + الحسابات
+// الميزان 14.0.0 - الجزء 1: الأساسيات
+// app-part1.js
+// المتغيرات + الأدوات + Firebase + المستخدمين + الحسابات + المخازن
 // ============================================================
 
 const STORAGE_KEY = 'mizan_';
@@ -37,6 +38,11 @@ window.accounts = [];
 window.journalEntries = [];
 window.inventoryMovements = [];
 
+// ✅ متغيرات المخازن الجديدة
+window.warehouses = [];
+window.warehouseMovements = [];
+window.productWarehouseStock = {};
+
 window.currentUser = null;
 window.currentSaleItems = [];
 window.currentPurItems = [];
@@ -48,6 +54,7 @@ window.currentAuditFilter = 'all';
 window.currentInvoiceFilter = 'all';
 window.currentTreasuryFilter = 'all';
 window.currentMovementFilter = 'all';
+window.currentWarehouseTab = 'list';
 window.vatSettings = { defaultVAT: 14 };
 
 // ============================================================
@@ -295,7 +302,9 @@ window.syncToCloud = function() {
         companyData: companyData || {}, users: users || [], auditLog: auditLog || [],
         vatSettings: vatSettings || { defaultVAT: 14 }, accounts: accounts || [],
         journalEntries: journalEntries || [], inventoryMovements: inventoryMovements || [],
-        lastSync: new Date().toISOString(), version: '13.0.0'
+        warehouses: warehouses || [], warehouseMovements: warehouseMovements || [],
+        productWarehouseStock: productWarehouseStock || {},
+        lastSync: new Date().toISOString(), version: '14.0.0'
     });
     
     updateSyncStatus('⏳ جاري الرفع...', 'info');
@@ -335,6 +344,9 @@ window.syncFromCloud = function() {
             if (data.accounts) window.accounts = data.accounts;
             if (data.journalEntries) window.journalEntries = data.journalEntries;
             if (data.inventoryMovements) window.inventoryMovements = data.inventoryMovements;
+            if (data.warehouses) window.warehouses = data.warehouses;
+            if (data.warehouseMovements) window.warehouseMovements = data.warehouseMovements;
+            if (data.productWarehouseStock) window.productWarehouseStock = data.productWarehouseStock;
             saveAll();
             populateAllDropdowns();
             refreshAllViews();
@@ -458,6 +470,14 @@ window.navigateTo = function(page) {
     if (page === 'reports') renderReport(currentReport);
     if (page === 'accounts') { renderAccounts(); renderJournal(); populateAccountDropdowns(); }
     if (page === 'inventory-movements') renderInventoryMovements();
+    if (page === 'warehouses') {
+        if (typeof renderWarehouses === 'function') renderWarehouses();
+        if (typeof populateWarehouseDropdowns === 'function') populateWarehouseDropdowns();
+        if (typeof populateWarehouseProducts === 'function') populateWarehouseProducts();
+        if (typeof populateWarehouseStockFilter === 'function') populateWarehouseStockFilter();
+        if (typeof renderWarehouseStock === 'function') renderWarehouseStock();
+        if (typeof renderWarehouseMovements === 'function') renderWarehouseMovements();
+    }
     if (page === 'company') renderCompanyPage();
     if (page === 'users') renderUsers();
     if (page === 'audit') renderAudit();
@@ -493,4 +513,75 @@ window.closeModal = function() {
     if (overlay) overlay.classList.remove('show');
 };
 
-console.log('✅ تم تحميل app-part1.js - الأساسيات');
+// ============================================================
+// Populate All Dropdowns
+// ============================================================
+window.populateAllDropdowns = function() {
+    if (typeof populateSaleProducts === 'function') populateSaleProducts();
+    if (typeof populateSaleCustomers === 'function') populateSaleCustomers();
+    if (typeof populatePurSuppliers === 'function') populatePurSuppliers();
+    if (typeof populatePurProducts === 'function') populatePurProducts();
+    if (typeof populateRetProducts === 'function') populateRetProducts();
+    if (typeof toggleReturnCustomer === 'function') toggleReturnCustomer();
+    if (typeof populateCollectCustomers === 'function') populateCollectCustomers();
+    if (typeof populatePaySuppliers === 'function') populatePaySuppliers();
+    if (typeof populateSettleCustomers === 'function') populateSettleCustomers();
+    if (typeof populateSettleProducts === 'function') populateSettleProducts();
+    if (typeof populateAccountDropdowns === 'function') populateAccountDropdowns();
+    if (typeof populateWarehouseDropdowns === 'function') populateWarehouseDropdowns();
+    if (typeof populateWarehouseProducts === 'function') populateWarehouseProducts();
+    if (typeof populateWarehouseStockFilter === 'function') populateWarehouseStockFilter();
+};
+
+// ============================================================
+// Refresh All Views
+// ============================================================
+window.refreshAllViews = function() {
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderCashier === 'function') renderCashier();
+    if (typeof renderPurchases === 'function') renderPurchases();
+    if (typeof renderReturns === 'function') renderReturns();
+    if (typeof renderExpenses === 'function') renderExpenses();
+    if (typeof renderInvoices === 'function') renderInvoices();
+    if (typeof renderTreasury === 'function') renderTreasury();
+    if (typeof renderCustomers === 'function') renderCustomers();
+    if (typeof renderSuppliers === 'function') renderSuppliers();
+    if (typeof renderPayments === 'function') renderPayments();
+    if (typeof renderUsers === 'function') renderUsers();
+    if (typeof renderAudit === 'function') renderAudit();
+    if (typeof renderAccounts === 'function') renderAccounts();
+    if (typeof renderJournal === 'function') renderJournal();
+    if (typeof renderInventoryMovements === 'function') renderInventoryMovements();
+    if (typeof renderWarehouses === 'function') renderWarehouses();
+    if (typeof renderWarehouseStock === 'function') renderWarehouseStock();
+    if (typeof renderWarehouseMovements === 'function') renderWarehouseMovements();
+    if (typeof updateDashboard === 'function') updateDashboard();
+    if (typeof renderSettings === 'function') renderSettings();
+};
+
+// ============================================================
+// Save All (يستخدم من الملفات التانية)
+// ============================================================
+window.saveAll = function() {
+    setData('products', products);
+    setData('sales', sales);
+    setData('purchases', purchases);
+    setData('returns', returns);
+    setData('expenses', expenses);
+    setData('customers', customers);
+    setData('suppliers', suppliers);
+    setData('treasury', treasury);
+    setData('payments', payments);
+    setData('users', users);
+    setData('auditLog', auditLog);
+    setData('companyData', companyData);
+    setData('vatSettings', vatSettings);
+    setData('accounts', accounts);
+    setData('journalEntries', journalEntries);
+    setData('inventoryMovements', inventoryMovements);
+    setData('warehouses', warehouses);
+    setData('warehouseMovements', warehouseMovements);
+    setData('productWarehouseStock', productWarehouseStock);
+};
+
+console.log('✅ تم تحميل app-part1.js - الأساسيات (v14.0.0)');
