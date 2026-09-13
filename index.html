@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#0D0D0D" />
     <title>الميزان - نظام محاسبة ونقاط بيع</title>
-    
-<link rel="stylesheet" href="style.css" />
-<link rel="stylesheet" href="app-cashier-new.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
-    
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+</head>
 <body>
 
     <!-- ============ شاشة الدخول ============ -->
@@ -75,7 +73,7 @@
                 </div>
                 <div class="dashboard-stats">
                     <div class="dashboard-card"><div class="number" id="dashProfit">0.00</div><div class="label">📈 صافي الربح</div></div>
-                    <div class="dashboard-card"><div class="number" id="dashTreasury">0.00</div><div class="label">🏦 رصيد الخزنة</div></div>
+                    <div class="dashboard-card"><div class="number" id="dashTreasury">0.00</div><div class="label">🏦 إجمالي الخزائن</div></div>
                     <div class="dashboard-card"><div class="number" id="dashProducts">0</div><div class="label">📦 عدد المنتجات</div></div>
                     <div class="dashboard-card"><div class="number" id="dashInventory">0</div><div class="label">📊 إجمالي الكميات</div></div>
                 </div>
@@ -139,12 +137,11 @@
             </div>
         </div>
 
-        <!-- ============ الكاشير (تصميم جديد) ============ -->
+        <!-- ============ الكاشير ============ -->
         <div id="page-cashier" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-cash-register"></i> الكاشير</h2>
                 
-                <!-- رأس الفاتورة -->
                 <div class="invoice-header-card">
                     <div class="invoice-header-top">
                         <div class="invoice-title">
@@ -154,16 +151,13 @@
                         </div>
                         <div class="invoice-actions">
                             <button class="btn-icon btn-save" onclick="saveSale()" title="حفظ">
-                                <i class="fas fa-save"></i>
-                                <span>حفظ</span>
+                                <i class="fas fa-save"></i><span>حفظ</span>
                             </button>
                             <button class="btn-icon btn-print" onclick="printCurrentInvoice()" title="طباعة">
-                                <i class="fas fa-print"></i>
-                                <span>طباعة</span>
+                                <i class="fas fa-print"></i><span>طباعة</span>
                             </button>
                             <button class="btn-icon btn-cancel" onclick="clearSale()" title="إلغاء">
-                                <i class="fas fa-times"></i>
-                                <span>إلغاء</span>
+                                <i class="fas fa-times"></i><span>إلغاء</span>
                             </button>
                         </div>
                     </div>
@@ -227,10 +221,18 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="info-row">
+                            <div class="info-field wide" id="saleCashBoxField">
+                                <label>💰 الخزنة</label>
+                                <select id="saleCashBox" class="inv-select">
+                                    <option value="">اختر الخزنة...</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <!-- إضافة صنف -->
                 <div class="add-item-section">
                     <div class="add-item-header">
                         <i class="fas fa-plus-circle"></i>
@@ -258,14 +260,12 @@
                     </div>
                 </div>
                 
-                <!-- جدول الأصناف -->
                 <div class="items-table-container">
                     <div class="items-table-header">
                         <i class="fas fa-list"></i>
                         <span>أصناف الفاتورة</span>
                         <span class="items-count-badge" id="itemsCountBadge">0</span>
                     </div>
-                    
                     <div id="saleItemsContainer">
                         <div class="empty-items">
                             <i class="fas fa-shopping-cart"></i>
@@ -275,7 +275,6 @@
                     </div>
                 </div>
                 
-                <!-- الإجماليات -->
                 <div class="totals-box" id="saleTotalBox" style="display:none;">
                     <div class="totals-grid">
                         <div class="total-stat">
@@ -295,7 +294,6 @@
                             <span class="total-value" id="saleVAT">0.00</span>
                         </div>
                     </div>
-                    
                     <div class="grand-total-box">
                         <div class="grand-label">الإجمالي النهائي</div>
                         <div class="grand-value" id="saleTotal">0.00 ج.م</div>
@@ -318,24 +316,30 @@
                     <h3>🛒 فاتورة شراء جديدة</h3>
                     <div class="form-row">
                         <div class="form-group"><label>المورد</label><select id="purSupplier"><option value="">اختر...</option></select></div>
-                        <div class="form-group"><label>الدفع</label>
-                            <select id="purPayment"><option value="cash">💵 نقدي</option><option value="credit">📝 آجل</option></select>
-                        </div>
+                        <div class="form-group"><label>🏪 المخزن</label><select id="purWarehouse"><option value="">اختر...</option></select></div>
                     </div>
                     <div class="form-row">
-                        <div class="form-group"><label>🏪 المخزن</label><select id="purWarehouse"><option value="">اختر...</option></select></div>
-                        <div class="form-group">
-                            <label>نوع الفاتورة</label>
-                            <div class="payment-methods">
-                                <label class="payment-option">
-                                    <input type="radio" name="purInvoiceType" value="simple" checked onchange="updatePurTotals()" />
-                                    <span>📋 عادية</span>
-                                </label>
-                                <label class="payment-option">
-                                    <input type="radio" name="purInvoiceType" value="tax" onchange="updatePurTotals()" />
-                                    <span>🧾 ضريبية</span>
-                                </label>
-                            </div>
+                        <div class="form-group"><label>الدفع</label>
+                            <select id="purPayment">
+                                <option value="cash">💵 نقدي</option>
+                                <option value="credit">📝 آجل</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>💰 الخزنة</label>
+                            <select id="purCashBox"><option value="">اختر الخزنة...</option></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>نوع الفاتورة</label>
+                        <div class="payment-methods">
+                            <label class="payment-option">
+                                <input type="radio" name="purInvoiceType" value="simple" checked onchange="updatePurTotals()" />
+                                <span>📋 عادية</span>
+                            </label>
+                            <label class="payment-option">
+                                <input type="radio" name="purInvoiceType" value="tax" onchange="updatePurTotals()" />
+                                <span>🧾 ضريبية</span>
+                            </label>
                         </div>
                     </div>
                     <div class="divider">— إضافة أصناف —</div>
@@ -413,6 +417,10 @@
                             <select id="retWarehouse"><option value="">اختر...</option></select>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label>💰 الخزنة</label>
+                        <select id="retCashBox"><option value="">اختر الخزنة...</option></select>
+                    </div>
                     <div class="divider">— إضافة أصناف —</div>
                     <div class="form-row">
                         <div class="form-group"><label>المنتج</label><select id="retProduct" onchange="updateRetPrice()"><option value="">اختر...</option></select></div>
@@ -474,6 +482,10 @@
                         </div>
                         <div class="form-group"><label>التاريخ</label><input type="date" id="expDate" /></div>
                     </div>
+                    <div class="form-group">
+                        <label>💰 الخزنة</label>
+                        <select id="expenseCashBox"><option value="">اختر الخزنة...</option></select>
+                    </div>
                     <button class="btn btn-primary btn-block" onclick="saveExpense()"><i class="fas fa-save"></i> إضافة</button>
                 </div>
                 <h2 style="margin-top:20px;"><i class="fas fa-list"></i> السجل</h2>
@@ -502,12 +514,106 @@
             </div>
         </div>
 
-        <!-- ============ الخزنة ============ -->
+        <!-- ============ الخزائن (جديد) ============ -->
+        <div id="page-cash-boxes" class="page-container">
+            <div class="page-content">
+                <h2><i class="fas fa-money-bill-wave"></i> الخزائن</h2>
+                
+                <div class="form-card">
+                    <h3 id="cashBoxFormTitle">➕ إضافة خزنة جديدة</h3>
+                    <input type="hidden" id="cashBoxId" />
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>اسم الخزنة *</label>
+                            <input type="text" id="cashBoxName" placeholder="مثال: فودافون كاش" />
+                        </div>
+                        <div class="form-group">
+                            <label>الأيقونة</label>
+                            <select id="cashBoxIcon">
+                                <option value="💵">💵 نقدي</option>
+                                <option value="📱">📱 محفظة</option>
+                                <option value="💳">💳 كارت</option>
+                                <option value="🏦">🏦 بنك</option>
+                                <option value="📮">📮 بريد</option>
+                                <option value="💰">💰 أخرى</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>النوع</label>
+                            <select id="cashBoxType">
+                                <option value="cash">💵 نقدي</option>
+                                <option value="wallet">📱 محفظة إلكترونية</option>
+                                <option value="bank">🏦 بنكي</option>
+                                <option value="post">📮 بريد</option>
+                                <option value="other">📋 أخرى</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>الرصيد الافتتاحي</label>
+                            <input type="number" id="cashBoxOpeningBalance" value="0" step="0.01" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>تفاصيل (اختياري)</label>
+                        <input type="text" id="cashBoxDetails" placeholder="مثال: رقم المحفظة أو اسم البنك" />
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="cashBoxIsDefault" style="width:auto;" />
+                            <span>⭐ تعيين كخزنة افتراضية</span>
+                        </label>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" onclick="saveCashBox()"><i class="fas fa-save"></i> <span id="cashBoxSaveBtnText">إضافة</span></button>
+                        <button class="btn btn-secondary" onclick="resetCashBoxForm()"><i class="fas fa-times"></i> إلغاء</button>
+                    </div>
+                </div>
+                
+                <h3 style="color:#C9A94E;margin:14px 0 10px;font-size:15px;"><i class="fas fa-list"></i> قائمة الخزائن</h3>
+                <div id="cashBoxList"></div>
+                
+                <div class="form-card" style="margin-top:14px;">
+                    <h3>🔄 تحويل بين الخزائن</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>من خزنة *</label>
+                            <select id="transferFrom"><option value="">اختر...</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>إلى خزنة *</label>
+                            <select id="transferTo"><option value="">اختر...</option></select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>المبلغ *</label>
+                            <input type="number" id="transferAmount" min="0.01" step="0.01" />
+                        </div>
+                        <div class="form-group">
+                            <label>التاريخ</label>
+                            <input type="date" id="transferDate" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>ملاحظات</label>
+                        <input type="text" id="transferNotes" />
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="saveCashBoxTransfer()"><i class="fas fa-exchange-alt"></i> تنفيذ التحويل</button>
+                </div>
+                
+                <h3 style="color:#C9A94E;margin:14px 0 10px;font-size:15px;"><i class="fas fa-history"></i> سجل التحويلات</h3>
+                <div id="cashBoxTransfersList"></div>
+            </div>
+        </div>
+
+        <!-- ============ الخزنة (الحركات) ============ -->
         <div id="page-treasury" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-vault"></i> الخزنة</h2>
                 <div class="balance-card">
-                    <div class="label">رصيد الخزنة الحالي</div>
+                    <div class="label">إجمالي رصيد الخزائن</div>
                     <div class="amount" id="treasuryBalance">0.00 🇪🇬</div>
                 </div>
                 <div class="stats-mini">
@@ -521,6 +627,10 @@
                             <select id="treasuryType"><option value="deposit">💚 إيداع</option><option value="withdraw">❤️ سحب</option></select>
                         </div>
                         <div class="form-group"><label>المبلغ</label><input type="number" id="treasuryAmount" min="0" step="0.01" /></div>
+                    </div>
+                    <div class="form-group">
+                        <label>💰 الخزنة</label>
+                        <select id="manualCashBox"><option value="">اختر الخزنة...</option></select>
                     </div>
                     <div class="form-group"><label>البيان</label><input type="text" id="treasuryNote" /></div>
                     <button class="btn btn-primary btn-block" onclick="addTreasuryTransaction()"><i class="fas fa-plus"></i> إضافة</button>
@@ -615,12 +725,16 @@
                             <span> 🇪🇬</span>
                         </div>
                         <div class="form-group">
-                            <label>الفاتورة (اختياري - للتسديد المباشر)</label>
+                            <label>الفاتورة (اختياري)</label>
                             <select id="collectInvoice"><option value="">توزيع تلقائي (الأقدم أولاً)</option></select>
                         </div>
                         <div class="form-row">
                             <div class="form-group"><label>المبلغ</label><input type="number" id="collectAmount" min="0.01" step="0.01" /></div>
                             <div class="form-group"><label>التاريخ</label><input type="date" id="collectDate" /></div>
+                        </div>
+                        <div class="form-group">
+                            <label>💰 الخزنة</label>
+                            <select id="collectCashBox"><option value="">اختر الخزنة...</option></select>
                         </div>
                         <div class="form-group"><label>ملاحظات (اختياري)</label><input type="text" id="collectNote" /></div>
                         <button class="btn btn-success btn-block" onclick="saveCollect()"><i class="fas fa-hand-holding-usd"></i> حفظ التحصيل</button>
@@ -639,12 +753,16 @@
                             <span> 🇪🇬</span>
                         </div>
                         <div class="form-group">
-                            <label>الفاتورة (اختياري - للتسديد المباشر)</label>
+                            <label>الفاتورة (اختياري)</label>
                             <select id="payInvoice"><option value="">توزيع تلقائي (الأقدم أولاً)</option></select>
                         </div>
                         <div class="form-row">
                             <div class="form-group"><label>المبلغ</label><input type="number" id="payAmount" min="0.01" step="0.01" /></div>
                             <div class="form-group"><label>التاريخ</label><input type="date" id="payDate" /></div>
+                        </div>
+                        <div class="form-group">
+                            <label>💰 الخزنة</label>
+                            <select id="payCashBox"><option value="">اختر الخزنة...</option></select>
                         </div>
                         <div class="form-group"><label>ملاحظات (اختياري)</label><input type="text" id="payNote" /></div>
                         <button class="btn btn-danger btn-block" onclick="savePay()"><i class="fas fa-money-bill-wave"></i> حفظ السداد</button>
@@ -748,9 +866,9 @@
                         <h3>📝 قيد محاسبي جديد</h3>
                         <div class="form-row">
                             <div class="form-group"><label>التاريخ</label><input type="date" id="jeDate" /></div>
-                            <div class="form-group"><label>المرجع (اختياري)</label><input type="text" id="jeRef" placeholder="مثال: قيد يومية #1" /></div>
+                            <div class="form-group"><label>المرجع (اختياري)</label><input type="text" id="jeRef" /></div>
                         </div>
-                        <div class="form-group"><label>الشرح</label><input type="text" id="jeDesc" placeholder="مثال: شراء مكتب" /></div>
+                        <div class="form-group"><label>الشرح</label><input type="text" id="jeDesc" /></div>
                         <div class="divider">— المدين (Debit) —</div>
                         <div class="form-row">
                             <div class="form-group"><label>الحساب المدين</label><select id="jeDebitAccount"><option value="">اختر...</option></select></div>
@@ -804,8 +922,6 @@
                     <button class="tab-btn" onclick="switchWarehouseTab('transfer', this)">🔄 تحويل</button>
                     <button class="tab-btn" onclick="switchWarehouseTab('in', this)">➕ إدخال</button>
                     <button class="tab-btn" onclick="switchWarehouseTab('out', this)">➖ صرف</button>
-                    <button class="tab-btn" onclick="switchWarehouseTab('opening', this)">🎁 أول المدة</button>
-                    <button class="tab-btn" onclick="switchWarehouseTab('adjustment', this)">⚖️ تسوية</button>
                     <button class="tab-btn" onclick="switchWarehouseTab('movements', this)">📋 الحركات</button>
                 </div>
 
@@ -837,7 +953,7 @@
 
                 <div id="whTab-stock" class="pay-tab-content" style="display:none;">
                     <div class="search-box">
-                        <select id="warehouseStockFilter" onchange="renderWarehouseStock()" style="width:100%;font-size:13px;padding:10px;border-radius:10px;border:2px solid #3D3D3D;background:#0D0D0D;color:#F5E6C8;">
+                        <select id="warehouseStockFilter" onchange="renderWarehouseStock()">
                             <option value="">كل المخازن</option>
                         </select>
                     </div>
@@ -848,19 +964,16 @@
                     <div class="form-card">
                         <h3>🔄 تحويل بين المخازن</h3>
                         <div class="form-row">
-                            <div class="form-group"><label>من مخزن *</label><select id="transferFrom" onchange="updateTransferAvailable()"><option value="">اختر...</option></select></div>
-                            <div class="form-group"><label>إلى مخزن *</label><select id="transferTo"><option value="">اختر...</option></select></div>
+                            <div class="form-group"><label>من مخزن *</label><select id="transferFromWarehouse"><option value="">اختر...</option></select></div>
+                            <div class="form-group"><label>إلى مخزن *</label><select id="transferToWarehouse"><option value="">اختر...</option></select></div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group"><label>المنتج *</label><select id="transferProduct" onchange="updateTransferAvailable()"><option value="">اختر...</option></select></div>
+                            <div class="form-group"><label>المنتج *</label><select id="transferProduct"><option value="">اختر...</option></select></div>
                             <div class="form-group"><label>الكمية *</label><input type="number" id="transferQty" value="1" min="1" /></div>
                         </div>
-                        <div class="credit-info" id="transferAvailableBox" style="display:none;">
-                            💰 المتاح في المصدر: <strong id="transferAvailableQty">0</strong> وحدة
-                        </div>
                         <div class="form-row">
-                            <div class="form-group"><label>التاريخ</label><input type="date" id="transferDate" /></div>
-                            <div class="form-group"><label>ملاحظات</label><input type="text" id="transferNotes" /></div>
+                            <div class="form-group"><label>التاريخ</label><input type="date" id="transferWhDate" /></div>
+                            <div class="form-group"><label>ملاحظات</label><input type="text" id="transferWhNotes" /></div>
                         </div>
                         <button class="btn btn-primary btn-block" onclick="saveTransfer()"><i class="fas fa-exchange-alt"></i> تنفيذ التحويل</button>
                     </div>
@@ -877,18 +990,6 @@
                             <div class="form-group"><label>الكمية *</label><input type="number" id="stockInQty" value="1" min="1" /></div>
                             <div class="form-group"><label>سعر الوحدة</label><input type="number" id="stockInPrice" min="0" step="0.01" /></div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>السبب</label>
-                                <select id="stockInReason">
-                                    <option value="purchase">🛒 شراء</option>
-                                    <option value="return">🔄 مرتجع</option>
-                                    <option value="production">🏭 إنتاج</option>
-                                    <option value="gift">🎁 هدية</option>
-                                    <option value="other">📌 أخرى</option>
-                                </select>
-                            </div>
-                            <div class="form-group"><label>التاريخ</label><input type="date" id="stockInDate" /></div>
-                        </div>
                         <div class="form-group"><label>ملاحظات</label><input type="text" id="stockInNotes" /></div>
                         <button class="btn btn-success btn-block" onclick="saveStockIn()"><i class="fas fa-plus-circle"></i> إدخال</button>
                     </div>
@@ -898,82 +999,21 @@
                     <div class="form-card">
                         <h3>➖ صرف صنف من المخزون</h3>
                         <div class="form-row">
-                            <div class="form-group"><label>المخزن *</label><select id="stockOutWarehouse" onchange="updateStockOutAvailable()"><option value="">اختر...</option></select></div>
-                            <div class="form-group"><label>المنتج *</label><select id="stockOutProduct" onchange="updateStockOutAvailable()"><option value="">اختر...</option></select></div>
-                        </div>
-                        <div class="credit-info" id="stockOutAvailableBox" style="display:none;">
-                            📊 المتاح: <strong id="stockOutAvailableQty">0</strong> وحدة
+                            <div class="form-group"><label>المخزن *</label><select id="stockOutWarehouse"><option value="">اختر...</option></select></div>
+                            <div class="form-group"><label>المنتج *</label><select id="stockOutProduct"><option value="">اختر...</option></select></div>
                         </div>
                         <div class="form-row">
                             <div class="form-group"><label>الكمية *</label><input type="number" id="stockOutQty" value="1" min="1" /></div>
                             <div class="form-group"><label>السبب</label>
                                 <select id="stockOutReason">
                                     <option value="damaged">💔 تالف</option>
-                                    <option value="expired">⏰ منتهي الصلاحية</option>
-                                    <option value="internal">🏢 استخدام داخلي</option>
-                                    <option value="gift">🎁 هدية</option>
-                                    <option value="sample">📦 عينة</option>
+                                    <option value="expired">⏰ منتهي</option>
+                                    <option value="internal">🏢 داخلي</option>
                                     <option value="other">📌 أخرى</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>التاريخ</label><input type="date" id="stockOutDate" /></div>
-                            <div class="form-group"><label>ملاحظات</label><input type="text" id="stockOutNotes" /></div>
-                        </div>
                         <button class="btn btn-danger btn-block" onclick="saveStockOut()"><i class="fas fa-minus-circle"></i> صرف</button>
-                    </div>
-                </div>
-
-                <div id="whTab-opening" class="pay-tab-content" style="display:none;">
-                    <div class="form-card">
-                        <h3>🎁 جرد أول المدة (رصيد افتتاحي)</h3>
-                        <p class="settings-desc">سجل الكميات الافتتاحية للبداية.</p>
-                        <div class="form-row">
-                            <div class="form-group"><label>المخزن *</label><select id="openingWarehouse" onchange="updateOpeningInfo()"><option value="">اختر...</option></select></div>
-                            <div class="form-group"><label>المنتج *</label><select id="openingProduct" onchange="updateOpeningInfo()"><option value="">اختر...</option></select></div>
-                        </div>
-                        <div class="credit-info" id="openingCurrentBox" style="display:none;">
-                            📊 الرصيد الحالي: <strong id="openingCurrentQty">0</strong> وحدة
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>الكمية الافتتاحية *</label><input type="number" id="openingQty" value="0" min="0" /></div>
-                            <div class="form-group"><label>سعر الوحدة</label><input type="number" id="openingPrice" min="0" step="0.01" /></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>التاريخ</label><input type="date" id="openingDate" /></div>
-                            <div class="form-group"><label>ملاحظات</label><input type="text" id="openingNotes" /></div>
-                        </div>
-                        <button class="btn btn-warning btn-block" onclick="saveOpeningBalance()"><i class="fas fa-flag-checkered"></i> تسجيل رصيد أول المدة</button>
-                    </div>
-                </div>
-
-                <div id="whTab-adjustment" class="pay-tab-content" style="display:none;">
-                    <div class="form-card">
-                        <h3>⚖️ تسوية جرد</h3>
-                        <div class="form-row">
-                            <div class="form-group"><label>المخزن *</label><select id="adjWarehouse" onchange="updateAdjInfo()"><option value="">اختر...</option></select></div>
-                            <div class="form-group"><label>المنتج *</label><select id="adjProduct" onchange="updateAdjInfo()"><option value="">اختر...</option></select></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>الكمية بالنظام</label>
-                                <div style="padding:10px;background:#1C1C1C;border-radius:8px;text-align:center;font-weight:900;color:#C9A94E;" id="adjSystemQty">-</div>
-                            </div>
-                            <div class="form-group">
-                                <label>الكمية الفعلية *</label>
-                                <input type="number" id="adjActualQty" min="0" oninput="updateAdjInfo()" />
-                            </div>
-                        </div>
-                        <div class="credit-info">
-                            <span>📊 الفرق: </span>
-                            <strong id="adjDiff">-</strong>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>التاريخ</label><input type="date" id="adjDate" /></div>
-                            <div class="form-group"><label>ملاحظات</label><input type="text" id="adjNotes" /></div>
-                        </div>
-                        <button class="btn btn-warning btn-block" onclick="saveInventoryAdjustment()"><i class="fas fa-balance-scale"></i> تنفيذ التسوية</button>
                     </div>
                 </div>
 
@@ -1007,7 +1047,7 @@
                     <div class="company-preview-info" id="companyPreviewInfo">لم يتم إدخال بيانات بعد</div>
                 </div>
                 <div class="form-card">
-                    <h3>🖼️ شعار الشركة (اللوجو)</h3>
+                    <h3>🖼️ شعار الشركة</h3>
                     <div class="logo-upload-box">
                         <div class="logo-preview-box" id="logoPreviewBox">
                             <i class="fas fa-image"></i>
@@ -1023,7 +1063,6 @@
                             </button>
                         </div>
                     </div>
-                    <p class="logo-hint">💡 يفضل صورة مربعة، حجم أقل من 500KB</p>
                 </div>
                 <div class="form-card">
                     <h3>📝 بيانات الشركة</h3>
@@ -1033,8 +1072,8 @@
                     </div>
                     <div class="form-group"><label>العنوان</label><input type="text" id="setCompanyAddress" /></div>
                     <div class="form-row">
-                        <div class="form-group"><label>الرقم الضريبي</label><input type="text" id="setCompanyTax" placeholder="123-456-789" /></div>
-                        <div class="form-group"><label>السجل التجاري</label><input type="text" id="setCompanyCR" placeholder="12345" /></div>
+                        <div class="form-group"><label>الرقم الضريبي</label><input type="text" id="setCompanyTax" /></div>
+                        <div class="form-group"><label>السجل التجاري</label><input type="text" id="setCompanyCR" /></div>
                     </div>
                     <div class="form-group"><label>ملاحظة أسفل الفاتورة</label><input type="text" id="setCompanyFooter" /></div>
                     <button class="btn btn-primary btn-block" onclick="saveCompanySettings()"><i class="fas fa-save"></i> حفظ البيانات</button>
@@ -1091,8 +1130,8 @@
                     <button class="filter-chip" onclick="filterAudit('add', this)">➕ إضافة</button>
                     <button class="filter-chip" onclick="filterAudit('edit', this)">✏️ تعديل</button>
                     <button class="filter-chip" onclick="filterAudit('delete', this)">🗑️ حذف</button>
-                    <button class="filter-chip" onclick="filterAudit('sale', this)">💰 فواتير بيع</button>
-                    <button class="filter-chip" onclick="filterAudit('purchase', this)">🛒 فواتير شراء</button>
+                    <button class="filter-chip" onclick="filterAudit('sale', this)">💰 بيع</button>
+                    <button class="filter-chip" onclick="filterAudit('purchase', this)">🛒 شراء</button>
                     <button class="filter-chip" onclick="filterAudit('payment', this)">💳 تحصيل/سداد</button>
                 </div>
                 <div class="search-box"><input type="text" id="auditSearch" placeholder="🔍 بحث في السجل..." oninput="renderAudit()" /></div>
@@ -1138,6 +1177,7 @@
                     <div class="settings-info-row"><span class="label">عدد الحسابات</span><span class="value" id="setAccountsCount">0</span></div>
                     <div class="settings-info-row"><span class="label">عدد القيود</span><span class="value" id="setJournalCount">0</span></div>
                     <div class="settings-info-row"><span class="label">حركات المخزون</span><span class="value" id="setMovementsCount">0</span></div>
+                    <div class="settings-info-row"><span class="label">عدد الخزائن</span><span class="value" id="setCashBoxesCount">0</span></div>
                     <div class="settings-info-row"><span class="label">عدد المستخدمين</span><span class="value" id="setUsersCount">0</span></div>
                     <div class="settings-info-row"><span class="label">حجم البيانات</span><span class="value" id="setDataSize">0 KB</span></div>
                 </div>
@@ -1153,6 +1193,7 @@
             <div class="page-content">
                 <h2><i class="fas fa-ellipsis-h"></i> المزيد</h2>
                 <div class="more-grid">
+                    <button class="more-item" onclick="navigateTo('cash-boxes')"><i class="fas fa-money-bill-wave"></i><span>الخزائن</span></button>
                     <button class="more-item" onclick="navigateTo('warehouses')"><i class="fas fa-warehouse"></i><span>إدارة المخازن</span></button>
                     <button class="more-item" onclick="navigateTo('accounts')"><i class="fas fa-sitemap"></i><span>الحسابات</span></button>
                     <button class="more-item" onclick="navigateTo('payments')"><i class="fas fa-hand-holding-usd"></i><span>التحصيل والسداد</span></button>
@@ -1161,7 +1202,7 @@
                     <button class="more-item" onclick="navigateTo('purchases')"><i class="fas fa-shopping-cart"></i><span>فواتير الشراء</span></button>
                     <button class="more-item" onclick="navigateTo('returns')"><i class="fas fa-undo-alt"></i><span>المرتجعات</span></button>
                     <button class="more-item" onclick="navigateTo('expenses')"><i class="fas fa-money-bill-wave"></i><span>المصروفات</span></button>
-                    <button class="more-item" onclick="navigateTo('treasury')"><i class="fas fa-vault"></i><span>الخزنة</span></button>
+                    <button class="more-item" onclick="navigateTo('treasury')"><i class="fas fa-vault"></i><span>حركات الخزنة</span></button>
                     <button class="more-item" onclick="navigateTo('customers')"><i class="fas fa-users"></i><span>العملاء</span></button>
                     <button class="more-item" onclick="navigateTo('suppliers')"><i class="fas fa-truck"></i><span>الموردين</span></button>
                     <button class="more-item" onclick="navigateTo('inventory-movements')"><i class="fas fa-exchange-alt"></i><span>حركات المخزون</span></button>
@@ -1177,8 +1218,8 @@
         <nav class="bottom-nav">
             <button class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')"><i class="fas fa-chart-pie"></i><span>لوحة التحكم</span></button>
             <button class="nav-item" data-page="inventory" onclick="navigateTo('inventory')"><i class="fas fa-box"></i><span>المخزون</span></button>
-            <button class="nav-item" data-page="warehouses" onclick="navigateTo('warehouses')"><i class="fas fa-warehouse"></i><span>المخازن</span></button>
             <button class="nav-item" data-page="cashier" onclick="navigateTo('cashier')"><i class="fas fa-cash-register"></i><span>الكاشير</span></button>
+            <button class="nav-item" data-page="cash-boxes" onclick="navigateTo('cash-boxes')"><i class="fas fa-money-bill-wave"></i><span>الخزائن</span></button>
             <button class="nav-item" data-page="more" onclick="navigateTo('more')"><i class="fas fa-ellipsis-h"></i><span>المزيد</span></button>
         </nav>
     </div>
@@ -1188,7 +1229,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
-        <script src="app-part1.js"></script>
+    <script src="app-part1.js"></script>
     <script src="app-part2.js"></script>
     <script src="app-part3.js"></script>
     <script src="app-part4.js"></script>
@@ -1199,10 +1240,12 @@
     <script src="app-session.js"></script>
     <script src="app-multi-treasury.js"></script>
 
-    <!-- 🔍 Eruda Console -->
+    <!-- 🔍 Eruda Console للموبايل -->
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
     <script>
-        if (window.innerWidth <= 768) eruda.init();
+        if (window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            eruda.init();
+        }
     </script>
 
 </body>
