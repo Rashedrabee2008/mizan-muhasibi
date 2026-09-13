@@ -1316,8 +1316,9 @@ body {
     }
 }
 
+
 /* ============================================================
-   البحث الذكي (Smart Search)
+   البحث الشامل - Smart Search
    ============================================================ */
 
 .smart-select-wrapper {
@@ -1328,14 +1329,13 @@ body {
 .smart-select-input {
     width: 100%;
     font-size: 13px;
-    padding: 10px 14px;
+    padding: 11px 40px 11px 14px;
     border-radius: 8px;
     border: 2px solid #3D3D3D;
     background: #1C1C1C;
     color: #F5E6C8;
     font-family: inherit;
     transition: 0.2s;
-    padding-left: 40px;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23C9A94E' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: 12px center;
@@ -1345,6 +1345,7 @@ body {
     outline: none;
     border-color: #C9A94E;
     box-shadow: 0 0 0 3px rgba(201, 169, 78, 0.15);
+    background-color: #232323;
 }
 
 .smart-select-input::placeholder {
@@ -1360,22 +1361,16 @@ body {
     background: #1C1C1C;
     border: 2px solid #C9A94E;
     border-radius: 10px;
-    max-height: 280px;
+    max-height: 300px;
     overflow-y: auto;
-    z-index: 1000;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    z-index: 10000;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
     animation: smartDropdownIn 0.2s ease-out;
 }
 
 @keyframes smartDropdownIn {
-    from {
-        opacity: 0;
-        transform: translateY(-8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .smart-select-item {
@@ -1390,9 +1385,7 @@ body {
     color: #F5E6C8;
 }
 
-.smart-select-item:last-child {
-    border-bottom: none;
-}
+.smart-select-item:last-child { border-bottom: none; }
 
 .smart-select-item:hover,
 .smart-select-item.active {
@@ -1417,6 +1410,35 @@ body {
     direction: rtl;
 }
 
+.smart-select-empty {
+    text-align: center;
+    padding: 20px 14px;
+    color: #5D5D5D;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* شريط تمرير */
+.smart-select-dropdown::-webkit-scrollbar { width: 6px; }
+.smart-select-dropdown::-webkit-scrollbar-track { background: #0D0D0D; }
+.smart-select-dropdown::-webkit-scrollbar-thumb { background: #C9A94E; border-radius: 8px; }
+
+/* زر المسح */
+.clear-search-btn {
+    z-index: 10;
+}
+
+/* الجوال */
+@media (max-width: 480px) {
+    .smart-select-input {
+        font-size: 14px;
+        padding: 12px 40px 12px 14px;
+    }
+    .smart-select-item {
+        padding: 14px 12px;
+        font-size: 14px;
+    }
+}
 .smart-badge {
     font-size: 10px;
     font-weight: 800;
@@ -1472,3 +1494,4 @@ body {
 .smart-select-dropdown::-webkit-scrollbar-thumb:hover {
     background: #E6A830;
 }
+
