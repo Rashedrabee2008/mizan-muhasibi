@@ -1,0 +1,166 @@
+<!-- ================================================
+     الكاشير - تصميم جدولي احترافي
+     ================================================ -->
+<div id="page-cashier" class="page-container">
+    <div class="page-content">
+        <h2><i class="fas fa-cash-register"></i> الكاشير</h2>
+        
+        <!-- ═══════════ رأس الفاتورة ═══════════ -->
+        <div class="invoice-header-card">
+            <div class="invoice-header-top">
+                <div class="invoice-title">
+                    <i class="fas fa-receipt"></i>
+                    <span>فاتورة بيع</span>
+                    <span class="invoice-num-badge" id="nextInvNum">#1</span>
+                </div>
+                <div class="invoice-actions">
+                    <button class="btn-icon btn-save" onclick="saveSale()" title="حفظ (F10)">
+                        <i class="fas fa-save"></i>
+                        <span>حفظ</span>
+                    </button>
+                    <button class="btn-icon btn-print" onclick="printCurrentInvoice()" title="طباعة">
+                        <i class="fas fa-print"></i>
+                        <span>طباعة</span>
+                    </button>
+                    <button class="btn-icon btn-cancel" onclick="clearSale()" title="إلغاء">
+                        <i class="fas fa-times"></i>
+                        <span>إلغاء</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="invoice-header-info">
+                <div class="info-row">
+                    <div class="info-field">
+                        <label>رقم الفاتورة</label>
+                        <div class="info-value" id="invNumberDisplay">جديد</div>
+                    </div>
+                    <div class="info-field">
+                        <label>التاريخ</label>
+                        <div class="info-value" id="invDateDisplay">--/--/----</div>
+                    </div>
+                    <div class="info-field">
+                        <label>الوقت</label>
+                        <div class="info-value" id="invTimeDisplay">--:--</div>
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-field wide">
+                        <label>العميل</label>
+                        <select id="saleCustomer" class="inv-select">
+                            <option value="">عميل نقدي</option>
+                        </select>
+                    </div>
+                    <div class="info-field wide">
+                        <label>🏪 المخزن</label>
+                        <select id="saleWarehouse" class="inv-select" onchange="onWarehouseChange()">
+                            <option value="">اختر المخزن...</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-field wide">
+                        <label>📋 نوع الفاتورة</label>
+                        <div class="invoice-type-switch">
+                            <label class="type-opt">
+                                <input type="radio" name="saleInvoiceType" value="simple" checked onchange="updateSaleTotals()">
+                                <span>📋 عادية</span>
+                            </label>
+                            <label class="type-opt">
+                                <input type="radio" name="saleInvoiceType" value="tax" onchange="updateSaleTotals()">
+                                <span>🧾 ضريبية</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="info-field wide">
+                        <label>💳 طريقة الدفع</label>
+                        <div class="invoice-type-switch">
+                            <label class="type-opt">
+                                <input type="radio" name="salePaymentMethod" value="cash" checked>
+                                <span>💵 نقدي</span>
+                            </label>
+                            <label class="type-opt">
+                                <input type="radio" name="salePaymentMethod" value="credit">
+                                <span>📝 آجل</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ═══════════ قسم إضافة صنف ═══════════ -->
+        <div class="add-item-section">
+            <div class="add-item-header">
+                <i class="fas fa-plus-circle"></i>
+                <span>إضافة صنف جديد</span>
+            </div>
+            <div class="add-item-row">
+                <div class="add-field">
+                    <label>المنتج</label>
+                    <select id="saleProduct" class="inv-select" onchange="updateSalePrice()">
+                        <option value="">اختر منتج...</option>
+                    </select>
+                </div>
+                <div class="add-field small">
+                    <label>الكمية</label>
+                    <input type="number" id="saleQty" value="1" min="1" class="inv-input">
+                </div>
+                <div class="add-field small">
+                    <label>السعر</label>
+                    <input type="number" id="salePrice" min="0" step="0.01" class="inv-input">
+                </div>
+                <button class="btn-add-item" onclick="addSaleItem()">
+                    <i class="fas fa-cart-plus"></i>
+                    <span>إضافة</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- ═══════════ جدول الأصناف ═══════════ -->
+        <div class="items-table-container">
+            <div class="items-table-header">
+                <i class="fas fa-list"></i>
+                <span>أصناف الفاتورة</span>
+                <span class="items-count-badge" id="itemsCountBadge">0</span>
+            </div>
+            
+            <div id="saleItemsContainer">
+                <div class="empty-items">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>لا توجد أصناف</span>
+                    <small>أضف صنف من الأعلى</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ═══════════ صندوق الإجماليات ═══════════ -->
+        <div class="totals-box" id="saleTotalBox" style="display:none;">
+            <div class="totals-grid">
+                <div class="total-stat">
+                    <span class="total-label">عدد الأصناف</span>
+                    <span class="total-value" id="statItemsCount">0</span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-label">إجمالي الكمية</span>
+                    <span class="total-value" id="statTotalQty">0</span>
+                </div>
+                <div class="total-stat">
+                    <span class="total-label">المجموع</span>
+                    <span class="total-value" id="saleSubtotal">0.00</span>
+                </div>
+                <div class="total-stat highlight">
+                    <span class="total-label">الضريبة</span>
+                    <span class="total-value" id="saleVAT">0.00</span>
+                </div>
+            </div>
+            
+            <div class="grand-total-box">
+                <div class="grand-label">الإجمالي النهائي</div>
+                <div class="grand-value" id="saleTotal">0.00 ج.م</div>
+            </div>
+        </div>
+    </div>
+</div>
