@@ -1,0 +1,598 @@
+/* ============================================================
+   الميزان 14.0.0 - تصميم نماذج الفواتير
+   app-forms-style.css
+   ============================================================ */
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 تصميم عام لبطاقات النماذج
+   ═══════════════════════════════════════════════════════════ */
+
+.form-card {
+    background: linear-gradient(135deg, #0D0D0D 0%, #1A1A1A 100%);
+    border-radius: 16px;
+    padding: 18px 16px;
+    margin-bottom: 16px;
+    border: 1px solid #2D2D2D;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.form-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #C9A94E, #E6A830, #C9A94E);
+}
+
+.form-card h3 {
+    font-size: 16px;
+    color: #C9A94E;
+    margin-bottom: 16px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 2px dashed #2D2D2D;
+    letter-spacing: 0.5px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎨 تصميم كل قسم بيع/شراء/مرتجع (خلفية مختلفة)
+   ═══════════════════════════════════════════════════════════ */
+
+/* الكاشير - بيع */
+#page-cashier .form-card::before {
+    background: linear-gradient(90deg, #2D8F5E, #4CAF50, #2D8F5E);
+}
+
+#page-cashier .form-card h3 {
+    color: #4CAF50;
+}
+
+/* الشراء */
+#page-purchases .form-card::before {
+    background: linear-gradient(90deg, #E06060, #FF7676, #E06060);
+}
+
+#page-purchases .form-card h3 {
+    color: #FF7676;
+}
+
+/* المرتجعات */
+#page-returns .form-card::before {
+    background: linear-gradient(90deg, #E6A830, #FFC107, #E6A830);
+}
+
+#page-returns .form-card h3 {
+    color: #FFC107;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📝 حقول الإدخال
+   ═══════════════════════════════════════════════════════════ */
+
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    font-size: 12px;
+    font-weight: 800;
+    display: block;
+    margin-bottom: 6px;
+    color: #C9A94E;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.form-group input,
+.form-group select {
+    font-size: 16px;
+    padding: 13px 14px;
+    border-radius: 10px;
+    border: 2px solid #3D3D3D;
+    background: #0D0D0D;
+    color: #F5E6C8;
+    width: 100%;
+    font-family: inherit;
+    transition: all 0.25s;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #C9A94E;
+    background: #1A1A1A;
+    box-shadow: 0 0 0 4px rgba(201, 169, 78, 0.15);
+}
+
+.form-group input::placeholder,
+.form-group select::placeholder {
+    color: #5D5D5D;
+    font-size: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🔘 أزرار طريقة الدفع ونوع الفاتورة
+   ═══════════════════════════════════════════════════════════ */
+
+.payment-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.payment-option {
+    background: #0D0D0D;
+    border: 2px solid #3D3D3D;
+    border-radius: 12px;
+    padding: 14px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.25s;
+    font-size: 14px;
+    font-weight: 800;
+    color: #F5E6C8;
+    -webkit-tap-highlight-color: rgba(201, 169, 78, 0.2);
+}
+
+.payment-option:hover {
+    border-color: #C9A94E;
+    background: #1A1A1A;
+}
+
+.payment-option input[type="radio"] {
+    accent-color: #C9A94E;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.payment-option:has(input[type="radio"]:checked) {
+    border-color: #C9A94E;
+    background: linear-gradient(135deg, #2A2A2A, #1F1F1F);
+    box-shadow: 0 4px 12px rgba(201, 169, 78, 0.25);
+    transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📋 جدول الأصناف المضافة
+   ═══════════════════════════════════════════════════════════ */
+
+.table-header {
+    font-size: 12px;
+    font-weight: 900;
+    color: #C9A94E;
+    padding: 12px 8px;
+    border-bottom: 2px solid #C9A94E;
+    display: grid;
+    gap: 6px;
+    background: linear-gradient(90deg, transparent, rgba(201, 169, 78, 0.05));
+    border-radius: 8px 8px 0 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table-row {
+    font-size: 13px;
+    padding: 12px 8px;
+    border-bottom: 1px solid #2D2D2D;
+    display: grid;
+    gap: 6px;
+    align-items: center;
+    color: #F5E6C8;
+    transition: all 0.2s;
+    background: #0D0D0D;
+}
+
+.table-row:hover {
+    background: #1A1A1A;
+    border-radius: 8px;
+    transform: translateX(-4px);
+}
+
+.table-row:last-child {
+    border-bottom: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   💰 صندوق الإجماليات
+   ═══════════════════════════════════════════════════════════ */
+
+.sale-total-box {
+    background: linear-gradient(135deg, #0D0D0D, #1A1A1A);
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 14px;
+    border: 2px solid #C9A94E;
+    box-shadow: 0 8px 24px rgba(201, 169, 78, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.sale-total-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #C9A94E, #E6A830, #C9A94E);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.tax-summary {
+    background: #0D0D0D;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    border: 1px solid #2D2D2D;
+}
+
+.tax-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 14px;
+    color: #F5E6C8;
+    border-bottom: 1px solid #2D2D2D;
+}
+
+.tax-row:last-child {
+    border-bottom: none;
+}
+
+.tax-row span:first-child {
+    color: #A89070;
+    font-weight: 700;
+}
+
+.tax-row span:last-child {
+    font-weight: 800;
+    color: #F5E6C8;
+}
+
+.tax-row.total {
+    border-top: 2px solid #C9A94E;
+    padding-top: 12px;
+    margin-top: 8px;
+    font-size: 18px;
+    font-weight: 900;
+    border-bottom: none;
+}
+
+.tax-row.total span:last-child {
+    color: #C9A94E;
+    font-size: 22px;
+    text-shadow: 0 2px 8px rgba(201, 169, 78, 0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎯 الأزرار
+   ═══════════════════════════════════════════════════════════ */
+
+.btn {
+    font-size: 14px;
+    font-weight: 900;
+    padding: 13px 20px;
+    min-height: 48px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    font-family: inherit;
+    letter-spacing: 0.3px;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.2);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #C9A94E, #B8953A);
+    color: #0D0D0D;
+    box-shadow: 0 6px 16px rgba(201, 169, 78, 0.35);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #D4B458, #C9A94E);
+    box-shadow: 0 8px 20px rgba(201, 169, 78, 0.5);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #2D8F5E, #1A7A4A);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(45, 143, 94, 0.35);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #35A06B, #2D8F5E);
+    box-shadow: 0 8px 20px rgba(45, 143, 94, 0.5);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #E06060, #C04040);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(224, 96, 96, 0.35);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #E87070, #E06060);
+    box-shadow: 0 8px 20px rgba(224, 96, 96, 0.5);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #E6A830, #C99028);
+    color: #0D0D0D;
+    box-shadow: 0 6px 16px rgba(230, 168, 48, 0.35);
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #F0B840, #E6A830);
+    box-shadow: 0 8px 20px rgba(230, 168, 48, 0.5);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-sm {
+    font-size: 12px;
+    padding: 8px 12px;
+    min-height: 36px;
+    min-width: 36px;
+    border-radius: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   🎯 الفاصل
+   ═══════════════════════════════════════════════════════════ */
+
+.divider {
+    text-align: center;
+    color: #A89070;
+    font-size: 12px;
+    font-weight: 900;
+    margin: 18px 0 14px;
+    letter-spacing: 2px;
+    position: relative;
+    text-transform: uppercase;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: calc(50% - 100px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #3D3D3D, transparent);
+}
+
+.divider::before {
+    left: 0;
+}
+
+.divider::after {
+    right: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📊 صندوق "لا توجد أصناف"
+   ═══════════════════════════════════════════════════════════ */
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #5D5D5D;
+    background: linear-gradient(135deg, #0D0D0D, #1A1A1A);
+    border-radius: 14px;
+    border: 2px dashed #2D2D2D;
+    margin: 12px 0;
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+    color: #3D3D3D;
+    opacity: 0.6;
+}
+
+.empty-state span {
+    font-size: 14px;
+    font-weight: 700;
+    color: #A89070;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📱 تحسينات الجوال
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 480px) {
+    .form-card {
+        padding: 14px 12px;
+    }
+    
+    .form-card h3 {
+        font-size: 14px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        font-size: 16px;
+        padding: 12px 12px;
+    }
+    
+    .payment-option {
+        padding: 12px 6px;
+        font-size: 13px;
+    }
+    
+    .payment-option input[type="radio"] {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .table-header {
+        font-size: 10px;
+        padding: 10px 4px;
+    }
+    
+    .table-row {
+        font-size: 11px;
+        padding: 10px 4px;
+    }
+    
+    .sale-total-box {
+        padding: 14px 12px;
+    }
+    
+    .tax-row {
+        font-size: 13px;
+        padding: 7px 0;
+    }
+    
+    .tax-row.total {
+        font-size: 16px;
+    }
+    
+    .tax-row.total span:last-child {
+        font-size: 20px;
+    }
+    
+    .btn {
+        font-size: 13px;
+        padding: 12px 16px;
+        min-height: 46px;
+    }
+    
+    .divider::before,
+    .divider::after {
+        width: calc(50% - 80px);
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   📋 نموذج الفاتورة الجديدة (تصميم خاص)
+   ═══════════════════════════════════════════════════════════ */
+
+.invoice-form {
+    background: linear-gradient(135deg, #0D0D0D, #1A1A1A);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 16px;
+    border: 2px solid #2D2D2D;
+    position: relative;
+    overflow: hidden;
+}
+
+.invoice-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 14px;
+    border-bottom: 2px dashed #2D2D2D;
+    margin-bottom: 16px;
+}
+
+.invoice-form-header h3 {
+    font-size: 18px;
+    font-weight: 900;
+    color: #C9A94E;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.invoice-form-header .invoice-type-badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+}
+
+.invoice-type-badge.sale {
+    background: linear-gradient(135deg, #2D8F5E, #1A7A4A);
+    color: #fff;
+}
+
+.invoice-type-badge.purchase {
+    background: linear-gradient(135deg, #E06060, #C04040);
+    color: #fff;
+}
+
+.invoice-type-badge.return {
+    background: linear-gradient(135deg, #E6A830, #C99028);
+    color: #0D0D0D;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ✨ تأثيرات إضافية
+   ═══════════════════════════════════════════════════════════ */
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-card,
+.sale-total-box,
+.invoice-form {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* حقل مطلوب */
+.form-group label.required::after {
+    content: ' *';
+    color: #E06060;
+    font-size: 14px;
+}
+
+/* حقول بحالة نجاح */
+.form-group.success input,
+.form-group.success select {
+    border-color: #2D8F5E;
+    box-shadow: 0 0 0 3px rgba(45, 143, 94, 0.15);
+}
+
+/* حقول بحالة خطأ */
+.form-group.error input,
+.form-group.error select {
+    border-color: #E06060;
+    box-shadow: 0 0 0 3px rgba(224, 96, 96, 0.15);
+}
