@@ -1665,4 +1665,147 @@ setInterval(function() {
     };
 })();
 
-console.log('✅ تم تحميل app-part2.js بنجاح');
+// ═══════════════════════════════════════════════════════════
+// 🏪 ربط المنتج بالمخزن
+// ═══════════════════════════════════════════════════════════
+
+// ✅ تعبئة قائمة المخازن في نموذج المنتج
+window.populateProductWarehouse = function() {
+    try {
+        const sel = document.getElementById('productWarehouse');
+        if (!sel) return;
+        
+        const cv = sel.value;
+        let whs = [];
+        
+        if (typeof warehouses !== 'undefined' && Array.isArray(warehouses) && warehouses.length > 0) {
+            whs = warehouses;
+        } else {
+            try {
+                whs = JSON.parse(localStorage.getItem('mizan_warehouses') || '[]');
+            } catch (e) { whs = []; }
+        }
+        
+        if (whs.length === 0) {
+            whs = [{
+                id: 1,
+                name: 'المخزن الرئيسي',
+                isDefault: true,
+                active: true
+            }];
+        }
+        
+        let html = '<option value="">توزيع على المخزن الرئيسي</option>';
+        whs.forEach(function(w) {
+            const isDef = w.isDefault ? ' ⭐' : '';
+            html += '<option value="' + w.id + '">' + w.name + isDef + '</option>';
+        });
+        sel.innerHTML = html;
+        sel.value = cv;
+    } catch (e) {
+        console.warn('⚠️ خطأ في populateProductWarehouse:', e.message);
+    }
+};
+
+// ✅ تعديل دالة saveProduct لإضافة الكمية للمخزن
+(function() {
+    let _originalSaveProduct = window.saveProduct;
+    
+    window.saveProduct = function() {
+        try {
+            // استدعاء الدالة الأصلية
+            if (_originalSaveProduct) {
+                _originalSaveProduct.apply(this, arguments);
+            }
+            
+            // ✅ بعد الحفظ، نضيف الكمية للمخزن
+            setTimeout(function() {
+                try {
+                    const productName = document.getElementById('productName')?.value?.trim();
+                    if (!productName) return;
+                    
+                    const product = products.find(function(p) {
+                        return p.name === productName;
+                    });
+                    
+                    if (!product) return;
+                    
+                    // المخزن المختار
+                    const warehouseId = document.getElementById('productWarehouse')?.value;
+                    const defaultWh = typeof getDefaultWarehouse === 'function' 
+                        ? getDefaultWarehouse() 
+                        : (warehouses && warehouses[0]);
+                    
+                    const targetWhId = warehouseId || (defaultWh ? defaultWh.id : null);
+                    
+                    if (!targetWhId) {
+                        console.warn('⚠️ لا يوجد مخزن محدد');
+                        return;
+                    }
+                    
+                    // ✅ إضافة الكمية للمخزن
+                    if (typeof productWarehouseStock === 'undefined' || !productWarehouseStock) {
+                        window.productWarehouseStock = {};
+                    }
+                    
+                    if (!productWarehouseStock[product.id]) {
+                        productWarehouseStock[product.id] = {};
+                    }
+                    
+                    // ✅ نحدث فقط لو ماكانش مضاف (عشان ما يتكررش)
+                    const currentQty = productWarehouseStock[product.id][targetWhId] || 0;
+                    
+                    // نتحقق: هل الكمية في المخزن أقل من كمية المنتج؟
+                    if (currentQty < product.qty) {
+                        const diff = product.qty - currentQty;
+                        productWarehouseStock[product.id][targetWhId] = currentQty + diff;
+                        
+                        // حفظ
+                        if (typeof setData === 'function') {
+                            setData('productWarehouseStock', productWarehouseStock);
+                        } else {
+                            localStorage.setItem('mizan_productWarehouseStock', JSON.stringify(productWarehouseStock));
+                        }
+                        
+                        console.log('✅ تم إضافة ' + diff + ' ' + productName + ' لمخزن ' + targetWhId);
+                    }
+                    
+                    // ✅ إعادة تعبئة القائمة
+                    populateProductWarehouse();
+                    
+                    // ✅ تحديث عرض المنتجات
+                    if (typeof renderProducts === 'function') renderProducts();
+                    if (typeof renderWarehouseStatsOnDashboard === 'function') renderWarehouseStatsOnDashboard();
+                    
+                } catch (e) {
+                    console.warn('⚠️ خطأ في ربط المنتج بالمخزن:', e.message);
+                }
+            }, 300);
+            
+        } catch (e) {
+            console.warn('⚠️ خطأ في saveProduct:', e.message);
+        }
+    };
+})();
+
+// ✅ تعبئة القائمة عند فتح الصفحة
+window.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        populateProductWarehouse();
+    }, 3500);
+});
+
+// ✅ إعادة التعبئة عند التنقل
+(function() {
+    let _navOriginal = window.navigateTo;
+    window.navigateTo = function(page) {
+        if (_navOriginal) _navOriginal.apply(this, arguments);
+        setTimeout(function() {
+            if (page === 'inventory') {
+                populateProductWarehouse();
+            }
+        }, 500);
+    };
+})();
+
+console.log('✅ تم تحميل ربط المنتج بالمخزن');
