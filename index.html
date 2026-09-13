@@ -23,8 +23,7 @@
             </div>
             <div class="form-group">
                 <label>🔑 كلمة المرور</label>
-                <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور..." 
-                       onkeydown="if(event.key==='Enter') checkLogin()" />
+                <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور..." onkeydown="if(event.key==='Enter') checkLogin()" />
             </div>
             <button class="btn btn-primary btn-block" onclick="checkLogin()">
                 <i class="fas fa-unlock"></i> دخول
@@ -98,6 +97,10 @@
                 <div class="chart-container">
                     <h3><i class="fas fa-chart-line"></i> آخر 7 أيام - المبيعات</h3>
                     <div id="miniChart" class="mini-chart"></div>
+                </div>
+                <div id="warehouseStatsSection">
+                    <h2 style="margin-top:20px;"><i class="fas fa-warehouse"></i> إحصائيات المخازن</h2>
+                    <div id="warehouseStatsGrid" class="dashboard-stats"></div>
                 </div>
                 <h2 style="margin-top:20px;"><i class="fas fa-receipt"></i> آخر المبيعات</h2>
                 <div id="dashLastSales"><div class="empty-state"><i class="fas fa-receipt"></i><span>لا توجد مبيعات</span></div></div>
@@ -514,7 +517,7 @@
             </div>
         </div>
 
-        <!-- ============ الخزائن (جديد) ============ -->
+        <!-- ============ الخزائن ============ -->
         <div id="page-cash-boxes" class="page-container">
             <div class="page-content">
                 <h2><i class="fas fa-money-bill-wave"></i> الخزائن</h2>
@@ -953,9 +956,7 @@
 
                 <div id="whTab-stock" class="pay-tab-content" style="display:none;">
                     <div class="search-box">
-                        <select id="warehouseStockFilter" onchange="renderWarehouseStock()">
-                            <option value="">كل المخازن</option>
-                        </select>
+                        <select id="warehouseStockFilter" onchange="renderWarehouseStock()"><option value="">كل المخازن</option></select>
                     </div>
                     <div id="warehouseStockList"></div>
                 </div>
