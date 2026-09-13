@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#0D0D0D" />
     <title>الميزان - نظام محاسبة ونقاط بيع</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
-</head>
+    
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="app-cashier-new.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
+    
 <body>
 
     <!-- ============ شاشة الدخول ============ -->
@@ -1186,7 +1188,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
-    <script src="app-part1.js"></script>
+        <script src="app-part1.js"></script>
     <script src="app-part2.js"></script>
     <script src="app-part3.js"></script>
     <script src="app-part4.js"></script>
@@ -1195,6 +1197,12 @@
     <script src="app-integration.js"></script>
     <script src="app-sync-stock.js"></script>
     <script src="app-session.js"></script>
+
+    <!-- 🔍 Eruda Console -->
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>
+        if (window.innerWidth <= 768) eruda.init();
+    </script>
 
 </body>
 </html>
