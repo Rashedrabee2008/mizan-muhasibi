@@ -1052,32 +1052,29 @@
     </div>
 
     <div id="toast" class="toast"></div>
-
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    
-<script src="app-part1.js"></script>
-<script src="app-part2.js"></script>
-<script src="app-part3.js"></script>
-<script src="app-part4.js"></script>
-<script src="app-warehouses.js"></script>
-<script src="app-whatsapp.js"></script>
-<script src="app-integration.js"></script>
-<script src="app-sync-stock.js"></script>
-<script src="app-session.js"></script>
-<script src="app-final-fix.js"></script>
 
-<!-- 🔍 Eruda Console للموبايل -->
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>
-    // يشغل Eruda على الموبايل فقط
-    if (window.innerWidth <= 768 || /Android|iPhone|iPad/i.test(navigator.userAgent)) {
-        eruda.init({
-            tool: ['console', 'elements', 'network', 'resources', 'info', 'snippets', 'sources']
-        });
-        console.log('📱 Eruda Console شغال');
-    }
-</script>
-    
+    <!-- التطبيق -->
+    <script src="app-part1.js"></script>
+    <script src="app-part2.js"></script>
+    <script src="app-part3.js"></script>
+    <script src="app-part4.js"></script>
+    <script src="app-warehouses.js"></script>
+    <script src="app-whatsapp.js"></script>
+    <script src="app-integration.js"></script>
+    <script src="app-sync-stock.js"></script>
+    <script src="app-session.js"></script>
+
+    <!-- 🔍 Eruda Console للموبايل -->
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>
+        if (window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            eruda.init();
+        }
+    </script>
+
 </body>
 </html>
+    
