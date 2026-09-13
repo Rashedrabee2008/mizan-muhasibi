@@ -1,0 +1,419 @@
+/* ============================================================
+   الميزان 14.0.0 - تصميم الفواتير الاحترافي
+   ============================================================ */
+
+/* ============ تصميم الفاتورة العام ============ */
+.invoice-print {
+    direction: rtl;
+    background: linear-gradient(135deg, #0D0D0D 0%, #1A1A1A 100%);
+    padding: 24px 20px;
+    border-radius: 16px;
+    border: 2px solid #3D3D3D;
+    margin-bottom: 16px;
+    font-size: 13px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* شريط علوي ملوّن */
+.invoice-print::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #C9A94E, #E6A830, #C9A94E);
+}
+
+/* فاتورة ضريبية */
+.invoice-print.tax-invoice {
+    border-color: #C9A94E;
+    background: linear-gradient(135deg, #0D0D0D 0%, #1F1A0D 100%);
+}
+
+.invoice-print.tax-invoice::before {
+    background: linear-gradient(90deg, #C9A94E, #9B59B6, #C9A94E);
+}
+
+/* ============ الرأس ============ */
+.invoice-print .inv-header {
+    text-align: center;
+    padding-bottom: 16px;
+    border-bottom: 2px dashed #3D3D3D;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.invoice-print .inv-header h2 {
+    color: #C9A94E;
+    font-size: 24px;
+    font-weight: 900;
+    margin: 8px 0;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 8px rgba(201, 169, 78, 0.3);
+}
+
+.invoice-print .inv-header p {
+    color: #A89070;
+    font-size: 12px;
+    margin: 3px 0;
+    font-weight: 600;
+}
+
+.invoice-print .inv-logo {
+    max-width: 90px;
+    max-height: 90px;
+    margin: 0 auto 10px;
+    border-radius: 12px;
+    display: block;
+    object-fit: contain;
+    border: 2px solid #C9A94E;
+    padding: 4px;
+    background: #0D0D0D;
+    box-shadow: 0 4px 12px rgba(201, 169, 78, 0.2);
+}
+
+.invoice-print .tax-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #C9A94E, #E6A830);
+    color: #0D0D0D;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 12px rgba(201, 169, 78, 0.3);
+}
+
+/* ============ معلومات الفاتورة ============ */
+.invoice-print .inv-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding: 14px;
+    background: #0D0D0D;
+    border-radius: 12px;
+    border: 1px solid #2D2D2D;
+}
+
+.invoice-print .inv-info div {
+    color: #F5E6C8;
+    font-size: 12px;
+    padding: 6px 0;
+    border-bottom: 1px dotted #2D2D2D;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.invoice-print .inv-info div:nth-child(n+3) {
+    border-bottom: none;
+}
+
+.invoice-print .inv-info span.lbl {
+    color: #A89070;
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+/* ============ جدول الأصناف ============ */
+.invoice-print table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.invoice-print table thead tr {
+    background: linear-gradient(135deg, #C9A94E, #B8953A);
+}
+
+.invoice-print table th {
+    color: #0D0D0D;
+    padding: 12px 8px;
+    font-weight: 900;
+    text-align: center;
+    font-size: 12px;
+    border: none;
+    letter-spacing: 0.5px;
+}
+
+.invoice-print table tbody tr {
+    background: #0D0D0D;
+    transition: all 0.2s;
+}
+
+.invoice-print table tbody tr:nth-child(even) {
+    background: #151515;
+}
+
+.invoice-print table tbody tr:hover {
+    background: #1F1F1F;
+    transform: scale(1.01);
+}
+
+.invoice-print table td {
+    color: #F5E6C8;
+    padding: 10px 8px;
+    text-align: center;
+    border-bottom: 1px solid #2D2D2D;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.invoice-print table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.invoice-print table td:first-child {
+    color: #A89070;
+    font-weight: 800;
+}
+
+.invoice-print table td:last-child {
+    color: #2D8F5E;
+    font-weight: 900;
+    font-size: 13px;
+}
+
+/* ============ الإجماليات ============ */
+.invoice-print .inv-totals {
+    padding: 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0D0D0D, #1A1A1A);
+    border: 1px solid #2D2D2D;
+    margin-bottom: 14px;
+}
+
+.invoice-print .inv-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 13px;
+    color: #F5E6C8;
+    border-bottom: 1px dotted #2D2D2D;
+}
+
+.invoice-print .inv-total-row:last-child {
+    border-bottom: none;
+}
+
+.invoice-print .inv-total-row span:first-child {
+    color: #A89070;
+    font-weight: 700;
+}
+
+.invoice-print .inv-total-row span:last-child {
+    font-weight: 800;
+    color: #F5E6C8;
+}
+
+.invoice-print .inv-total-row.grand {
+    font-size: 20px;
+    font-weight: 900;
+    color: #C9A94E;
+    padding: 14px 0 6px;
+    margin-top: 8px;
+    border-top: 2px solid #C9A94E;
+    border-bottom: none;
+}
+
+.invoice-print .inv-total-row.grand span:first-child {
+    color: #C9A94E;
+    font-size: 16px;
+}
+
+.invoice-print .inv-total-row.grand span:last-child {
+    color: #C9A94E;
+    font-size: 24px;
+    text-shadow: 0 2px 8px rgba(201, 169, 78, 0.4);
+}
+
+/* ============ التذييل ============ */
+.invoice-print .inv-footer {
+    text-align: center;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 2px dashed #3D3D3D;
+    font-size: 12px;
+    color: #A89070;
+    font-weight: 600;
+    font-style: italic;
+}
+
+/* ============ تفاصيل الفاتورة (Modal) ============ */
+.invoice-detail {
+    background: linear-gradient(135deg, #0D0D0D, #1A1A1A);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    border: 2px solid #C9A94E;
+    box-shadow: 0 4px 16px rgba(201, 169, 78, 0.15);
+}
+
+.invoice-detail .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px dotted #2D2D2D;
+    font-size: 13px;
+}
+
+.invoice-detail .detail-row:last-child {
+    border-bottom: none;
+}
+
+.invoice-detail .detail-row span:first-child {
+    color: #A89070;
+    font-weight: 700;
+}
+
+.invoice-detail .detail-row span:last-child {
+    color: #F5E6C8;
+    font-weight: 800;
+}
+
+/* ============ شارات الحالة ============ */
+.invoice-status {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.invoice-status.paid {
+    background: linear-gradient(135deg, #2D8F5E, #1A7A4A);
+    color: #fff;
+}
+
+.invoice-status.partial {
+    background: linear-gradient(135deg, #E6A830, #C9A94E);
+    color: #0D0D0D;
+}
+
+.invoice-status.unpaid {
+    background: linear-gradient(135deg, #E06060, #C04040);
+    color: #fff;
+}
+
+/* ============ رسائل واتساب محسّنة ============ */
+.whatsapp-btn {
+    background: linear-gradient(135deg, #25D366, #1DA851);
+    color: #fff;
+    border: none;
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.3s;
+    font-family: inherit;
+    min-height: 44px;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);
+    letter-spacing: 0.3px;
+}
+
+.whatsapp-btn:hover {
+    background: linear-gradient(135deg, #1DA851, #158F42);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(37, 211, 102, 0.4);
+}
+
+.whatsapp-btn:active {
+    transform: scale(0.97);
+}
+
+/* ============ أزرار الطباعة ============ */
+.thermal-btn {
+    flex: 1;
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1C1C1C, #2A2A2A);
+    border: 2px solid #3D3D3D;
+    color: #F5E6C8;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: inherit;
+    min-width: 90px;
+    letter-spacing: 0.3px;
+}
+
+.thermal-btn:hover {
+    border-color: #C9A94E;
+    background: linear-gradient(135deg, #2A2A2A, #3D3D3D);
+    transform: translateY(-2px);
+}
+
+.thermal-btn.active {
+    background: linear-gradient(135deg, #C9A94E, #B8953A);
+    color: #0D0D0D;
+    border-color: #C9A94E;
+    box-shadow: 0 4px 12px rgba(201, 169, 78, 0.3);
+}
+
+/* ============ معاينة الفاتورة ============ */
+.invoice-preview {
+    background: linear-gradient(135deg, #0D0D0D, #1A1A1A);
+    border-radius: 12px;
+    padding: 18px;
+    border: 2px dashed #C9A94E;
+    text-align: center;
+    box-shadow: inset 0 0 30px rgba(201, 169, 78, 0.05);
+}
+
+/* ============ محسّنات للجوال ============ */
+@media (max-width: 480px) {
+    .invoice-print {
+        padding: 16px 12px;
+        font-size: 12px;
+    }
+    
+    .invoice-print .inv-header h2 {
+        font-size: 20px;
+    }
+    
+    .invoice-print table th,
+    .invoice-print table td {
+        padding: 8px 4px;
+        font-size: 11px;
+    }
+    
+    .invoice-print .inv-total-row.grand {
+        font-size: 16px;
+    }
+    
+    .invoice-print .inv-total-row.grand span:last-child {
+        font-size: 20px;
+    }
+    
+    .thermal-btn {
+        font-size: 11px;
+        padding: 9px 10px;
+        min-width: 70px;
+    }
+    
+    .whatsapp-btn {
+        font-size: 11px;
+        padding: 9px 12px;
+    }
+}
