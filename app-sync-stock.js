@@ -1,9 +1,57 @@
 // ============================================================
 // الميزان 14.0.0 - مزامنة المخزون مع المخازن
-// app-sync-stock.js (نسخة كاملة مع الحماية من الأخطاء)
+// app-sync-stock.js (نسخة محسّنة مع حماية كاملة)
 // ============================================================
 
 console.log('🔄 تحميل app-sync-stock.js - مزامنة المخزون مع المخازن');
+
+// ═══════════════════════════════════════════════════════════
+// 🔧 دوال مساعدة
+// ═══════════════════════════════════════════════════════════
+
+window.cleanProductWarehouseStock = function() {
+    try {
+        if (typeof productWarehouseStock === 'undefined' || !productWarehouseStock || typeof productWarehouseStock !== 'object') {
+            window.productWarehouseStock = {};
+            return;
+        }
+        
+        const cleaned = {};
+        Object.keys(productWarehouseStock).forEach(function(key) {
+            // تجاهل المفاتيح الفاسدة
+            if (!key || key === 'null' || key === 'undefined' || key === 'NaN') return;
+            
+            const stock = productWarehouseStock[key];
+            if (!stock || typeof stock !== 'object') return;
+            
+            // تنظيف القيم داخلها
+            const cleanStock = {};
+            Object.keys(stock).forEach(function(whId) {
+                if (!whId || whId === 'null' || whId === 'undefined') return;
+                const qty = stock[whId];
+                if (typeof qty === 'number' && isFinite(qty) && qty > 0) {
+                    cleanStock[whId] = qty;
+                }
+            });
+            
+            if (Object.keys(cleanStock).length > 0) {
+                cleaned[key] = cleanStock;
+            }
+        });
+        
+        window.productWarehouseStock = cleaned;
+        console.log('✅ تم تنظيف productWarehouseStock (' + Object.keys(cleaned).length + ' منتج)');
+        
+        if (typeof setData === 'function') {
+            setData('productWarehouseStock', cleaned);
+        } else {
+            localStorage.setItem('mizan_productWarehouseStock', JSON.stringify(cleaned));
+        }
+    } catch (e) {
+        console.warn('⚠️ خطأ في تنظيف المخزون:', e.message);
+        window.productWarehouseStock = {};
+    }
+};
 
 // ═══════════════════════════════════════════════════════════
 // 🔄 1. مزامنة شاملة (مع حماية)
@@ -13,18 +61,19 @@ window.syncAllStockToWarehouses = function() {
     try {
         console.log('🔄 بدء مزامنة المخزون مع المخازن...');
         
-        // ✅ حماية
+        // ✅ حماية 1
         if (typeof products === 'undefined' || !Array.isArray(products)) {
             console.warn('⚠️ products مش موجود');
             return { movedCount: 0, totalQty: 0 };
         }
         
+        // ✅ حماية 2
         if (typeof warehouses === 'undefined' || !Array.isArray(warehouses)) {
             console.warn('⚠️ warehouses مش موجود');
             return { movedCount: 0, totalQty: 0 };
         }
         
-        // نتأكد إن فيه مخزن افتراضي
+        // ✅ حماية 3: عمل مخزن رئيسي لو مفيش
         if (warehouses.length === 0) {
             console.log('⚠️ ما فيش مخازن، إنشاء مخزن رئيسي...');
             window.warehouses = [{
@@ -32,11 +81,9 @@ window.syncAllStockToWarehouses = function() {
                 name: 'المخزن الرئيسي',
                 location: 'المركز الرئيسي',
                 manager: 'المدير',
-                phone: '',
                 isDefault: true,
                 active: true,
-                createdAt: new Date().toISOString(),
-                createdBy: 'system'
+                createdAt: new Date().toISOString()
             }];
             if (typeof setData === 'function') {
                 setData('warehouses', warehouses);
@@ -45,12 +92,11 @@ window.syncAllStockToWarehouses = function() {
             }
         }
         
-        if (typeof productWarehouseStock === 'undefined' || !productWarehouseStock) {
-            window.productWarehouseStock = {};
-        }
+        // ✅ حماية 4: تنظيف productWarehouseStock أولاً
+        cleanProductWarehouseStock();
         
-        const defaultWh = warehouses.find(w => w.isDefault) || warehouses[0];
-        if (!defaultWh) {
+        const defaultWh = warehouses.find(function(w) { return w.isDefault; }) || warehouses[0];
+        if (!defaultWh || !defaultWh.id) {
             console.warn('⚠️ لا يوجد مخزن افتراضي');
             return { movedCount: 0, totalQty: 0 };
         }
@@ -59,15 +105,17 @@ window.syncAllStockToWarehouses = function() {
         let movedCount = 0;
         let totalQty = 0;
         
-        products.forEach(p => {
+        products.forEach(function(p) {
             if (!p || !p.id) return;
             
             let currentInWarehouses = 0;
             try {
                 if (typeof getTotalProductStock === 'function') {
                     currentInWarehouses = getTotalProductStock(p.id);
-                } else if (productWarehouseStock[p.id]) {
-                    currentInWarehouses = Object.values(productWarehouseStock[p.id]).reduce((s, q) => s + (q || 0), 0);
+                } else if (productWarehouseStock && productWarehouseStock[p.id]) {
+                    currentInWarehouses = Object.values(productWarehouseStock[p.id]).reduce(function(s, q) {
+                        return s + (typeof q === 'number' ? q : 0);
+                    }, 0);
                 }
             } catch (e) {
                 currentInWarehouses = 0;
@@ -82,7 +130,7 @@ window.syncAllStockToWarehouses = function() {
                     productWarehouseStock[p.id][defaultWhId] = currentInDefault + diff;
                     movedCount++;
                     totalQty += diff;
-                    console.log('✅ ' + p.name + ': نقل ' + diff + ' قطعة للمخزن الرئيسي');
+                    console.log('✅ ' + p.name + ': نقل ' + diff + ' قطعة');
                 } else if (diff < 0) {
                     p.qty = currentInWarehouses;
                     console.log('⚠️ ' + p.name + ': تصحيح المخزون');
@@ -90,6 +138,7 @@ window.syncAllStockToWarehouses = function() {
             }
         });
         
+        // حفظ
         if (typeof setData === 'function') {
             setData('products', products);
             setData('productWarehouseStock', productWarehouseStock);
@@ -110,14 +159,15 @@ window.syncAllStockToWarehouses = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🔄 2. خصم من مخزن (مع حماية)
+// 🔄 2. خصم من مخزن
 // ═══════════════════════════════════════════════════════════
 
 window.deductFromWarehouse = function(productId, warehouseId, qty, reason, refType, refId) {
     try {
         if (!warehouseId) {
             if (typeof getDefaultWarehouse === 'function') {
-                warehouseId = getDefaultWarehouse()?.id;
+                const dw = getDefaultWarehouse();
+                warehouseId = dw ? dw.id : null;
             }
         }
         
@@ -128,7 +178,7 @@ window.deductFromWarehouse = function(productId, warehouseId, qty, reason, refTy
         
         if (typeof products === 'undefined' || !Array.isArray(products)) return false;
         
-        const product = products.find(p => p.id == productId);
+        const product = products.find(function(p) { return p.id == productId; });
         if (!product) return false;
         
         const beforeInWarehouse = typeof getProductStockInWarehouse === 'function' 
@@ -173,14 +223,15 @@ window.deductFromWarehouse = function(productId, warehouseId, qty, reason, refTy
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🔄 3. إضافة لمخزن (مع حماية)
+// 🔄 3. إضافة لمخزن
 // ═══════════════════════════════════════════════════════════
 
 window.addToWarehouse = function(productId, warehouseId, qty, price, reason, refType, refId) {
     try {
         if (!warehouseId) {
             if (typeof getDefaultWarehouse === 'function') {
-                warehouseId = getDefaultWarehouse()?.id;
+                const dw = getDefaultWarehouse();
+                warehouseId = dw ? dw.id : null;
             }
         }
         
@@ -191,7 +242,7 @@ window.addToWarehouse = function(productId, warehouseId, qty, price, reason, ref
         
         if (typeof products === 'undefined' || !Array.isArray(products)) return false;
         
-        const product = products.find(p => p.id == productId);
+        const product = products.find(function(p) { return p.id == productId; });
         if (!product) return false;
         
         const beforeInWarehouse = typeof getProductStockInWarehouse === 'function' 
@@ -232,32 +283,7 @@ window.addToWarehouse = function(productId, warehouseId, qty, price, reason, ref
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🔄 4. الحماية من الأخطاء (تستبدل الملفات القديمة)
-// ═══════════════════════════════════════════════════════════
-
-// ✅ حماية syncAllStockToWarehouses
-if (typeof window.syncAllStockToWarehouses === 'function') {
-    const _originalSync = window.syncAllStockToWarehouses;
-    window.syncAllStockToWarehouses = function() {
-        try {
-            if (typeof products === 'undefined' || !Array.isArray(products)) {
-                console.warn('⚠️ products مش موجود');
-                return { movedCount: 0, totalQty: 0 };
-            }
-            if (typeof warehouses === 'undefined' || !Array.isArray(warehouses) || warehouses.length === 0) {
-                console.warn('⚠️ warehouses مش موجود');
-                return { movedCount: 0, totalQty: 0 };
-            }
-            return _originalSync.apply(this, arguments);
-        } catch (e) {
-            console.warn('⚠️ خطأ محمي:', e.message);
-            return { movedCount: 0, totalQty: 0 };
-        }
-    };
-}
-
-// ═══════════════════════════════════════════════════════════
-// 🔄 5. زر مزامنة يدوي
+// 🔄 4. زر مزامنة يدوي
 // ═══════════════════════════════════════════════════════════
 
 window.manualSyncStock = function() {
@@ -279,134 +305,10 @@ window.manualSyncStock = function() {
         if (typeof renderProducts === 'function') renderProducts();
         if (typeof renderWarehouses === 'function') renderWarehouses();
         if (typeof renderWarehouseStock === 'function') renderWarehouseStock();
+        if (typeof renderWarehouseStatsOnDashboard === 'function') renderWarehouseStatsOnDashboard();
         if (typeof populateAllDropdowns === 'function') populateAllDropdowns();
     } catch (e) {
         console.warn('⚠️ خطأ في manualSyncStock:', e.message);
-    }
-};
-
-// ═══════════════════════════════════════════════════════════
-// 🔄 6. عرض حركات المخازن (مع حماية)
-// ═══════════════════════════════════════════════════════════
-
-window.renderWarehouseMovements = function() {
-    try {
-        const c = document.getElementById('warehouseMovementsList');
-        if (!c) return;
-        
-        if (typeof warehouseMovements === 'undefined' || !Array.isArray(warehouseMovements) || warehouseMovements.length === 0) {
-            c.innerHTML = '<div class="empty-state"><i class="fas fa-exchange-alt"></i><span>لا توجد حركات</span></div>';
-            return;
-        }
-        
-        const typeNames = {
-            'in': { name: '➕ إدخال', color: '#2D8F5E', icon: '📥' },
-            'out': { name: '➖ صرف', color: '#E06060', icon: '📤' },
-            'transfer': { name: '🔄 تحويل', color: '#4A8AB5', icon: '🔄' },
-            'opening': { name: '🎁 افتتاحي', color: '#C9A94E', icon: '📊' },
-            'adjustment': { name: '⚖️ تسوية', color: '#E6A830', icon: '⚖️' }
-        };
-        
-        let html = '<div class="table-header" style="grid-template-columns: 0.4fr 0.8fr 1.2fr 1fr 0.6fr 1.2fr;"><span>#</span><span>النوع</span><span>الصنف</span><span>المخزن</span><span>الكمية</span><span>التاريخ</span></div>';
-        
-        warehouseMovements.slice(0, 100).forEach(m => {
-            const tn = typeNames[m.type] || { name: m.type, color: '#5D5D5D', icon: '📋' };
-            let warehouseText = m.warehouseName || '';
-            
-            if (m.type === 'transfer') {
-                warehouseText = (m.fromWarehouseName || '') + ' ← ' + (m.toWarehouseName || '');
-            }
-            
-            let qtyText = tn.icon + ' ' + m.qty;
-            if (m.type === 'adjustment') {
-                qtyText = (m.diff > 0 ? '+' : '') + m.diff;
-            }
-            
-            html += '<div class="table-row" style="grid-template-columns: 0.4fr 0.8fr 1.2fr 1fr 0.6fr 1.2fr;font-size:11px;">' +
-                '<span>#' + (m.number || '-') + '</span>' +
-                '<span style="color:' + tn.color + ';font-weight:700;font-size:10px;">' + tn.name + '</span>' +
-                '<span>' + (m.productName || '') + '</span>' +
-                '<span style="font-size:10px;color:#A89070;">' + warehouseText + '</span>' +
-                '<span style="color:' + tn.color + ';font-weight:700;">' + qtyText + '</span>' +
-                '<span style="font-size:10px;color:#A89070;">' + (m.date || '') + '<br>' + (m.time || '') + '</span>' +
-                '</div>';
-        });
-        c.innerHTML = html;
-    } catch (e) {
-        console.warn('⚠️ خطأ في renderWarehouseMovements:', e.message);
-    }
-};
-
-// ═══════════════════════════════════════════════════════════
-// 🔄 7. عرض المنتجات (مع المخازن)
-// ═══════════════════════════════════════════════════════════
-
-window.renderProducts = function() {
-    try {
-        const container = document.getElementById('productList');
-        if (!container) return;
-        
-        if (typeof products === 'undefined' || !Array.isArray(products)) return;
-        if (typeof warehouses === 'undefined' || !Array.isArray(warehouses)) return;
-        
-        const search = (document.getElementById('inventorySearch')?.value || '').trim().toLowerCase();
-        let filtered = products;
-        if (search) {
-            filtered = products.filter(p => 
-                (p.name || '').toLowerCase().includes(search) || 
-                (p.barcode && p.barcode.includes(search))
-            );
-        }
-        
-        if (filtered.length === 0) {
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><span>' + (search ? 'لا توجد نتائج' : 'لا توجد منتجات') + '</span></div>';
-            return;
-        }
-        
-        const showActions = typeof canEdit === 'function' && canEdit() || typeof canDelete === 'function' && canDelete();
-        
-        let headerCols = '<span>المنتج</span><span>الشراء</span><span>البيع</span>';
-        warehouses.forEach(w => {
-            const shortName = (w.name || '').substring(0, 8);
-            headerCols += '<span style="font-size:9px;">' + shortName + (w.isDefault ? '⭐' : '') + '</span>';
-        });
-        headerCols += '<span>الإجمالي</span>';
-        if (showActions) headerCols += '<span></span>';
-        
-        const cols = '2fr 0.7fr 0.7fr ' + warehouses.map(() => '0.8fr').join(' ') + ' 0.7fr ' + (showActions ? '1fr' : '0');
-        
-        let html = '<div class="table-header" style="grid-template-columns: ' + cols + ';">' + headerCols + '</div>';
-        
-        filtered.forEach(p => {
-            const low = p.qty <= (p.min || 5);
-            
-            let cellsHtml = 
-                '<span><strong>' + p.name + '</strong>' + (p.barcode ? '<br><small style="color:#A89070;font-size:9px;">' + p.barcode + '</small>' : '') + '</span>' +
-                '<span>' + formatMoney(p.buy) + '</span>' +
-                '<span style="color:#2D8F5E;font-weight:700;">' + formatMoney(p.sell) + '</span>';
-            
-            warehouses.forEach(w => {
-                const qty = typeof getProductStockInWarehouse === 'function' 
-                    ? getProductStockInWarehouse(p.id, w.id) 
-                    : 0;
-                cellsHtml += '<span style="color:' + (qty > 0 ? '#C9A94E' : '#5D5D5D') + ';font-weight:' + (qty > 0 ? '700' : '400') + ';font-size:11px;">' + qty + '</span>';
-            });
-            
-            cellsHtml += '<span style="' + (low ? 'color:#E06060;font-weight:700;' : 'color:#4A8AB5;font-weight:700;') + '">' + p.qty + (low ? ' ⚠️' : '') + '</span>';
-            
-            if (showActions) {
-                cellsHtml += '<div style="display:flex;gap:4px;">' +
-                    (typeof canEdit === 'function' && canEdit() ? '<button class="btn btn-warning btn-sm" onclick="editProduct(' + p.id + ')"><i class="fas fa-edit"></i></button>' : '') +
-                    (typeof canDelete === 'function' && canDelete() ? '<button class="btn btn-danger btn-sm" onclick="deleteProduct(' + p.id + ')"><i class="fas fa-trash"></i></button>' : '') +
-                    '</div>';
-            }
-            
-            html += '<div class="table-row" style="grid-template-columns: ' + cols + ';">' + cellsHtml + '</div>';
-        });
-        
-        container.innerHTML = html;
-    } catch (e) {
-        console.warn('⚠️ خطأ في renderProducts:', e.message);
     }
 };
 
@@ -424,7 +326,7 @@ window.addEventListener('DOMContentLoaded', function() {
                 console.log('✅ تمت مزامنة ' + result.movedCount + ' منتج');
                 if (typeof showToast === 'function') {
                     setTimeout(function() {
-                        showToast('✅ تمت مزامنة ' + result.movedCount + ' منتج مع المخازن', 'success');
+                        showToast('✅ تمت مزامنة ' + result.movedCount + ' منتج', 'success');
                     }, 2000);
                 }
             }
@@ -438,5 +340,4 @@ window.addEventListener('DOMContentLoaded', function() {
     }, 2000);
 });
 
-console.log('✅ تم تحميل app-sync-stock.js بنجاح');
-console.log('🔄 مزامنة المخزون مع المخازن جاهزة (مع الحماية)');
+console.log('✅ تم تحميل app-sync-stock.js بنجاح (مع حماية كاملة)');
