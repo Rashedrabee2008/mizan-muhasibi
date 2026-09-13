@@ -1,37 +1,26 @@
 // ============================================================
-// الميزان 14.0.0 - البحث القسري في كل التطبيق
-// app-search-force.js
+// الميزان 14.0.0 - حل مشكلة الكيبورد على الموبايل
+// app-mobile-fix.js
 // ============================================================
 // 
-// يستخدم MutationObserver لاكتشاف القوائم فور بنائها
-// ويطبّق البحث عليها فوراً
+// المشكلة: البحث مش بيفتح الكيبورد على الموبايل
+// الحل: استخدام touchstart بدل mousedown + تحسينات الموبايل
 // ============================================================
 
-console.log('🔍 تحميل app-search-force.js');
+console.log('📱 تحميل app-mobile-fix.js - إصلاح الموبايل');
 
 // ═══════════════════════════════════════════════════════════
-// 🎨 تطبيع النص
+// 🔍 كشف الموبايل
 // ═══════════════════════════════════════════════════════════
-window.normalizeArabic = function(text) {
-    if (!text) return '';
-    return String(text).toLowerCase().trim()
-        .replace(/[\u064B-\u0652]/g, '')
-        .replace(/[أإآا]/g, 'ا')
-        .replace(/[يى]/g, 'ي')
-        .replace(/ة/g, 'ه')
-        .replace(/\s+/g, ' ');
-};
-
-window.matchesSearch = function(text, query) {
-    if (!query) return true;
-    if (!text) return false;
-    return normalizeArabic(String(text)).includes(normalizeArabic(String(query)));
+window.isMobile = function() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+        || window.innerWidth <= 768;
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🔧 القائمة الواحدة
+// 🔧 إعادة بناء القائمة المنسدلة (المصححة للموبايل)
 // ═══════════════════════════════════════════════════════════
-window.makeSelectSearchable = function(selectId, placeholder, icon) {
+window.makeSelectSearchableFixed = function(selectId, placeholder, icon) {
     icon = icon || '🔍';
     const original = document.getElementById(selectId);
     if (!original) return false;
@@ -52,6 +41,13 @@ window.makeSelectSearchable = function(selectId, placeholder, icon) {
         }
     });
     
+    // لو مفيش خيارات، منعملش حاجة
+    if (options.length === 0) {
+        original.style.display = '';
+        delete original.dataset.searchable;
+        return false;
+    }
+    
     const wrapper = document.createElement('div');
     wrapper.className = 'smart-select-wrapper';
     wrapper.style.cssText = 'position:relative;';
@@ -62,7 +58,10 @@ window.makeSelectSearchable = function(selectId, placeholder, icon) {
     if (currentOpt && currentOpt.value !== '') currentLabel = currentOpt.textContent.trim();
     
     wrapper.innerHTML = 
-        '<input type="text" id="' + uid + '_input" class="smart-select-input" placeholder="' + placeholder + '" value="' + currentLabel + '" autocomplete="off" />' +
+        '<input type="text" id="' + uid + '_input" class="smart-select-input" ' +
+        'placeholder="' + placeholder + '" value="' + currentLabel + '" ' +
+        'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" ' +
+        'inputmode="text" />' +
         '<div id="' + uid + '_dropdown" class="smart-select-dropdown" style="display:none;"></div>';
     
     original.parentNode.insertBefore(wrapper, original);
@@ -95,39 +94,88 @@ window.makeSelectSearchable = function(selectId, placeholder, icon) {
         dropdown.innerHTML = html;
         dropdown.style.display = 'block';
         
+        // ═══ الحل الأساسي: استخدام mousedown على الكمبيوتر + touchend على الموبايل ═══
         dropdown.querySelectorAll('.smart-select-item').forEach(item => {
-            item.addEventListener('mousedown', function(e) {
-                e.preventDefault();
-                input.value = this.dataset.label;
-                original.value = this.dataset.value;
+            const handleSelect = function(e) {
+                // ✅ نمنع فقط على الكمبيوتر، مش على الموبايل
+                if (!isMobile()) {
+                    e.preventDefault();
+                }
+                
+                const value = this.dataset.value;
+                const label = this.dataset.label;
+                
+                input.value = label;
+                original.value = value;
                 original.dispatchEvent(new Event('change', { bubbles: true }));
                 dropdown.style.display = 'none';
-            });
+                
+                // ✅ نرجع الفوكس للخارج (عشان الكيبورد يقفل بعد الاختيار)
+                input.blur();
+            };
+            
+            // ✅ للكمبيوتر
+            item.addEventListener('mousedown', handleSelect);
+            
+            // ✅ للموبايل - touchstart أفضل من click
+            item.addEventListener('touchstart', function(e) {
+                e.preventDefault(); // ✅ مهم عشان مايفتحش الكيبورد تاني
+                handleSelect.call(this, e);
+            }, { passive: false });
         });
     };
     
-    input.addEventListener('input', function() { showDropdown(filterOptions(this.value.trim())); });
-    input.addEventListener('focus', function() { showDropdown(filterOptions(this.value.trim())); });
-    input.addEventListener('blur', function() { setTimeout(() => { dropdown.style.display = 'none'; }, 200); });
+    // ═══ الأحداث - محسّنة للموبايل ═══
     
+    // ✅ عند الكتابة - بتشتغل على الموبايل والكمبيوتر
+    input.addEventListener('input', function() {
+        showDropdown(filterOptions(this.value.trim()));
+    });
+    
+    // ✅ عند الفوكس - ما نمنعش الفوكس على الموبايل
+    input.addEventListener('focus', function() {
+        showDropdown(filterOptions(this.value.trim()));
+    });
+    
+    // ✅ عند الخروج - تأخير بسيط عشان نقدر نختار من القايمة
+    input.addEventListener('blur', function() {
+        setTimeout(() => { 
+            dropdown.style.display = 'none'; 
+        }, 300);
+    });
+    
+    // ✅ منع لوحة المفاتيح من التصرف بشكل غريب
     input.addEventListener('keydown', function(e) {
         const items = dropdown.querySelectorAll('.smart-select-item');
         const current = dropdown.querySelector('.smart-select-item.active');
+        
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             if (!items.length) return;
-            if (!current) { items[0].classList.add('active'); items[0].scrollIntoView({ block: 'nearest' }); }
-            else {
+            if (!current) { 
+                items[0].classList.add('active'); 
+                items[0].scrollIntoView({ block: 'nearest' }); 
+            } else {
                 const idx = Array.from(items).indexOf(current);
-                if (idx < items.length - 1) { current.classList.remove('active'); items[idx + 1].classList.add('active'); items[idx + 1].scrollIntoView({ block: 'nearest' }); }
+                if (idx < items.length - 1) { 
+                    current.classList.remove('active'); 
+                    items[idx + 1].classList.add('active'); 
+                    items[idx + 1].scrollIntoView({ block: 'nearest' }); 
+                }
             }
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
             if (!items.length) return;
-            if (!current) { items[items.length - 1].classList.add('active'); items[items.length - 1].scrollIntoView({ block: 'nearest' }); }
-            else {
+            if (!current) { 
+                items[items.length - 1].classList.add('active'); 
+                items[items.length - 1].scrollIntoView({ block: 'nearest' }); 
+            } else {
                 const idx = Array.from(items).indexOf(current);
-                if (idx > 0) { current.classList.remove('active'); items[idx - 1].classList.add('active'); items[idx - 1].scrollIntoView({ block: 'nearest' }); }
+                if (idx > 0) { 
+                    current.classList.remove('active'); 
+                    items[idx - 1].classList.add('active'); 
+                    items[idx - 1].scrollIntoView({ block: 'nearest' }); 
+                }
             }
         } else if (e.key === 'Enter') {
             e.preventDefault();
@@ -138,11 +186,16 @@ window.makeSelectSearchable = function(selectId, placeholder, icon) {
         }
     });
     
+    // ✅ مهم جداً: منع التنقل بالتاب من قفل القائمة
+    input.addEventListener('touchstart', function(e) {
+        // لا نمنع السلوك الافتراضي، عشان الكيبورد يفتح
+    }, { passive: true });
+    
     return true;
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🔄 إعادة بناء البحث (مع إزالة القديم)
+// 🔄 إعادة بناء البحث (بالنسخة المصححة)
 // ═══════════════════════════════════════════════════════════
 window.rebuildSearch = function() {
     // 1. إزالة كل الـ wrappers القديمة
@@ -194,80 +247,133 @@ window.rebuildSearch = function() {
     
     let applied = 0;
     configs.forEach(([id, placeholder, icon]) => {
-        if (makeSelectSearchable(id, placeholder, icon)) applied++;
+        if (makeSelectSearchableFixed(id, placeholder, icon)) applied++;
     });
     
     return applied;
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🔄 الحقول العادية - زر مسح
+// 🔧 إصلاح الكيبورد على الموبايل - منع Zoom
 // ═══════════════════════════════════════════════════════════
-window.enhanceSearchInputs = function() {
-    const ids = ['inventorySearch', 'invoiceSearch', 'customerSearch', 'supplierSearch', 'userSearch', 'auditSearch', 'journalSearch'];
-    ids.forEach(id => {
-        const input = document.getElementById(id);
-        if (!input || input.dataset.enhanced === 'true') return;
-        input.dataset.enhanced = 'true';
-        
-        const parent = input.parentNode;
-        if (parent && !parent.querySelector('.clear-search-btn')) {
-            parent.style.position = 'relative';
-            input.style.paddingLeft = '40px';
-            
-            const btn = document.createElement('button');
-            btn.className = 'clear-search-btn';
-            btn.innerHTML = '✕';
-            btn.style.cssText = 'position:absolute;left:12px;top:50%;transform:translateY(-50%);background:#3D3D3D;border:none;color:#F5E6C8;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:12px;display:none;align-items:center;justify-content:center;font-weight:900;';
-            btn.onclick = () => {
-                input.value = '';
-                input.dispatchEvent(new Event('input', { bubbles: true }));
-                btn.style.display = 'none';
-                input.focus();
-            };
-            parent.appendChild(btn);
-            
-            input.addEventListener('input', () => {
-                btn.style.display = input.value ? 'flex' : 'none';
-            });
+window.fixMobileKeyboard = function() {
+    // ✅ منع الزووم التلقائي عند الكتابة
+    const metaViewport = document.querySelector('meta[name="viewport"]');
+    if (metaViewport) {
+        metaViewport.setAttribute('content', 
+            'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+        );
+    }
+    
+    // ✅ التأكد من أن كل حقول الإدخال لها حجم مناسب (16px+) لمنع الزووم على iOS
+    const style = document.createElement('style');
+    style.textContent = `
+        /* منع الزووم على iOS */
+        input[type="text"],
+        input[type="number"],
+        input[type="password"],
+        input[type="date"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="search"],
+        select,
+        textarea,
+        .smart-select-input {
+            font-size: 16px !important;
+            -webkit-text-size-adjust: 100%;
+            touch-action: manipulation;
         }
-    });
+        
+        /* تحسين النقر على الموبايل */
+        .smart-select-item,
+        .btn,
+        .nav-item,
+        button {
+            -webkit-tap-highlight-color: rgba(201, 169, 78, 0.3);
+            touch-action: manipulation;
+        }
+        
+        /* منع تحديد النص في الأزرار */
+        .btn, .nav-item, button, .smart-select-item {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        /* نسمح بتحديد النص في حقل البحث */
+        input, textarea {
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        
+        /* القائمة المنسدلة على الموبايل */
+        @media (max-width: 768px) {
+            .smart-select-dropdown {
+                position: fixed !important;
+                top: auto !important;
+                bottom: 0 !important;
+                right: 0 !important;
+                left: 0 !important;
+                max-height: 60vh !important;
+                border-radius: 16px 16px 0 0 !important;
+                animation: slideUpMobile 0.3s ease-out !important;
+                z-index: 99999 !important;
+            }
+            
+            @keyframes slideUpMobile {
+                from { transform: translateY(100%); }
+                to { transform: translateY(0); }
+            }
+            
+            .smart-select-item {
+                padding: 16px 14px !important;
+                font-size: 15px !important;
+                border-bottom: 1px solid #2D2D2D !important;
+            }
+            
+            .smart-icon {
+                font-size: 20px !important;
+            }
+            
+            .smart-label {
+                font-size: 15px !important;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    console.log('✅ تم إصلاح إعدادات الموبايل');
 };
 
 // ═══════════════════════════════════════════════════════════
 // 🚀 التطبيق الشامل
 // ═══════════════════════════════════════════════════════════
-window.applySearchNow = function() {
+window.applyMobileFix = function() {
+    fixMobileKeyboard();
     const count = rebuildSearch();
-    enhanceSearchInputs();
-    console.log(`✅ تم تفعيل البحث على ${count} قائمة`);
+    console.log(`📱 تم تطبيق إصلاح الموبايل على ${count} قائمة`);
+    return count;
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🔄 MutationObserver - يراقب القوائم ويطبق البحث فوراً
+// 🔄 MutationObserver - يراقب القوائم
 // ═══════════════════════════════════════════════════════════
-window.startSearchObserver = function() {
+window.startMobileObserver = function() {
     const observer = new MutationObserver((mutations) => {
         let needsRebuild = false;
         
         mutations.forEach(m => {
-            // لو اتضاف select جديد
             m.addedNodes.forEach(node => {
                 if (node.nodeType === 1) {
-                    if (node.tagName === 'SELECT') {
-                        needsRebuild = true;
-                    } else if (node.querySelector && node.querySelector('select')) {
-                        needsRebuild = true;
-                    }
+                    if (node.tagName === 'SELECT') needsRebuild = true;
+                    else if (node.querySelector && node.querySelector('select')) needsRebuild = true;
                 }
             });
             
-            // لو اتغيرت خيارات select
             if (m.type === 'childList' && m.target.tagName === 'SELECT') {
-                // القائمة تحدثت، نعيد تفعيل البحث عليها
                 const sel = m.target;
                 if (sel.dataset.searchable === 'true') {
-                    // نحذف العلامة، عشان نعيد البناء
                     delete sel.dataset.searchable;
                     needsRebuild = true;
                 }
@@ -275,10 +381,10 @@ window.startSearchObserver = function() {
         });
         
         if (needsRebuild) {
-            clearTimeout(window._rebuildTimer);
-            window._rebuildTimer = setTimeout(() => {
-                applySearchNow();
-            }, 100);
+            clearTimeout(window._mobileRebuildTimer);
+            window._mobileRebuildTimer = setTimeout(() => {
+                applyMobileFix();
+            }, 150);
         }
     });
     
@@ -286,52 +392,44 @@ window.startSearchObserver = function() {
         childList: true,
         subtree: true
     });
-    
-    console.log('👀 MutationObserver شغال - سيراقب القوائم');
 };
 
 // ═══════════════════════════════════════════════════════════
 // 🚀 التشغيل
 // ═══════════════════════════════════════════════════════════
 
-// عند فتح الصفحة
 window.addEventListener('DOMContentLoaded', function() {
     // انتظر حتى تتحمل كل البيانات
     setTimeout(() => {
-        applySearchNow();
-        startSearchObserver();
+        applyMobileFix();
+        startMobileObserver();
+        console.log('📱 التطبيق جاهز للموبايل والكمبيوتر');
     }, 3000);
     
-    // إعادة التطبيق كل ثانية لأول 15 ثانية (عشان نضمن)
+    // إعادة التطبيق أول 15 ثانية
     let count = 0;
     const interval = setInterval(() => {
         count++;
-        applySearchNow();
+        applyMobileFix();
         if (count >= 15) clearInterval(interval);
     }, 1000);
 });
 
-// عند التنقل بين الصفحات
-const _nav = window.navigateTo;
+// عند التنقل
+const _navMobile = window.navigateTo;
 window.navigateTo = function(page) {
-    if (_nav) _nav.apply(this, arguments);
-    setTimeout(applySearchNow, 200);
-    setTimeout(applySearchNow, 600);
-    setTimeout(applySearchNow, 1200);
+    if (_navMobile) _navMobile.apply(this, arguments);
+    setTimeout(applyMobileFix, 200);
+    setTimeout(applyMobileFix, 600);
 };
 
 // عند تحديث القوائم
-const _populate = window.populateAllDropdowns;
+const _populateMobile = window.populateAllDropdowns;
 window.populateAllDropdowns = function() {
-    if (_populate) _populate.apply(this, arguments);
-    setTimeout(applySearchNow, 200);
-    setTimeout(applySearchNow, 700);
+    if (_populateMobile) _populateMobile.apply(this, arguments);
+    setTimeout(applyMobileFix, 200);
+    setTimeout(applyMobileFix, 700);
 };
 
-// دالة يدوية لو احتجت
-window.refreshSearchNow = function() {
-    applySearchNow();
-    showToast('✅ تم تحديث البحث', 'success');
-};
-
-console.log('✅ app-search-force.js جاهز');
+console.log('✅ app-mobile-fix.js جاهز');
+console.log('📱 البحث سيعمل على الموبايل والكمبيوتر');
