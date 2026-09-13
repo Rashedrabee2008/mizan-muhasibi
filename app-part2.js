@@ -1,134 +1,133 @@
 // ============================================================
-// الميزان 13.0.0 - الجزء 2: العمليات
-// المخزون + البيع + الشراء + المرتجعات + الدفعات + المقاصة
+// الميزان 14.0.0 - الجزء 2: العمليات
+// app-part2.js (نسخة كاملة مع البحث الذكي المدمج)
 // ============================================================
 
-// ============================================================
-// المخزون
-// ============================================================
-window.saveProduct = function() {
-    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const id = $('productId').value;
-    const name = $('productName').value.trim();
-    const barcode = $('productBarcode').value.trim();
-    const buy = parseFloat($('productBuy').value) || 0;
-    const sell = parseFloat($('productSell').value) || 0;
-    const qty = parseInt($('productQty').value) || 0;
-    const min = parseInt($('productMin').value) || 5;
-    const vat = parseFloat($('productVAT')?.value) || vatSettings.defaultVAT;
-    if (!name) { showToast('⚠️ أدخل اسم المنتج', 'error'); return; }
-    if (buy <= 0) { showToast('⚠️ أدخل سعر شراء صحيح', 'error'); return; }
-    if (sell <= 0) { showToast('⚠️ أدخل سعر بيع صحيح', 'error'); return; }
-    if (id) {
-        if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-        const idx = products.findIndex(p => p.id == id);
-        if (idx > -1) {
-            const old = { ...products[idx] };
-            products[idx] = { ...products[idx], name, barcode, buy, sell, qty, min, vat };
-            if (old.qty !== qty) {
-                const diff = qty - old.qty;
-                logInventoryMovement({
-                    productId: products[idx].id, productName: name,
-                    type: diff > 0 ? 'in' : 'out', qty: Math.abs(diff), price: buy,
-                    reason: 'adjustment', refType: 'product_edit', refId: products[idx].id,
-                    balanceBefore: old.qty, balanceAfter: qty,
-                    notes: 'تعديل يدوي للمخزون'
-                });
-            }
-            addAuditLog('edit', 'product', `تعديل منتج: ${name}`);
-            showToast('✅ تم تعديل المنتج', 'success');
-        }
-    } else {
-        if (products.find(p => p.name === name)) { showToast('⚠️ المنتج موجود', 'warning'); return; }
-        const newProduct = { id: Date.now(), name, barcode, buy, sell, qty, min, vat, createdAt: new Date().toISOString() };
-        products.push(newProduct);
-        if (qty > 0) {
-            logInventoryMovement({
-                productId: newProduct.id, productName: name,
-                type: 'in', qty: qty, price: buy,
-                reason: 'initial', refType: 'product_add', refId: newProduct.id,
-                balanceBefore: 0, balanceAfter: qty, notes: 'رصيد افتتاحي'
-            });
-        }
-        addAuditLog('add', 'product', `إضافة منتج: ${name}`);
-        showToast('✅ تم إضافة المنتج', 'success');
-    }
-    setData('products', products);
-    resetProductForm(); renderProducts(); populateAllDropdowns(); updateDashboard();
+console.log('📦 تحميل app-part2.js - العمليات + البحث الذكي');
+
+// ═══════════════════════════════════════════════════════════
+// 🔍 نظام البحث الذكي المدمج (Search Engine)
+// ═══════════════════════════════════════════════════════════
+window._srchTimers = {};
+
+window._normAr = function(t) {
+    if (!t) return '';
+    return String(t).toLowerCase().trim()
+        .replace(/[\u064B-\u0652]/g, '')
+        .replace(/[أإآا]/g, 'ا')
+        .replace(/[يى]/g, 'ي')
+        .replace(/ة/g, 'ه');
 };
 
-window.editProduct = function(id) {
-    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const p = products.find(pr => pr.id == id); if (!p) return;
-    $('productId').value = p.id; $('productName').value = p.name;
-    $('productBarcode').value = p.barcode || ''; $('productBuy').value = p.buy;
-    $('productSell').value = p.sell; $('productQty').value = p.qty;
-    $('productMin').value = p.min || 5;
-    if ($('productVAT')) $('productVAT').value = p.vat || vatSettings.defaultVAT;
-    $('productFormTitle').textContent = '✏️ تعديل المنتج';
-    $('productSaveBtnText').textContent = 'حفظ التعديل';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-window.deleteProduct = function(id) {
-    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const p = products.find(pr => pr.id == id); if (!p) return;
-    if (!confirm(`⚠️ حذف "${p.name}"؟`)) return;
-    window.products = products.filter(pr => pr.id != id);
-    setData('products', products);
-    addAuditLog('delete', 'product', `حذف منتج: ${p.name}`);
-    renderProducts(); populateAllDropdowns(); updateDashboard();
-    showToast('🗑️ تم الحذف', 'info');
-};
-
-window.resetProductForm = function() {
-    $('productId').value = ''; $('productName').value = '';
-    $('productBarcode').value = ''; $('productBuy').value = '';
-    $('productSell').value = ''; $('productQty').value = '';
-    $('productMin').value = '5';
-    if ($('productVAT')) $('productVAT').value = vatSettings.defaultVAT;
-    $('productFormTitle').textContent = '➕ إضافة منتج جديد';
-    $('productSaveBtnText').textContent = 'إضافة';
-};
-
-window.renderProducts = function() {
-    const container = $('productList'); if (!container) return;
-    const search = ($('inventorySearch')?.value || '').trim().toLowerCase();
-    let filtered = products;
-    if (search) filtered = products.filter(p => p.name.toLowerCase().includes(search) || (p.barcode && p.barcode.includes(search)));
-    if (filtered.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fas fa-box-open"></i><span>${search ? 'لا توجد نتائج' : 'لا توجد منتجات'}</span></div>`;
-        return;
-    }
-    const showActions = canEdit() || canDelete();
-    let html = `<div class="table-header" style="grid-template-columns: 2fr 0.8fr 0.8fr 0.6fr 0.7fr ${showActions ? '1.2fr' : '0'};"><span>المنتج</span><span>الشراء</span><span>البيع</span><span>الكمية</span><span>الضريبة</span>${showActions ? '<span></span>' : ''}</div>`;
-    filtered.forEach(p => {
-        const low = p.qty <= (p.min || 5);
-        const vat = p.vat || vatSettings.defaultVAT;
-        html += `<div class="table-row" style="grid-template-columns: 2fr 0.8fr 0.8fr 0.6fr 0.7fr ${showActions ? '1.2fr' : '0'};">
-            <span><strong>${p.name}</strong>${p.barcode ? `<br><small style="color:#A89070;font-size:10px;">${p.barcode}</small>` : ''}</span>
-            <span>${formatMoney(p.buy)}</span>
-            <span style="color:#2D8F5E;font-weight:700;">${formatMoney(p.sell)}</span>
-            <span style="${low ? 'color:#E06060;font-weight:700;' : ''}">${p.qty}${low ? ' ⚠️' : ''}</span>
-            <span style="color:#9B59B6;font-weight:700;font-size:11px;">${vat}%</span>
-            ${showActions ? `<div style="display:flex;gap:4px;">
-                ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editProduct(${p.id})"><i class="fas fa-edit"></i></button>` : ''}
-                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>` : ''}
-            </div>` : ''}
-        </div>`;
+window._makeSearchable = function(selectId, placeholder, icon) {
+    icon = icon || '🔍';
+    const sel = document.getElementById(selectId);
+    if (!sel) return false;
+    if (sel.dataset.srch === 'true') return false;
+    
+    const opts = [];
+    Array.from(sel.options).forEach(o => {
+        if (o.value !== '') opts.push({ v: o.value, t: o.textContent.trim() });
     });
-    container.innerHTML = html;
+    if (opts.length === 0) return false;
+    
+    sel.dataset.srch = 'true';
+    sel.style.display = 'none';
+    
+    const wrap = document.createElement('div');
+    wrap.className = 'srch-wrap';
+    wrap.style.cssText = 'position:relative;width:100%;';
+    const uid = 'srch_' + selectId + '_' + Date.now();
+    
+    let cur = '';
+    const c = Array.from(sel.options).find(o => o.value === sel.value);
+    if (c && c.value !== '') cur = c.textContent.trim();
+    
+    wrap.innerHTML = 
+        '<input type="text" id="' + uid + '" placeholder="' + placeholder + '" value="' + cur + '" autocomplete="off" inputmode="search" style="width:100%;font-size:16px;padding:12px 14px;border-radius:8px;border:2px solid #3D3D3D;background:#1C1C1C;color:#F5E6C8;font-family:inherit;box-sizing:border-box;outline:none;">' +
+        '<div id="' + uid + '_d" style="display:none;position:absolute;top:calc(100% + 4px);right:0;left:0;background:#1C1C1C;border:2px solid #C9A94E;border-radius:10px;max-height:280px;overflow-y:auto;z-index:99999;box-shadow:0 12px 32px rgba(0,0,0,0.6);"></div>';
+    
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    
+    const inp = document.getElementById(uid);
+    const dd = document.getElementById(uid + '_d');
+    
+    const showList = function(q) {
+        const q2 = _normAr(q);
+        const list = q2 ? opts.filter(o => _normAr(o.t).includes(q2)) : opts;
+        if (!list.length) {
+            dd.innerHTML = '<div style="padding:16px;text-align:center;color:#5D5D5D;font-size:14px;">لا توجد نتائج</div>';
+            dd.style.display = 'block';
+            return;
+        }
+        let h = '';
+        list.slice(0, 100).forEach(function(o) {
+            h += '<div class="srch-item" data-v="' + o.v + '" data-t="' + o.t.replace(/"/g, '&quot;') + '" style="padding:14px;cursor:pointer;border-bottom:1px solid #2D2D2D;color:#F5E6C8;font-size:14px;display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">' + icon + '</span><span>' + o.t + '</span></div>';
+        });
+        dd.innerHTML = h;
+        dd.style.display = 'block';
+        
+        dd.querySelectorAll('.srch-item').forEach(function(it) {
+            const pick = function(ev) {
+                ev.stopPropagation();
+                inp.value = it.dataset.t;
+                sel.value = it.dataset.v;
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                dd.style.display = 'none';
+                inp.blur();
+            };
+            it.addEventListener('touchend', pick, { passive: true });
+            it.addEventListener('click', pick);
+        });
+    };
+    
+    inp.addEventListener('input', function() {
+        clearTimeout(window._srchTimers[selectId]);
+        const q = this.value;
+        window._srchTimers[selectId] = setTimeout(function() { showList(q); }, 100);
+    });
+    inp.addEventListener('focus', function() { showList(this.value); });
+    inp.addEventListener('blur', function() { setTimeout(function() { dd.style.display = 'none'; }, 250); });
+    
+    return true;
 };
 
-// ============================================================
-// الكاشير - عرض الأصناف
-// ============================================================
+window._applyAllSearch = function() {
+    const list = [
+        ['saleCustomer', '🔍 اكتب اسم العميل...', '👤'],
+        ['saleProduct', '🔍 اكتب اسم المنتج...', '📦'],
+        ['saleWarehouse', '🔍 اختر المخزن...', '🏪'],
+        ['purSupplier', '🔍 اكتب اسم المورد...', '🚚'],
+        ['purProduct', '🔍 اكتب اسم المنتج...', '📦'],
+        ['purWarehouse', '🔍 اختر المخزن...', '🏪'],
+        ['retParty', '🔍 اختر الجهة...', '👤'],
+        ['retProduct', '🔍 اكتب اسم المنتج...', '📦'],
+        ['retWarehouse', '🔍 اختر المخزن...', '🏪'],
+        ['collectCustomer', '🔍 اكتب اسم العميل...', '👤'],
+        ['paySupplier', '🔍 اكتب اسم المورد...', '🚚'],
+        ['settleCustomer', '🔍 اكتب اسم العميل...', '👤'],
+        ['settleProduct', '🔍 اكتب اسم المنتج...', '📦']
+    ];
+    let n = 0;
+    list.forEach(function(cfg) {
+        if (_makeSearchable(cfg[0], cfg[1], cfg[2])) n++;
+    });
+    return n;
+};
+
+// ═══════════════════════════════════════════════════════════
+// 🛒 نظام المبيعات (Sales)
+// ═══════════════════════════════════════════════════════════
+
 window.populateSaleProducts = function() {
     const sel = $('saleProduct'); if (!sel) return;
     const cv = sel.value;
     sel.innerHTML = '<option value="">اختر منتج...</option>';
     products.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name} (متاح: ${p.qty})</option>`);
     sel.value = cv;
+    delete sel.dataset.srch;
+    setTimeout(_applyAllSearch, 50);
 };
 
 window.populateSaleCustomers = function() {
@@ -137,6 +136,20 @@ window.populateSaleCustomers = function() {
     sel.innerHTML = '<option value="">عميل نقدي</option>';
     customers.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
     sel.value = cv;
+    delete sel.dataset.srch;
+    setTimeout(_applyAllSearch, 50);
+};
+
+window.populateSaleWarehouse = function() {
+    const sel = $('saleWarehouse'); if (!sel) return;
+    const cv = sel.value;
+    sel.innerHTML = '<option value="">اختر المخزن...</option>';
+    warehouses.forEach(w => {
+        sel.innerHTML += `<option value="${w.id}" ${w.isDefault ? 'selected' : ''}>${w.name}${w.isDefault ? ' ⭐' : ''}</option>`;
+    });
+    sel.value = cv || (getDefaultWarehouse()?.id || '');
+    delete sel.dataset.srch;
+    setTimeout(_applyAllSearch, 50);
 };
 
 window.updateSalePrice = function() {
@@ -151,17 +164,32 @@ window.addSaleItem = function() {
     const id = $('saleProduct').value;
     const qty = parseInt($('saleQty').value) || 0;
     const price = parseFloat($('salePrice').value) || 0;
+    const whId = $('saleWarehouse')?.value;
+    
     if (!id) { showToast('⚠️ اختر منتج', 'error'); return; }
     if (qty <= 0) { showToast('⚠️ أدخل كمية صحيحة', 'error'); return; }
     if (price <= 0) { showToast('⚠️ أدخل سعر صحيح', 'error'); return; }
+    
     const p = products.find(pr => pr.id == id); if (!p) return;
+    
+    // لو في مخزن، نتحقق من الكمية فيه
+    let availableQty = p.qty;
+    if (whId && typeof getProductStockInWarehouse === 'function') {
+        availableQty = getProductStockInWarehouse(id, whId);
+    }
+    
     const ex = currentSaleItems.find(i => i.productId == id);
     const totalQty = qty + (ex ? ex.qty : 0);
-    if (totalQty > p.qty) { showToast(`⚠️ الكمية المتاحة: ${p.qty}`, 'error'); return; }
+    if (totalQty > availableQty) {
+        showToast(`⚠️ الكمية المتاحة: ${availableQty}`, 'error');
+        return;
+    }
+    
     const vatPercent = p.vat || vatSettings.defaultVAT;
     const subtotal = qty * price;
     const vatAmount = subtotal * (vatPercent / 100);
     const totalWithVAT = subtotal + vatAmount;
+    
     if (ex) {
         ex.qty += qty;
         ex.subtotal = ex.qty * ex.price;
@@ -174,18 +202,30 @@ window.addSaleItem = function() {
             subtotal: subtotal, vatAmount: vatAmount, total: totalWithVAT
         });
     }
-    $('saleQty').value = 1; $('salePrice').value = ''; $('saleProduct').value = '';
-    renderCashier(); updateSaleTotals(); showToast('✅ تم إضافة الصنف', 'success');
+    
+    $('saleQty').value = 1;
+    $('salePrice').value = '';
+    $('saleProduct').value = '';
+    $('saleProduct').dispatchEvent(new Event('change', { bubbles: true }));
+    
+    renderCashier();
+    updateSaleTotals();
+    showToast('✅ تم إضافة الصنف', 'success');
 };
 
-window.removeSaleItem = function(i) { currentSaleItems.splice(i, 1); renderCashier(); updateSaleTotals(); };
+window.removeSaleItem = function(i) {
+    currentSaleItems.splice(i, 1);
+    renderCashier();
+    updateSaleTotals();
+};
 
 window.renderCashier = function() {
     const c = $('saleItemsContainer'), tb = $('saleTotalBox');
     if (!c) return;
     if (currentSaleItems.length === 0) {
         c.innerHTML = `<div class="empty-state"><i class="fas fa-shopping-cart"></i><span>لا توجد أصناف</span></div>`;
-        if (tb) tb.style.display = 'none'; return;
+        if (tb) tb.style.display = 'none';
+        return;
     }
     let html = `<div class="table-header" style="grid-template-columns: 1.8fr 0.7fr 0.8fr 0.8fr 0.5fr;"><span>الصنف</span><span>الكمية</span><span>السعر</span><span>الإجمالي</span><span></span></div>`;
     currentSaleItems.forEach((it, i) => {
@@ -206,6 +246,7 @@ window.updateSaleTotals = function() {
     const isTaxInvoice = invoiceType === 'tax';
     const finalVAT = isTaxInvoice ? vatTotal : 0;
     const grandTotal = subtotal + finalVAT;
+    
     if ($('saleSubtotal')) $('saleSubtotal').textContent = formatMoney(subtotal) + ' ج.م';
     if ($('saleVAT')) {
         $('saleVAT').textContent = isTaxInvoice ? formatMoney(finalVAT) + ' ج.م' : '0.00 ج.م (غير ضريبية)';
@@ -214,16 +255,26 @@ window.updateSaleTotals = function() {
     if ($('saleTotal')) $('saleTotal').textContent = formatMoney(grandTotal) + ' 🇪🇬';
 };
 
-// ============================================================
-// حفظ فاتورة البيع (مهمة جداً)
-// ============================================================
 window.saveSale = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (currentSaleItems.length === 0) { showToast('⚠️ لا توجد أصناف', 'error'); return; }
+    
+    const whId = $('saleWarehouse')?.value || (typeof getDefaultWarehouse === 'function' ? getDefaultWarehouse()?.id : null);
+    
     for (const it of currentSaleItems) {
         const p = products.find(pr => pr.id == it.productId);
-        if (!p || p.qty < it.qty) { showToast(`⚠️ الكمية غير كافية: ${it.name}`, 'error'); return; }
+        if (!p) { showToast(`⚠️ المنتج غير موجود: ${it.name}`, 'error'); return; }
+        
+        let available = p.qty;
+        if (whId && typeof getProductStockInWarehouse === 'function') {
+            available = getProductStockInWarehouse(it.productId, whId);
+        }
+        if (available < it.qty) {
+            showToast(`⚠️ الكمية غير كافية: ${it.name} (متاح: ${available})`, 'error');
+            return;
+        }
     }
+    
     const subtotal = currentSaleItems.reduce((s, i) => s + (i.subtotal || i.total), 0);
     const vatTotal = currentSaleItems.reduce((s, i) => s + (i.vatAmount || 0), 0);
     const customer = $('saleCustomer').value || 'عميل نقدي';
@@ -233,14 +284,14 @@ window.saveSale = function() {
     const finalVAT = isTaxInvoice ? vatTotal : 0;
     const total = subtotal + finalVAT;
     const today = getTodayDate();
-
+    
     if (paymentMethod === 'credit' && customer === 'عميل نقدي') {
         showToast('⚠️ اختر عميل مسجل للبيع الآجل', 'error');
         return;
     }
-
+    
     let cogsTotal = 0;
-    const itemCosts = [];
+    const itemChanges = [];
     currentSaleItems.forEach(it => {
         const p = products.find(pr => pr.id == it.productId);
         if (p) {
@@ -248,34 +299,51 @@ window.saveSale = function() {
             cogsTotal += (p.buy * it.qty);
             const before = p.qty;
             p.qty -= it.qty;
-            itemCosts.push({ item: it, before: before, after: p.qty });
+            
+            // خصم من المخزن
+            if (whId && typeof getProductStockInWarehouse === 'function') {
+                const whBefore = getProductStockInWarehouse(it.productId, whId);
+                if (typeof setProductStockInWarehouse === 'function') {
+                    setProductStockInWarehouse(it.productId, whId, Math.max(0, whBefore - it.qty));
+                }
+            }
+            
+            itemChanges.push({ item: it, before, after: p.qty });
         }
     });
-
+    
     const inv = {
         id: Date.now(), number: sales.length + 1, customer: customer,
         customerId: customers.find(c => c.name === customer)?.id || null,
-        paymentMethod: paymentMethod, invoiceType: isTaxInvoice ? 'tax' : 'simple',
+        warehouseId: whId,
+        paymentMethod: paymentMethod,
+        invoiceType: isTaxInvoice ? 'tax' : 'simple',
         subtotal: subtotal, vatTotal: finalVAT, cogs: cogsTotal, total: total,
         paidAmount: paymentMethod === 'cash' ? total : 0,
         remainingAmount: paymentMethod === 'cash' ? 0 : total,
         status: paymentMethod === 'cash' ? 'paid' : 'unpaid',
         items: JSON.parse(JSON.stringify(currentSaleItems)),
         relatedPayments: [], relatedReturns: [], journalEntryId: null,
-        date: today, time: getNowTime(), createdAt: new Date().toISOString(),
+        date: today, time: getNowTime(),
+        createdAt: new Date().toISOString(),
         createdBy: currentUser ? currentUser.name : 'unknown'
     };
     sales.push(inv);
-
-    itemCosts.forEach(({ item, before, after }) => {
-        logInventoryMovement({
-            productId: item.productId, productName: item.name,
-            type: 'out', qty: item.qty, price: item.costPrice,
-            reason: 'sale', refType: 'sale', refId: inv.id, refNumber: inv.number,
-            balanceBefore: before, balanceAfter: after
-        });
+    
+    // تسجيل حركات المخزون
+    itemChanges.forEach(({ item, before, after }) => {
+        if (typeof logInventoryMovement === 'function') {
+            logInventoryMovement({
+                productId: item.productId, productName: item.name,
+                type: 'out', qty: item.qty, price: item.costPrice,
+                reason: 'sale', refType: 'sale', refId: inv.id, refNumber: inv.number,
+                warehouseId: whId,
+                balanceBefore: before, balanceAfter: after
+            });
+        }
     });
-
+    
+    // القيد المحاسبي
     let journalEntry = null;
     try {
         const lines = [];
@@ -285,7 +353,7 @@ window.saveSale = function() {
         const vatAcc = getAccountByNameContains('ضريبة القيمة المضافة (دائن)');
         const cogsAcc = getAccountByNameContains('تكلفة البضاعة');
         const invAcc = getAccountByNameContains('المخزون');
-
+        
         if (paymentMethod === 'cash' && cashAcc) {
             lines.push({ accountId: cashAcc.id, accountName: cashAcc.name, debit: total, credit: 0 });
         } else if (arAcc) {
@@ -295,65 +363,70 @@ window.saveSale = function() {
         if (finalVAT > 0 && vatAcc) lines.push({ accountId: vatAcc.id, accountName: vatAcc.name, debit: 0, credit: finalVAT });
         if (cogsAcc && cogsTotal > 0) lines.push({ accountId: cogsAcc.id, accountName: cogsAcc.name, debit: cogsTotal, credit: 0 });
         if (invAcc && cogsTotal > 0) lines.push({ accountId: invAcc.id, accountName: invAcc.name, debit: 0, credit: cogsTotal });
-
+        
         if (lines.length >= 2) {
             journalEntry = createJournalEntry(
-                `فاتورة بيع ${isTaxInvoice ? 'ضريبية' : 'عادية'} #${inv.number} - ${customer}`,
+                `فاتورة بيع #${inv.number} - ${customer}`,
                 `SALE-${inv.number}`, today, lines, 'sale', inv.id
             );
             if (journalEntry) inv.journalEntryId = journalEntry.id;
         }
     } catch (e) { console.warn('⚠️ فشل القيد:', e); }
-
+    
+    // حركة الخزنة
     if (paymentMethod === 'cash') {
         treasury.push({
             id: Date.now() + 1, type: 'deposit', amount: total,
-            note: `${isTaxInvoice ? 'ضريبية' : 'عادية'} - فاتورة #${inv.number} - ${customer}`,
+            note: `فاتورة بيع #${inv.number} - ${customer}`,
             partyName: customer, invoiceNumber: inv.number,
             refType: 'sale', refId: inv.id, journalEntryId: inv.journalEntryId,
             date: today, time: getNowTime()
         });
-    } else {
-        treasury.push({
-            id: Date.now() + 1, type: 'deposit', amount: 0,
-            note: `بيع آجل - فاتورة #${inv.number} - ${customer} (دين)`,
-            partyName: customer, invoiceNumber: inv.number,
-            refType: 'sale_credit', refId: inv.id, journalEntryId: inv.journalEntryId,
-            date: today, time: getNowTime()
-        });
     }
-
-    setData('products', products); setData('sales', sales); setData('treasury', treasury);
+    
+    setData('products', products);
+    setData('sales', sales);
+    setData('treasury', treasury);
     addAuditLog('add', 'sale', `فاتورة بيع #${inv.number} - ${customer} - ${formatMoney(total)} ج.م`);
-
-    window.currentSaleItems = [];
+    
+    currentSaleItems = [];
     const custEl = $('saleCustomer'); if (custEl) custEl.value = '';
     setRadioValue('salePaymentMethod', 'cash');
     setRadioValue('saleInvoiceType', 'simple');
-    renderCashier(); updateSaleTotals(); populateSaleProducts();
-    updateDashboard(); renderTreasury(); renderInventoryMovements();
+    
+    renderCashier();
+    updateSaleTotals();
+    populateSaleProducts();
+    if (typeof populateSaleWarehouse === 'function') populateSaleWarehouse();
+    updateDashboard();
+    if (typeof renderTreasury === 'function') renderTreasury();
+    
     showToast(`✅ فاتورة #${inv.number} بمبلغ ${formatMoney(total)} 🇪🇬`, 'success');
 };
 
 window.clearSale = function() {
     if (currentSaleItems.length === 0) return;
     if (!confirm('⚠️ إلغاء الفاتورة؟')) return;
-    window.currentSaleItems = [];
+    currentSaleItems = [];
     const custEl = $('saleCustomer'); if (custEl) custEl.value = '';
     setRadioValue('salePaymentMethod', 'cash');
     setRadioValue('saleInvoiceType', 'simple');
-    renderCashier(); updateSaleTotals(); showToast('🗑️ تم الإلغاء', 'info');
+    renderCashier(); updateSaleTotals();
+    showToast('🗑️ تم الإلغاء', 'info');
 };
 
-// ============================================================
-// الشراء
-// ============================================================
+// ═══════════════════════════════════════════════════════════
+// 🛍️ نظام المشتريات (Purchases)
+// ═══════════════════════════════════════════════════════════
+
 window.populatePurSuppliers = function() {
     const sel = $('purSupplier'); if (!sel) return;
     const cv = sel.value;
     sel.innerHTML = '<option value="">اختر مورد...</option>';
     suppliers.forEach(s => sel.innerHTML += `<option value="${s.id}">${s.name}</option>`);
     sel.value = cv;
+    delete sel.dataset.srch;
+    setTimeout(_applyAllSearch, 50);
 };
 
 window.populatePurProducts = function() {
@@ -362,6 +435,20 @@ window.populatePurProducts = function() {
     sel.innerHTML = '<option value="">اختر منتج...</option>';
     products.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name}</option>`);
     sel.value = cv;
+    delete sel.dataset.srch;
+    setTimeout(_applyAllSearch, 50);
+};
+
+window.populatePurWarehouse = function() {
+    const sel = $('purWarehouse'); if (!sel) return;
+    const cv = sel.value;
+    sel.innerHTML = '<option value="">اختر المخزن...</option>';
+    warehouses.forEach(w => {
+        sel.innerHTML += `<option value="${w.id}" ${w.isDefault ? 'selected' : ''}>${w.name}${w.isDefault ? ' ⭐' : ''}</option>`;
+    });
+    sel.value = cv || (getDefaultWarehouse()?.id || '');
+    delete sel.dataset.srch;
+    setTimeout(_applyAllSearch, 50);
 };
 
 window.updatePurPrice = function() {
@@ -379,11 +466,13 @@ window.addPurItem = function() {
     if (!id) { showToast('⚠️ اختر منتج', 'error'); return; }
     if (qty <= 0) { showToast('⚠️ أدخل كمية صحيحة', 'error'); return; }
     if (price <= 0) { showToast('⚠️ أدخل سعر صحيح', 'error'); return; }
+    
     const p = products.find(pr => pr.id == id); if (!p) return;
     const vatPercent = p.vat || vatSettings.defaultVAT;
     const subtotal = qty * price;
     const vatAmount = subtotal * (vatPercent / 100);
     const totalWithVAT = subtotal + vatAmount;
+    
     const ex = currentPurItems.find(i => i.productId == id);
     if (ex) {
         ex.qty += qty;
@@ -397,18 +486,30 @@ window.addPurItem = function() {
             vatAmount: vatAmount, total: totalWithVAT
         });
     }
-    $('purQty').value = 1; $('purPrice').value = ''; $('purProduct').value = '';
-    renderPurItems(); updatePurTotals(); showToast('✅ تم الإضافة', 'success');
+    
+    $('purQty').value = 1;
+    $('purPrice').value = '';
+    $('purProduct').value = '';
+    $('purProduct').dispatchEvent(new Event('change', { bubbles: true }));
+    
+    renderPurItems();
+    updatePurTotals();
+    showToast('✅ تم الإضافة', 'success');
 };
 
-window.removePurItem = function(i) { currentPurItems.splice(i, 1); renderPurItems(); updatePurTotals(); };
+window.removePurItem = function(i) {
+    currentPurItems.splice(i, 1);
+    renderPurItems();
+    updatePurTotals();
+};
 
 window.renderPurItems = function() {
     const c = $('purItemsContainer'), tb = $('purTotalBox');
     if (!c) return;
     if (currentPurItems.length === 0) {
         c.innerHTML = `<div class="empty-state"><i class="fas fa-shopping-cart"></i><span>لا توجد أصناف</span></div>`;
-        if (tb) tb.style.display = 'none'; return;
+        if (tb) tb.style.display = 'none';
+        return;
     }
     let html = `<div class="table-header" style="grid-template-columns: 1.8fr 0.7fr 0.8fr 0.8fr 0.5fr;"><span>الصنف</span><span>الكمية</span><span>السعر</span><span>الإجمالي</span><span></span></div>`;
     currentPurItems.forEach((it, i) => {
@@ -440,9 +541,12 @@ window.updatePurTotals = function() {
 window.savePurchase = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (currentPurItems.length === 0) { showToast('⚠️ لا توجد أصناف', 'error'); return; }
+    
     const sid = $('purSupplier').value;
     if (!sid) { showToast('⚠️ اختر مورد', 'error'); return; }
     const supplier = suppliers.find(s => s.id == sid); if (!supplier) return;
+    
+    const whId = $('purWarehouse')?.value || (typeof getDefaultWarehouse === 'function' ? getDefaultWarehouse()?.id : null);
     const paymentEl = $('purPayment');
     const payment = paymentEl ? paymentEl.value : 'cash';
     const invoiceType = getRadioValue('purInvoiceType', 'simple');
@@ -460,32 +564,44 @@ window.savePurchase = function() {
             const before = p.qty;
             p.qty += it.qty;
             p.buy = it.price;
-            itemChanges.push({ item: it, before: before, after: p.qty });
+            
+            if (whId && typeof getProductStockInWarehouse === 'function' && typeof setProductStockInWarehouse === 'function') {
+                const whBefore = getProductStockInWarehouse(it.productId, whId);
+                setProductStockInWarehouse(it.productId, whId, whBefore + it.qty);
+            }
+            
+            itemChanges.push({ item: it, before, after: p.qty });
         }
     });
     
     const inv = {
         id: Date.now(), number: purchases.length + 1,
         supplierId: supplier.id, supplierName: supplier.name,
+        warehouseId: whId,
         invoiceType: isTaxInvoice ? 'tax' : 'simple',
         subtotal: subtotal, vatTotal: finalVAT,
         items: JSON.parse(JSON.stringify(currentPurItems)),
-        total: total, paidAmount: payment === 'cash' ? total : 0,
+        total: total,
+        paidAmount: payment === 'cash' ? total : 0,
         remainingAmount: payment === 'cash' ? 0 : total,
         payment: payment, status: payment === 'cash' ? 'paid' : 'unpaid',
         relatedPayments: [], relatedReturns: [], journalEntryId: null,
-        date: today, time: getNowTime(), createdAt: new Date().toISOString(),
+        date: today, time: getNowTime(),
+        createdAt: new Date().toISOString(),
         createdBy: currentUser ? currentUser.name : 'unknown'
     };
     purchases.push(inv);
     
     itemChanges.forEach(({ item, before, after }) => {
-        logInventoryMovement({
-            productId: item.productId, productName: item.name,
-            type: 'in', qty: item.qty, price: item.price,
-            reason: 'purchase', refType: 'purchase', refId: inv.id, refNumber: inv.number,
-            balanceBefore: before, balanceAfter: after
-        });
+        if (typeof logInventoryMovement === 'function') {
+            logInventoryMovement({
+                productId: item.productId, productName: item.name,
+                type: 'in', qty: item.qty, price: item.price,
+                reason: 'purchase', refType: 'purchase', refId: inv.id, refNumber: inv.number,
+                warehouseId: whId,
+                balanceBefore: before, balanceAfter: after
+            });
+        }
     });
     
     let journalEntry = null;
@@ -516,41 +632,42 @@ window.savePurchase = function() {
             refType: 'purchase', refId: inv.id, journalEntryId: inv.journalEntryId,
             date: today, time: getNowTime()
         });
-    } else {
-        treasury.push({
-            id: Date.now() + 1, type: 'withdraw', amount: 0,
-            note: `شراء آجل - فاتورة #${inv.number} - ${supplier.name} (دين)`,
-            partyName: supplier.name, invoiceNumber: inv.number,
-            refType: 'purchase_credit', refId: inv.id, journalEntryId: inv.journalEntryId,
-            date: today, time: getNowTime()
-        });
     }
     
-    setData('products', products); setData('purchases', purchases); setData('treasury', treasury);
+    setData('products', products);
+    setData('purchases', purchases);
+    setData('treasury', treasury);
     addAuditLog('add', 'purchase', `فاتورة شراء #${inv.number} - ${supplier.name} - ${formatMoney(total)} ج.م`);
     
-    window.currentPurItems = [];
+    currentPurItems = [];
     const supEl = $('purSupplier'); if (supEl) supEl.value = '';
     setRadioValue('purInvoiceType', 'simple');
-    renderPurItems(); updatePurTotals(); renderPurchases();
-    populatePurProducts(); updateDashboard();
-    renderTreasury(); renderInventoryMovements();
+    
+    renderPurItems();
+    updatePurTotals();
+    renderPurchases();
+    populatePurProducts();
+    if (typeof populatePurWarehouse === 'function') populatePurWarehouse();
+    updateDashboard();
+    if (typeof renderTreasury === 'function') renderTreasury();
+    
     showToast(`✅ فاتورة شراء #${inv.number} بمبلغ ${formatMoney(total)} 🇪🇬`, 'success');
 };
 
 window.clearPurchase = function() {
     if (currentPurItems.length === 0) return;
     if (!confirm('⚠️ إلغاء الفاتورة؟')) return;
-    window.currentPurItems = [];
+    currentPurItems = [];
     const supEl = $('purSupplier'); if (supEl) supEl.value = '';
     setRadioValue('purInvoiceType', 'simple');
-    renderPurItems(); updatePurTotals(); showToast('🗑️ تم الإلغاء', 'info');
+    renderPurItems(); updatePurTotals();
+    showToast('🗑️ تم الإلغاء', 'info');
 };
 
 window.renderPurchases = function() {
     const tc = purchases.length;
     const ta = purchases.reduce((s, i) => s + (i.total || 0), 0);
-    const pa = purchases.filter(i => i.status === 'pending' || i.status === 'unpaid' || i.status === 'partial')
+    const pa = purchases.filter(i => i.status === 'unpaid' || i.status === 'partial')
                         .reduce((s, i) => s + (i.remainingAmount || i.total || 0), 0);
     const today = getTodayDate();
     const tda = purchases.filter(i => i.date === today).reduce((s, i) => s + (i.total || 0), 0);
@@ -594,7 +711,6 @@ window.viewPurchase = function(id) {
     const taxBadge = isTax ? `<span class="tax-badge">🧾 فاتورة ضريبية</span>` : '';
     const subtotal = inv.subtotal !== undefined ? inv.subtotal : inv.total;
     const vatTotal = inv.vatTotal || 0;
-    const remaining = inv.remainingAmount !== undefined ? inv.remainingAmount : inv.total;
     
     const html = `
         <button class="modal-close" onclick="closeModal()">&times;</button>
@@ -603,6 +719,7 @@ window.viewPurchase = function(id) {
             <div class="inv-header">${taxBadge}${logoHtml}
                 <h2>${companyData.name || 'الميزان'}</h2>
                 <p>فاتورة شراء</p>
+                ${companyData.phone ? `<p>📞 ${companyData.phone}</p>` : ''}
             </div>
             <div class="inv-info">
                 <div><span class="lbl">رقم:</span> #${inv.number}</div>
@@ -615,7 +732,6 @@ window.viewPurchase = function(id) {
                 <div class="inv-total-row"><span>المجموع:</span><span>${formatMoney(subtotal)} ج.م</span></div>
                 ${isTax ? `<div class="inv-total-row"><span>الضريبة:</span><span style="color:#9B59B6;">${formatMoney(vatTotal)} ج.م</span></div>` : ''}
                 <div class="inv-total-row grand"><span>الإجمالي:</span><span>${formatMoney(inv.total)} 🇪🇬</span></div>
-                ${remaining > 0 && remaining < inv.total ? `<div class="inv-total-row"><span>المتبقي:</span><span style="color:#E06060;">${formatMoney(remaining)} ج.م</span></div>` : ''}
             </div>
             <div class="inv-footer">${companyData.footer || 'شكراً لتعاملكم معنا 🌟'}</div>
         </div>
@@ -630,32 +746,47 @@ window.deletePurchase = function(id) {
     if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const inv = purchases.find(p => p.id === id); if (!inv) return;
     if (!confirm(`⚠️ حذف فاتورة الشراء #${inv.number}؟`)) return;
+    
     inv.items.forEach(it => {
         const p = products.find(pr => pr.id == it.productId);
         if (p) {
             const before = p.qty;
             p.qty -= it.qty;
-            logInventoryMovement({
-                productId: p.id, productName: p.name,
-                type: 'out', qty: it.qty, price: it.price,
-                reason: 'adjustment', refType: 'purchase_delete', refId: inv.id,
-                refNumber: inv.number, balanceBefore: before, balanceAfter: p.qty,
-                notes: `حذف فاتورة شراء #${inv.number}`
-            });
+            
+            if (inv.warehouseId && typeof getProductStockInWarehouse === 'function' && typeof setProductStockInWarehouse === 'function') {
+                const whBefore = getProductStockInWarehouse(it.productId, inv.warehouseId);
+                setProductStockInWarehouse(it.productId, inv.warehouseId, Math.max(0, whBefore - it.qty));
+            }
+            
+            if (typeof logInventoryMovement === 'function') {
+                logInventoryMovement({
+                    productId: p.id, productName: p.name,
+                    type: 'out', qty: it.qty, price: it.price,
+                    reason: 'adjustment', refType: 'purchase_delete', refId: inv.id,
+                    refNumber: inv.number, balanceBefore: before, balanceAfter: p.qty,
+                    notes: `حذف فاتورة شراء #${inv.number}`
+                });
+            }
         }
     });
-    window.treasury = treasury.filter(t => !((t.refType === 'purchase' || t.refType === 'purchase_credit') && t.refId === id));
-    window.purchases = purchases.filter(p => p.id !== id);
-    setData('products', products); setData('purchases', purchases); setData('treasury', treasury);
+    
+    treasury = treasury.filter(t => !((t.refType === 'purchase' || t.refType === 'purchase_credit') && t.refId === id));
+    purchases = purchases.filter(p => p.id !== id);
+    setData('products', products);
+    setData('purchases', purchases);
+    setData('treasury', treasury);
     addAuditLog('delete', 'purchase', `حذف فاتورة شراء #${inv.number}`);
-    renderPurchases(); renderProducts(); updateDashboard();
-    renderTreasury(); renderInventoryMovements();
+    renderPurchases();
+    renderProducts();
+    updateDashboard();
+    if (typeof renderTreasury === 'function') renderTreasury();
     showToast(`🗑️ تم الحذف`, 'info');
 };
 
-// ============================================================
-// المرتجعات
-// ============================================================
+// ═══════════════════════════════════════════════════════════
+// 🔄 نظام المرتجعات (Returns)
+// ═══════════════════════════════════════════════════════════
+
 window.toggleReturnCustomer = function() {
     const typeEl = $('retType');
     if (!typeEl) return;
@@ -671,12 +802,16 @@ window.populateRetCustomers = function() {
     const sel = $('retParty'); if (!sel) return;
     sel.innerHTML = '<option value="">اختر عميل...</option>';
     customers.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+    delete sel.dataset.srch;
+    setTimeout(_applyAllSearch, 50);
 };
 
 window.populateRetSuppliers = function() {
     const sel = $('retParty'); if (!sel) return;
     sel.innerHTML = '<option value="">اختر مورد...</option>';
     suppliers.forEach(s => sel.innerHTML += `<option value="${s.name}">${s.name}</option>`);
+    delete sel.dataset.srch;
+    setTimeout(_applyAllSearch, 50);
 };
 
 window.populateRetProducts = function() {
@@ -685,6 +820,20 @@ window.populateRetProducts = function() {
     sel.innerHTML = '<option value="">اختر منتج...</option>';
     products.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name}</option>`);
     sel.value = cv;
+    delete sel.dataset.srch;
+    setTimeout(_applyAllSearch, 50);
+};
+
+window.populateRetWarehouse = function() {
+    const sel = $('retWarehouse'); if (!sel) return;
+    const cv = sel.value;
+    sel.innerHTML = '<option value="">اختر المخزن...</option>';
+    warehouses.forEach(w => {
+        sel.innerHTML += `<option value="${w.id}" ${w.isDefault ? 'selected' : ''}>${w.name}${w.isDefault ? ' ⭐' : ''}</option>`;
+    });
+    sel.value = cv || (getDefaultWarehouse()?.id || '');
+    delete sel.dataset.srch;
+    setTimeout(_applyAllSearch, 50);
 };
 
 window.loadReturnInvoices = function() {
@@ -726,40 +875,44 @@ window.addRetItem = function() {
     if (!id) { showToast('⚠️ اختر منتج', 'error'); return; }
     if (qty <= 0) { showToast('⚠️ أدخل كمية صحيحة', 'error'); return; }
     if (price <= 0) { showToast('⚠️ أدخل سعر صحيح', 'error'); return; }
+    
     const p = products.find(pr => pr.id == id); if (!p) return;
     const typeEl = $('retType');
     const type = typeEl ? typeEl.value : 'sale';
-    if (type === 'purchase' && qty > p.qty) { showToast(`⚠️ الكمية المتاحة: ${p.qty}`, 'error'); return; }
-    const invId = $('retOriginalInvoice')?.value;
-    if (invId) {
-        const invoice = type === 'sale' ? sales.find(s => s.id == invId) : purchases.find(pp => pp.id == invId);
-        if (invoice) {
-            const soldQty = invoice.items.find(i => i.productId == id)?.qty || 0;
-            if (soldQty === 0) { showToast('⚠️ المنتج غير موجود في هذه الفاتورة', 'error'); return; }
-            const alreadyReturned = returns.filter(r => r.originalInvoiceId == invId && r.type === type)
-                .flatMap(r => r.items || []).filter(i => i.productId == id).reduce((s, i) => s + i.qty, 0);
-            const currentInCart = currentRetItems.find(i => i.productId == id)?.qty || 0;
-            if (qty + alreadyReturned + currentInCart > soldQty) {
-                showToast(`⚠️ الكمية المتبقية: ${soldQty - alreadyReturned - currentInCart}`, 'error');
-                return;
-            }
-        }
+    
+    if (type === 'purchase' && qty > p.qty) {
+        showToast(`⚠️ الكمية المتاحة: ${p.qty}`, 'error');
+        return;
     }
+    
     const ex = currentRetItems.find(i => i.productId == id);
     if (ex) { ex.qty += qty; ex.total = ex.qty * ex.price; }
-    else currentRetItems.push({ productId: p.id, name: p.name, qty, price, costPrice: p.buy, total: qty * price });
-    $('retQty').value = 1; $('retPrice').value = ''; $('retProduct').value = '';
-    renderRetItems(); showToast('✅ تم الإضافة', 'success');
+    else currentRetItems.push({
+        productId: p.id, name: p.name, qty, price,
+        costPrice: p.buy, total: qty * price
+    });
+    
+    $('retQty').value = 1;
+    $('retPrice').value = '';
+    $('retProduct').value = '';
+    $('retProduct').dispatchEvent(new Event('change', { bubbles: true }));
+    
+    renderRetItems();
+    showToast('✅ تم الإضافة', 'success');
 };
 
-window.removeRetItem = function(i) { currentRetItems.splice(i, 1); renderRetItems(); };
+window.removeRetItem = function(i) {
+    currentRetItems.splice(i, 1);
+    renderRetItems();
+};
 
 window.renderRetItems = function() {
     const c = $('retItemsContainer'), tb = $('retTotalBox'), te = $('retTotal');
     if (!c) return;
     if (currentRetItems.length === 0) {
         c.innerHTML = `<div class="empty-state"><i class="fas fa-undo-alt"></i><span>لا توجد أصناف</span></div>`;
-        if (tb) tb.style.display = 'none'; return;
+        if (tb) tb.style.display = 'none';
+        return;
     }
     const total = currentRetItems.reduce((s, i) => s + i.total, 0);
     let html = `<div class="table-header" style="grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;"><span>الصنف</span><span>الكمية</span><span>السعر</span><span>الإجمالي</span><span></span></div>`;
@@ -778,14 +931,18 @@ window.renderRetItems = function() {
 window.saveReturn = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (currentRetItems.length === 0) { showToast('⚠️ لا توجد أصناف', 'error'); return; }
+    
     const typeEl = $('retType');
     const type = typeEl ? typeEl.value : 'sale';
     const party = $('retParty').value;
     if (!party) { showToast('⚠️ اختر العميل/المورد', 'error'); return; }
+    
+    const whId = $('retWarehouse')?.value || (typeof getDefaultWarehouse === 'function' ? getDefaultWarehouse()?.id : null);
     const originalInvoiceId = $('retOriginalInvoice')?.value || null;
     const originalInvoice = originalInvoiceId
         ? (type === 'sale' ? sales.find(s => s.id == originalInvoiceId) : purchases.find(p => p.id == originalInvoiceId))
         : null;
+    
     const total = currentRetItems.reduce((s, i) => s + i.total, 0);
     const today = getTodayDate();
     
@@ -796,29 +953,43 @@ window.saveReturn = function() {
             const before = p.qty;
             if (type === 'sale') p.qty += it.qty;
             else p.qty -= it.qty;
-            itemChanges.push({ item: it, before: before, after: p.qty });
+            
+            if (whId && typeof getProductStockInWarehouse === 'function' && typeof setProductStockInWarehouse === 'function') {
+                const whBefore = getProductStockInWarehouse(it.productId, whId);
+                if (type === 'sale') setProductStockInWarehouse(it.productId, whId, whBefore + it.qty);
+                else setProductStockInWarehouse(it.productId, whId, Math.max(0, whBefore - it.qty));
+            }
+            
+            itemChanges.push({ item: it, before, after: p.qty });
         }
     });
     
     const ret = {
         id: Date.now(), number: returns.length + 1, type: type, party: party,
         partyId: (type === 'sale' ? customers.find(c => c.name === party)?.id : suppliers.find(s => s.name === party)?.id) || null,
+        warehouseId: whId,
         originalInvoiceId: originalInvoiceId,
         originalInvoiceNumber: originalInvoice?.number || null,
-        paymentMethod: 'cash', items: JSON.parse(JSON.stringify(currentRetItems)),
-        total: total, journalEntryId: null, date: today, time: getNowTime(),
-        createdAt: new Date().toISOString(), createdBy: currentUser ? currentUser.name : 'unknown'
+        paymentMethod: 'cash',
+        items: JSON.parse(JSON.stringify(currentRetItems)),
+        total: total, journalEntryId: null,
+        date: today, time: getNowTime(),
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser ? currentUser.name : 'unknown'
     };
     returns.push(ret);
     
     itemChanges.forEach(({ item, before, after }) => {
-        logInventoryMovement({
-            productId: item.productId, productName: item.name,
-            type: type === 'sale' ? 'in' : 'out', qty: item.qty, price: item.price,
-            reason: type === 'sale' ? 'return_sale' : 'return_purchase',
-            refType: 'return', refId: ret.id, refNumber: ret.number,
-            balanceBefore: before, balanceAfter: after
-        });
+        if (typeof logInventoryMovement === 'function') {
+            logInventoryMovement({
+                productId: item.productId, productName: item.name,
+                type: type === 'sale' ? 'in' : 'out', qty: item.qty, price: item.price,
+                reason: type === 'sale' ? 'return_sale' : 'return_purchase',
+                refType: 'return', refId: ret.id, refNumber: ret.number,
+                warehouseId: whId,
+                balanceBefore: before, balanceAfter: after
+            });
+        }
     });
     
     if (originalInvoice) {
@@ -834,6 +1005,7 @@ window.saveReturn = function() {
         const cashAcc = getAccountByNameContains('النقدية بالخزنة');
         const salesAcc = getAccountByNameContains('إيرادات المبيعات');
         const invAcc = getAccountByNameContains('المخزون');
+        
         if (type === 'sale') {
             if (salesAcc) lines.push({ accountId: salesAcc.id, accountName: salesAcc.name, debit: total, credit: 0 });
             if (cashAcc) lines.push({ accountId: cashAcc.id, accountName: cashAcc.name, debit: 0, credit: total });
@@ -850,7 +1022,7 @@ window.saveReturn = function() {
     if (type === 'sale') {
         treasury.push({
             id: Date.now() + 1, type: 'withdraw', amount: total,
-            note: `مرتجع بيع #${ret.number} - ${party}${originalInvoice ? ` (فاتورة #${originalInvoice.number})` : ''}`,
+            note: `مرتجع بيع #${ret.number} - ${party}`,
             partyName: party, invoiceNumber: originalInvoice?.number || null,
             refType: 'return', refId: ret.id, journalEntryId: ret.journalEntryId,
             date: today, time: getNowTime()
@@ -858,30 +1030,39 @@ window.saveReturn = function() {
     } else {
         treasury.push({
             id: Date.now() + 1, type: 'deposit', amount: total,
-            note: `مرتجع شراء #${ret.number} - ${party}${originalInvoice ? ` (فاتورة #${originalInvoice.number})` : ''}`,
+            note: `مرتجع شراء #${ret.number} - ${party}`,
             partyName: party, invoiceNumber: originalInvoice?.number || null,
             refType: 'return', refId: ret.id, journalEntryId: ret.journalEntryId,
             date: today, time: getNowTime()
         });
     }
     
-    setData('products', products); setData('returns', returns); setData('treasury', treasury);
+    setData('products', products);
+    setData('returns', returns);
+    setData('treasury', treasury);
     addAuditLog('add', 'return', `مرتجع ${type === 'sale' ? 'بيع' : 'شراء'} #${ret.number} - ${party} - ${formatMoney(total)} ج.م`);
     
-    window.currentRetItems = [];
+    currentRetItems = [];
     const partyEl = $('retParty'); if (partyEl) partyEl.value = '';
     const invEl = $('retOriginalInvoice'); if (invEl) invEl.innerHTML = '<option value="">بدون ربط بفاتورة</option>';
-    renderRetItems(); renderReturns(); populateRetProducts();
-    updateDashboard(); renderTreasury(); renderInventoryMovements();
+    
+    renderRetItems();
+    renderReturns();
+    populateRetProducts();
+    if (typeof populateRetWarehouse === 'function') populateRetWarehouse();
+    updateDashboard();
+    if (typeof renderTreasury === 'function') renderTreasury();
+    
     showToast(`✅ مرتجع #${ret.number} بمبلغ ${formatMoney(total)} 🇪🇬`, 'success');
 };
 
 window.clearReturn = function() {
     if (currentRetItems.length === 0) return;
     if (!confirm('⚠️ إلغاء المرتجع؟')) return;
-    window.currentRetItems = [];
+    currentRetItems = [];
     const partyEl = $('retParty'); if (partyEl) partyEl.value = '';
-    renderRetItems(); showToast('🗑️ تم الإلغاء', 'info');
+    renderRetItems();
+    showToast('🗑️ تم الإلغاء', 'info');
 };
 
 window.renderReturns = function() {
@@ -915,33 +1096,39 @@ window.deleteReturn = function(id) {
     if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const r = returns.find(x => x.id === id); if (!r) return;
     if (!confirm(`⚠️ حذف المرتجع #${r.number}؟`)) return;
+    
     r.items.forEach(it => {
         const p = products.find(pr => pr.id == it.productId);
         if (p) {
             const before = p.qty;
             if (r.type === 'sale') p.qty -= it.qty;
             else p.qty += it.qty;
-            logInventoryMovement({
-                productId: p.id, productName: p.name,
-                type: r.type === 'sale' ? 'out' : 'in', qty: it.qty, price: it.price,
-                reason: 'adjustment', refType: 'return_delete', refId: r.id,
-                refNumber: r.number, balanceBefore: before, balanceAfter: p.qty,
-                notes: `حذف مرتجع #${r.number}`
-            });
+            
+            if (r.warehouseId && typeof getProductStockInWarehouse === 'function' && typeof setProductStockInWarehouse === 'function') {
+                const whBefore = getProductStockInWarehouse(it.productId, r.warehouseId);
+                if (r.type === 'sale') setProductStockInWarehouse(it.productId, r.warehouseId, Math.max(0, whBefore - it.qty));
+                else setProductStockInWarehouse(it.productId, r.warehouseId, whBefore + it.qty);
+            }
         }
     });
-    window.treasury = treasury.filter(t => !(t.refType === 'return' && t.refId === id));
-    window.returns = returns.filter(x => x.id !== id);
-    setData('products', products); setData('returns', returns); setData('treasury', treasury);
+    
+    treasury = treasury.filter(t => !(t.refType === 'return' && t.refId === id));
+    returns = returns.filter(x => x.id !== id);
+    setData('products', products);
+    setData('returns', returns);
+    setData('treasury', treasury);
     addAuditLog('delete', 'return', `حذف مرتجع #${r.number}`);
-    renderReturns(); renderProducts(); updateDashboard();
-    renderTreasury(); renderInventoryMovements();
+    renderReturns();
+    renderProducts();
+    updateDashboard();
+    if (typeof renderTreasury === 'function') renderTreasury();
     showToast('🗑️ تم الحذف', 'info');
 };
 
-// ============================================================
-// المصروفات
-// ============================================================
+// ═══════════════════════════════════════════════════════════
+// 💸 نظام المصروفات (Expenses)
+// ═══════════════════════════════════════════════════════════
+
 window.saveExpense = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const note = $('expNote').value.trim();
@@ -951,6 +1138,7 @@ window.saveExpense = function() {
     if (!note) { showToast('⚠️ أدخل البيان', 'error'); return; }
     if (amount <= 0) { showToast('⚠️ أدخل مبلغ صحيح', 'error'); return; }
     if (getTreasuryBalance() < amount) { showToast('⚠️ رصيد الخزنة غير كافي', 'error'); return; }
+    
     const exp = {
         id: Date.now(), note, amount, category, date,
         time: getNowTime(), journalEntryId: null,
@@ -969,6 +1157,7 @@ window.saveExpense = function() {
         else if (category === 'كهرباء' || category === 'مياه') expenseAcc = getAccountByNameContains('كهرباء');
         else if (category === 'صيانة') expenseAcc = getAccountByNameContains('صيانة');
         else expenseAcc = getAccountByNameContains('مصروفات متنوعة');
+        
         if (expenseAcc) lines.push({ accountId: expenseAcc.id, accountName: expenseAcc.name, debit: amount, credit: 0 });
         if (cashAcc) lines.push({ accountId: cashAcc.id, accountName: cashAcc.name, debit: 0, credit: amount });
         if (lines.length >= 2) {
@@ -984,10 +1173,14 @@ window.saveExpense = function() {
         refType: 'expense', refId: exp.id, journalEntryId: exp.journalEntryId,
         date, time: getNowTime()
     });
-    setData('expenses', expenses); setData('treasury', treasury);
+    setData('expenses', expenses);
+    setData('treasury', treasury);
     addAuditLog('add', 'expense', `مصروف: ${note} - ${formatMoney(amount)} ج.م`);
-    $('expNote').value = ''; $('expAmount').value = '';
-    renderExpenses(); updateDashboard(); renderTreasury();
+    $('expNote').value = '';
+    $('expAmount').value = '';
+    renderExpenses();
+    updateDashboard();
+    if (typeof renderTreasury === 'function') renderTreasury();
     showToast(`✅ تم الإضافة ${formatMoney(amount)} 🇪🇬`, 'success');
 };
 
@@ -1025,12 +1218,41 @@ window.deleteExpense = function(id) {
     if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const e = expenses.find(x => x.id === id); if (!e) return;
     if (!confirm('⚠️ حذف هذا المصروف؟')) return;
-    window.treasury = treasury.filter(t => !(t.refType === 'expense' && t.refId === id));
-    window.expenses = expenses.filter(x => x.id !== id);
-    setData('expenses', expenses); setData('treasury', treasury);
+    treasury = treasury.filter(t => !(t.refType === 'expense' && t.refId === id));
+    expenses = expenses.filter(x => x.id !== id);
+    setData('expenses', expenses);
+    setData('treasury', treasury);
     addAuditLog('delete', 'expense', `حذف مصروف: ${e.note}`);
-    renderExpenses(); updateDashboard(); renderTreasury();
+    renderExpenses();
+    updateDashboard();
+    if (typeof renderTreasury === 'function') renderTreasury();
     showToast('🗑️ تم الحذف', 'info');
 };
 
-console.log('✅ تم تحميل app-part2.js - العمليات');
+// ═══════════════════════════════════════════════════════════
+// 🚀 التهيئة النهائية
+// ═══════════════════════════════════════════════════════════
+
+// تشغيل البحث بعد تحميل الصفحة
+window.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        const n = _applyAllSearch();
+        console.log(`🔍 تم تفعيل البحث على ${n} قائمة (app-part2)`);
+    }, 2000);
+    
+    // إعادة المحاولة بعد دقيقتين لو القوائم اتبنت متأخر
+    setTimeout(function() {
+        _applyAllSearch();
+    }, 4000);
+});
+
+// دالة يدوية للتفعيل
+window.refreshInvoiceSearch = function() {
+    const n = _applyAllSearch();
+    if (typeof showToast === 'function') {
+        showToast(`✅ تم تفعيل البحث على ${n} قائمة`, 'success');
+    }
+    return n;
+};
+
+console.log('✅ تم تحميل app-part2.js - العمليات + البحث الذكي');
