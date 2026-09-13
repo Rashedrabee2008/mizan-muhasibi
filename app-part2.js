@@ -1393,4 +1393,97 @@ window.refreshInvoiceSearch = function() {
     return n;
 };
 
+// ═══════════════════════════════════════════════════════════
+// 🔧 إصلاح تعبئة المخازن تلقائياً
+// ═══════════════════════════════════════════════════════════
+
+(function() {
+    console.log('🔧 تفعيل تعبئة المخازن...');
+    
+    function fillWarehouses() {
+        // جلب المخازن
+        let whs = [];
+        try {
+            if (typeof warehouses !== 'undefined' && Array.isArray(warehouses) && warehouses.length > 0) {
+                whs = warehouses;
+            } else {
+                const raw = localStorage.getItem('mizan_warehouses');
+                if (raw) whs = JSON.parse(raw);
+            }
+        } catch(e) { console.warn('خطأ:', e); }
+        
+        if (!whs || whs.length === 0) {
+            // عمل مخزن رئيسي
+            whs = [{
+                id: 1,
+                name: 'المخزن الرئيسي',
+                location: 'المركز الرئيسي',
+                isDefault: true,
+                active: true
+            }];
+            localStorage.setItem('mizan_warehouses', JSON.stringify(whs));
+            if (typeof window.warehouses !== 'undefined') window.warehouses = whs;
+        }
+        
+        const ids = ['saleWarehouse', 'purWarehouse', 'retWarehouse'];
+        
+        ids.forEach(function(id) {
+            const sel = document.getElementById(id);
+            if (!sel) return;
+            
+            // لو فيه خيارات حقيقية، ما نلمسوش
+            const realOpts = Array.from(sel.options).filter(o => o.value !== '');
+            if (realOpts.length > 0) return;
+            
+            // نبني الخيارات
+            let html = '<option value="">اختر المخزن...</option>';
+            whs.forEach(function(w) {
+                const isDef = w.isDefault ? ' ⭐' : '';
+                const isSel = w.isDefault ? ' selected' : '';
+                html += '<option value="' + w.id + '"' + isSel + '>' + w.name + isDef + '</option>';
+            });
+            sel.innerHTML = html;
+            
+            // نتأكد إن الحقل ظاهر
+            sel.style.display = '';
+            sel.style.visibility = 'visible';
+            sel.disabled = false;
+            
+            console.log('✅ ' + id + ': ' + whs.length + ' خيار');
+        });
+    }
+    
+    // تشغيل فوري
+    fillWarehouses();
+    
+    // تشغيل كل ثانية لمدة 20 ثانية (عشان نضمن)
+    let counter = 0;
+    const timer = setInterval(function() {
+        counter++;
+        fillWarehouses();
+        if (counter >= 20) clearInterval(timer);
+    }, 1000);
+    
+    // عند التنقل
+    if (typeof window.navigateTo === 'function') {
+        const _nav = window.navigateTo;
+        window.navigateTo = function(page) {
+            _nav.apply(this, arguments);
+            setTimeout(fillWarehouses, 200);
+            setTimeout(fillWarehouses, 500);
+        };
+    }
+    
+    // لما القوائم تتحدث
+    if (typeof window.populateAllDropdowns === 'function') {
+        const _pop = window.populateAllDropdowns;
+        window.populateAllDropdowns = function() {
+            _pop.apply(this, arguments);
+            setTimeout(fillWarehouses, 100);
+        };
+    }
+    
+    console.log('✅ تم تفعيل تعبئة المخازن');
+})();
+
 console.log('✅ تم تحميل app-part2.js - العمليات + البحث + التصميم الجديد');
