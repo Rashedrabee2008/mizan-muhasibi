@@ -13,10 +13,9 @@
 console.log('💰 تحميل app-multi-treasury.js - نظام الخزائن المتعددة');
 
 // ═══════════════════════════════════════════════════════════
-// 💰 1. إدارة الخزائن
+// 💰 1. الخزائن الافتراضية
 // ═══════════════════════════════════════════════════════════
 
-// الخزائن الافتراضية
 window.DEFAULT_CASH_BOXES = [
     { id: 1, name: 'نقدي', type: 'cash', icon: '💵', isDefault: true, active: true, openingBalance: 0 },
     { id: 2, name: 'فودافون كاش', type: 'wallet', icon: '📱', isDefault: false, active: true, openingBalance: 0 },
@@ -27,9 +26,16 @@ window.DEFAULT_CASH_BOXES = [
     { id: 7, name: 'البريد', type: 'post', icon: '📮', isDefault: false, active: true, openingBalance: 0 }
 ];
 
-// تحميل الخزائن
+// ═══════════════════════════════════════════════════════════
+// 💰 2. المتغيرات
+// ═══════════════════════════════════════════════════════════
+
 window.cashBoxes = [];
 window.cashBoxTransfers = [];
+
+// ═══════════════════════════════════════════════════════════
+// 💰 3. التحميل والحفظ
+// ═══════════════════════════════════════════════════════════
 
 window.loadCashBoxes = function() {
     try {
@@ -49,6 +55,7 @@ window.loadCashBoxes = function() {
         }
         
         saveCashBoxes();
+        console.log('✅ تم تحميل ' + cashBoxes.length + ' خزنة');
         return true;
     } catch (e) {
         console.error('❌ خطأ تحميل الخزائن:', e);
@@ -66,17 +73,18 @@ window.saveCashBoxes = function() {
     }
 };
 
-// الحصول على خزنة بالمعرف
+// ═══════════════════════════════════════════════════════════
+// 💰 4. الدوال المساعدة
+// ═══════════════════════════════════════════════════════════
+
 window.getCashBoxById = function(id) {
     return cashBoxes.find(b => b.id == id);
 };
 
-// الحصول على الخزنة الافتراضية
 window.getDefaultCashBox = function() {
     return cashBoxes.find(b => b.isDefault) || cashBoxes[0];
 };
 
-// رصيد خزنة معينة (محسوب من treasury)
 window.getCashBoxBalance = function(boxId) {
     try {
         let balance = 0;
@@ -108,7 +116,6 @@ window.getCashBoxBalance = function(boxId) {
     }
 };
 
-// إجمالي كل الخزائن
 window.getTotalCashBalance = function() {
     let total = 0;
     cashBoxes.forEach(function(box) {
@@ -117,8 +124,19 @@ window.getTotalCashBalance = function() {
     return total;
 };
 
+window.getBoxTypeName = function(type) {
+    const types = {
+        'cash': '💵 نقدي',
+        'wallet': '📱 محفظة إلكترونية',
+        'bank': '🏦 حساب بنكي',
+        'post': '📮 حساب بريد',
+        'other': '📋 أخرى'
+    };
+    return types[type] || type;
+};
+
 // ═══════════════════════════════════════════════════════════
-// 💰 2. إدارة الخزائن (CRUD)
+// 💰 5. إدارة الخزائن (CRUD)
 // ═══════════════════════════════════════════════════════════
 
 window.saveCashBox = function() {
@@ -142,7 +160,6 @@ window.saveCashBox = function() {
         }
         
         if (id) {
-            // تعديل
             const idx = cashBoxes.findIndex(b => b.id == id);
             if (idx > -1) {
                 if (isDefault) {
@@ -164,7 +181,6 @@ window.saveCashBox = function() {
                 if (typeof showToast === 'function') showToast('✅ تم تعديل الخزنة', 'success');
             }
         } else {
-            // إضافة
             if (cashBoxes.find(b => b.name === name)) {
                 if (typeof showToast === 'function') showToast('⚠️ اسم الخزنة موجود', 'warning');
                 return;
@@ -174,7 +190,7 @@ window.saveCashBox = function() {
                 cashBoxes.forEach(b => b.isDefault = false);
             }
             
-            const newBox = {
+            cashBoxes.push({
                 id: Date.now(),
                 name: name,
                 type: type,
@@ -184,8 +200,7 @@ window.saveCashBox = function() {
                 isDefault: isDefault || cashBoxes.length === 0,
                 active: true,
                 createdAt: new Date().toISOString()
-            };
-            cashBoxes.push(newBox);
+            });
             
             if (typeof addAuditLog === 'function') {
                 addAuditLog('add', 'treasury', 'إضافة خزنة: ' + name);
@@ -288,7 +303,7 @@ window.resetCashBoxForm = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// 💰 3. عرض الخزائن
+// 💰 6. عرض الخزائن
 // ═══════════════════════════════════════════════════════════
 
 window.renderCashBoxes = function() {
@@ -310,20 +325,19 @@ window.renderCashBoxes = function() {
             '</div>' +
             '<div class="summary-item">' +
             '<div class="summary-label">إجمالي الرصيد</div>' +
-            '<div class="summary-value" style="color:#C9A94E;">' + formatMoney(total) + ' ج.م</div>' +
+            '<div class="summary-value">' + formatMoney(total) + ' ج.م</div>' +
             '</div>' +
             '</div>';
         
         html += '<div class="cash-boxes-grid">';
         cashBoxes.forEach(function(box) {
             const balance = getCashBoxBalance(box.id);
-            const isDefault = box.isDefault;
             
-            html += '<div class="cash-box-card ' + (isDefault ? 'default' : '') + '">' +
+            html += '<div class="cash-box-card ' + (box.isDefault ? 'default' : '') + '">' +
                 '<div class="cash-box-header">' +
                 '<div class="cash-box-icon">' + (box.icon || '💵') + '</div>' +
                 '<div class="cash-box-info">' +
-                '<div class="cash-box-name">' + box.name + (isDefault ? ' ⭐' : '') + '</div>' +
+                '<div class="cash-box-name">' + box.name + (box.isDefault ? ' ⭐' : '') + '</div>' +
                 '<div class="cash-box-type">' + getBoxTypeName(box.type) + '</div>' +
                 (box.details ? '<div class="cash-box-details">' + box.details + '</div>' : '') +
                 '</div>' +
@@ -333,7 +347,7 @@ window.renderCashBoxes = function() {
                 '<div class="balance-value">' + formatMoney(balance) + ' ج.م</div>' +
                 '</div>' +
                 '<div class="cash-box-actions">' +
-                (!isDefault ? '<button class="btn-icon-sm" onclick="setDefaultCashBox(' + box.id + ')" title="افتراضي">⭐</button>' : '') +
+                (!box.isDefault ? '<button class="btn-icon-sm" onclick="setDefaultCashBox(' + box.id + ')" title="افتراضي">⭐</button>' : '') +
                 '<button class="btn-icon-sm" onclick="editCashBox(' + box.id + ')" title="تعديل">✏️</button>' +
                 '<button class="btn-icon-sm danger" onclick="deleteCashBox(' + box.id + ')" title="حذف">🗑️</button>' +
                 '</div>' +
@@ -347,19 +361,8 @@ window.renderCashBoxes = function() {
     }
 };
 
-window.getBoxTypeName = function(type) {
-    const types = {
-        'cash': '💵 نقدي',
-        'wallet': '📱 محفظة إلكترونية',
-        'bank': '🏦 حساب بنكي',
-        'post': '📮 حساب بريد',
-        'other': '📋 أخرى'
-    };
-    return types[type] || type;
-};
-
 // ═══════════════════════════════════════════════════════════
-// 💰 4. تعبئة القوائم المنسدلة
+// 💰 7. تعبئة القوائم المنسدلة
 // ═══════════════════════════════════════════════════════════
 
 window.populateCashBoxDropdowns = function() {
@@ -401,7 +404,7 @@ window.populateCashBoxDropdowns = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// 💰 5. التحويل بين الخزائن
+// 💰 8. التحويل بين الخزائن
 // ═══════════════════════════════════════════════════════════
 
 window.saveCashBoxTransfer = function() {
@@ -414,7 +417,7 @@ window.saveCashBoxTransfer = function() {
         const fromId = document.getElementById('transferFrom')?.value;
         const toId = document.getElementById('transferTo')?.value;
         const amount = parseFloat(document.getElementById('transferAmount')?.value) || 0;
-        const date = document.getElementById('transferDate')?.value || (typeof getTodayDate === 'function' ? getTodayDate() : new Date().toISOString().split('T')[0]);
+        const date = document.getElementById('transferDate')?.value || new Date().toISOString().split('T')[0];
         const notes = document.getElementById('transferNotes')?.value.trim() || '';
         
         if (!fromId) {
@@ -448,6 +451,7 @@ window.saveCashBoxTransfer = function() {
         
         const now = new Date();
         const time = now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' });
+        const transferId = Date.now();
         
         // سحب من الخزنة المصدر
         if (typeof treasury !== 'undefined' && Array.isArray(treasury)) {
@@ -459,7 +463,7 @@ window.saveCashBoxTransfer = function() {
                 cashBoxId: fromId,
                 cashBoxName: fromBox.name,
                 refType: 'transfer',
-                refId: Date.now(),
+                refId: transferId,
                 date: date,
                 time: time
             });
@@ -473,7 +477,7 @@ window.saveCashBoxTransfer = function() {
                 cashBoxId: toId,
                 cashBoxName: toBox.name,
                 refType: 'transfer',
-                refId: Date.now(),
+                refId: transferId,
                 date: date,
                 time: time
             });
@@ -483,9 +487,8 @@ window.saveCashBoxTransfer = function() {
             }
         }
         
-        // حفظ الحركة
-        const transfer = {
-            id: Date.now(),
+        cashBoxTransfers.unshift({
+            id: transferId,
             number: cashBoxTransfers.length + 1,
             fromId: fromId,
             fromName: fromBox.name,
@@ -497,15 +500,13 @@ window.saveCashBoxTransfer = function() {
             notes: notes,
             createdAt: now.toISOString(),
             createdBy: (typeof currentUser !== 'undefined' && currentUser) ? currentUser.name : 'unknown'
-        };
-        cashBoxTransfers.unshift(transfer);
+        });
         saveCashBoxes();
         
         if (typeof addAuditLog === 'function') {
             addAuditLog('add', 'treasury', 'تحويل ' + formatMoney(amount) + ' ج.م من ' + fromBox.name + ' إلى ' + toBox.name);
         }
         
-        // إعادة تعيين
         if (document.getElementById('transferAmount')) document.getElementById('transferAmount').value = '';
         if (document.getElementById('transferNotes')) document.getElementById('transferNotes').value = '';
         
@@ -553,14 +554,60 @@ window.renderCashBoxTransfers = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// 💰 6. التهيئة
+// 💰 9. الحصول على الخزنة المختارة
+// ═══════════════════════════════════════════════════════════
+
+window.getSaleCashBox = function() {
+    const el = document.getElementById('saleCashBox');
+    if (el && el.value) return el.value;
+    return getDefaultCashBox()?.id || 1;
+};
+
+window.getPurCashBox = function() {
+    const el = document.getElementById('purCashBox');
+    if (el && el.value) return el.value;
+    return getDefaultCashBox()?.id || 1;
+};
+
+window.getRetCashBox = function() {
+    const el = document.getElementById('retCashBox');
+    if (el && el.value) return el.value;
+    return getDefaultCashBox()?.id || 1;
+};
+
+window.getCollectCashBox = function() {
+    const el = document.getElementById('collectCashBox');
+    if (el && el.value) return el.value;
+    return getDefaultCashBox()?.id || 1;
+};
+
+window.getPayCashBox = function() {
+    const el = document.getElementById('payCashBox');
+    if (el && el.value) return el.value;
+    return getDefaultCashBox()?.id || 1;
+};
+
+window.getExpenseCashBox = function() {
+    const el = document.getElementById('expenseCashBox');
+    if (el && el.value) return el.value;
+    return getDefaultCashBox()?.id || 1;
+};
+
+window.getManualCashBox = function() {
+    const el = document.getElementById('manualCashBox');
+    if (el && el.value) return el.value;
+    return getDefaultCashBox()?.id || 1;
+};
+
+// ═══════════════════════════════════════════════════════════
+// 💰 10. التهيئة
 // ═══════════════════════════════════════════════════════════
 
 window.initMultiTreasury = function() {
     console.log('💰 تهيئة نظام الخزائن المتعددة...');
     loadCashBoxes();
     populateCashBoxDropdowns();
-    console.log('✅ تم تهيئة الخزائن، عدد: ' + cashBoxes.length);
+    console.log('✅ تم تهيئة ' + cashBoxes.length + ' خزنة');
 };
 
 window.addEventListener('DOMContentLoaded', function() {
