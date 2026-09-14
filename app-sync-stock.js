@@ -6,6 +6,51 @@
 console.log('🔄 تحميل app-sync-stock.js - مزامنة المخزون مع المخازن');
 
 // ═══════════════════════════════════════════════════════════
+// 🛡️ حماية من الأخطاء: التأكد من وجود الدوال الأساسية
+// ═══════════════════════════════════════════════════════════
+
+// دالة آمنة لاستدعاء renderProducts
+function safeRenderProducts() {
+    if (typeof window.renderProducts === 'function') {
+        try {
+            window.renderProducts();
+        } catch (e) {
+            console.warn('⚠️ خطأ في renderProducts:', e.message);
+        }
+    }
+}
+
+function safeRenderWarehouses() {
+    if (typeof window.renderWarehouses === 'function') {
+        try {
+            window.renderWarehouses();
+        } catch (e) {
+            console.warn('⚠️ خطأ في renderWarehouses:', e.message);
+        }
+    }
+}
+
+function safeRenderWarehouseStock() {
+    if (typeof window.renderWarehouseStock === 'function') {
+        try {
+            window.renderWarehouseStock();
+        } catch (e) {
+            console.warn('⚠️ خطأ في renderWarehouseStock:', e.message);
+        }
+    }
+}
+
+function safePopulateAllDropdowns() {
+    if (typeof window.populateAllDropdowns === 'function') {
+        try {
+            window.populateAllDropdowns();
+        } catch (e) {
+            console.warn('⚠️ خطأ في populateAllDropdowns:', e.message);
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
 // 🔧 دوال مساعدة
 // ═══════════════════════════════════════════════════════════
 
@@ -18,13 +63,11 @@ window.cleanProductWarehouseStock = function() {
         
         const cleaned = {};
         Object.keys(productWarehouseStock).forEach(function(key) {
-            // تجاهل المفاتيح الفاسدة
             if (!key || key === 'null' || key === 'undefined' || key === 'NaN') return;
             
             const stock = productWarehouseStock[key];
             if (!stock || typeof stock !== 'object') return;
             
-            // تنظيف القيم داخلها
             const cleanStock = {};
             Object.keys(stock).forEach(function(whId) {
                 if (!whId || whId === 'null' || whId === 'undefined') return;
@@ -61,19 +104,16 @@ window.syncAllStockToWarehouses = function() {
     try {
         console.log('🔄 بدء مزامنة المخزون مع المخازن...');
         
-        // ✅ حماية 1
         if (typeof products === 'undefined' || !Array.isArray(products)) {
             console.warn('⚠️ products مش موجود');
             return { movedCount: 0, totalQty: 0 };
         }
         
-        // ✅ حماية 2
         if (typeof warehouses === 'undefined' || !Array.isArray(warehouses)) {
             console.warn('⚠️ warehouses مش موجود');
             return { movedCount: 0, totalQty: 0 };
         }
         
-        // ✅ حماية 3: عمل مخزن رئيسي لو مفيش
         if (warehouses.length === 0) {
             console.log('⚠️ ما فيش مخازن، إنشاء مخزن رئيسي...');
             window.warehouses = [{
@@ -92,7 +132,6 @@ window.syncAllStockToWarehouses = function() {
             }
         }
         
-        // ✅ حماية 4: تنظيف productWarehouseStock أولاً
         cleanProductWarehouseStock();
         
         const defaultWh = warehouses.find(function(w) { return w.isDefault; }) || warehouses[0];
@@ -138,7 +177,6 @@ window.syncAllStockToWarehouses = function() {
             }
         });
         
-        // حفظ
         if (typeof setData === 'function') {
             setData('products', products);
             setData('productWarehouseStock', productWarehouseStock);
@@ -302,11 +340,12 @@ window.manualSyncStock = function() {
             }
         }
         
-        if (typeof renderProducts === 'function') renderProducts();
-        if (typeof renderWarehouses === 'function') renderWarehouses();
-        if (typeof renderWarehouseStock === 'function') renderWarehouseStock();
-        if (typeof renderWarehouseStatsOnDashboard === 'function') renderWarehouseStatsOnDashboard();
-        if (typeof populateAllDropdowns === 'function') populateAllDropdowns();
+        // ✅ استخدام الدوال الآمنة
+        safeRenderProducts();
+        safeRenderWarehouses();
+        safeRenderWarehouseStock();
+        safePopulateAllDropdowns();
+        
     } catch (e) {
         console.warn('⚠️ خطأ في manualSyncStock:', e.message);
     }
@@ -317,9 +356,22 @@ window.manualSyncStock = function() {
 // ═══════════════════════════════════════════════════════════
 
 window.addEventListener('DOMContentLoaded', function() {
+    // ✅ تأخير أطول للتأكد من تحميل جميع الملفات
     setTimeout(function() {
         try {
             console.log('🔄 بدء المزامنة التلقائية...');
+            
+            // التأكد من وجود المتغيرات الأساسية
+            if (typeof products === 'undefined' || !Array.isArray(products)) {
+                console.warn('⚠️ products غير موجودة، تأجيل المزامنة');
+                return;
+            }
+            
+            if (typeof warehouses === 'undefined' || !Array.isArray(warehouses)) {
+                console.warn('⚠️ warehouses غير موجودة، تأجيل المزامنة');
+                return;
+            }
+            
             const result = syncAllStockToWarehouses();
             
             if (result && result.movedCount > 0) {
@@ -331,13 +383,15 @@ window.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            if (typeof renderProducts === 'function') renderProducts();
-            if (typeof renderWarehouses === 'function') renderWarehouses();
-            if (typeof renderWarehouseStock === 'function') renderWarehouseStock();
+            // ✅ استخدام الدوال الآمنة بدلاً من الاستدعاء المباشر
+            safeRenderProducts();
+            safeRenderWarehouses();
+            safeRenderWarehouseStock();
+            
         } catch (e) {
             console.warn('⚠️ خطأ في التهيئة:', e.message);
         }
-    }, 2000);
+    }, 3500); // زيادة الوقت لضمان تحميل جميع الملفات
 });
 
 console.log('✅ تم تحميل app-sync-stock.js بنجاح (مع حماية كاملة)');
