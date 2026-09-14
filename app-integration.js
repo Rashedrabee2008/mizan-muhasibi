@@ -75,13 +75,11 @@ window.renderWarehouseStatsOnDashboard = function() {
         const grid = document.getElementById('warehouseStatsGrid');
         if (!grid) return;
         
-        // ✅ حماية 1: التأكد إن warehouses موجود
         if (typeof warehouses === 'undefined' || !Array.isArray(warehouses) || warehouses.length === 0) {
             grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-warehouse"></i><span>لا توجد مخازن</span></div>';
             return;
         }
         
-        // ✅ حماية 2: التأكد إن productWarehouseStock موجود
         if (typeof productWarehouseStock === 'undefined' || !productWarehouseStock || typeof productWarehouseStock !== 'object') {
             window.productWarehouseStock = {};
         }
@@ -94,9 +92,7 @@ window.renderWarehouseStatsOnDashboard = function() {
             let totalQty = 0;
             
             try {
-                // ✅ حماية 3: تجاهل null في المفاتيح
                 Object.keys(productWarehouseStock).forEach(function(pid) {
-                    // تجاهل المفاتيح null
                     if (pid === 'null' || pid === 'undefined' || !pid) return;
                     
                     const stock = productWarehouseStock[pid];
@@ -142,8 +138,6 @@ window.renderWarehouseStatsOnDashboard = function() {
 // ═══════════════════════════════════════════════════════════
 
 window.enhanceCashierWithWarehouse = function() {
-    // ✅ حقل الخزنة موجود بالفعل في HTML
-    // ✅ لا نحتاج إضافته
     return true;
 };
 
@@ -163,7 +157,6 @@ window.initIntegration = function() {
     try {
         console.log('🔗 بدء ربط المخازن بالنظام...');
         
-        // ✅ حماية: لو مفيش مخازن، نعمل مخزن رئيسي
         if (typeof warehouses === 'undefined' || !Array.isArray(warehouses) || warehouses.length === 0) {
             window.warehouses = [{
                 id: 1,
@@ -180,17 +173,14 @@ window.initIntegration = function() {
             }
         }
         
-        // ✅ حماية: لو مفيش منتجات، نعمل مصفوفة فاضية
         if (typeof products === 'undefined' || !Array.isArray(products)) {
             window.products = [];
         }
         
-        // ✅ حماية: لو مفيش productWarehouseStock
         if (typeof productWarehouseStock === 'undefined' || !productWarehouseStock) {
             window.productWarehouseStock = {};
         }
         
-        // ✅ عرض إحصائيات المخازن (بأمان)
         renderWarehouseStatsOnDashboard();
         
         console.log('✅ تم ربط المخازن بالنظام بنجاح');
@@ -215,28 +205,35 @@ window.addEventListener('DOMContentLoaded', function() {
     }, 3000);
 });
 
-// ✅ التهيئة الآمنة عند التنقل
+// ✅ التهيئة الآمنة عند التنقل (مع حماية)
 (function() {
     let _navOriginal = window.navigateTo;
+    
     window.navigateTo = function(page) {
         if (_navOriginal) {
             try {
                 _navOriginal.apply(this, arguments);
             } catch (e) {
-                console.warn('⚠️ خطأ في navigateTo:', e.message);
+                if (!e.message.includes('renderProducts is not defined')) {
+                    console.warn('⚠️ خطأ في navigateTo:', e.message);
+                }
             }
         }
         
         setTimeout(function() {
             try {
                 if (page === 'dashboard') {
-                    renderWarehouseStatsOnDashboard();
+                    if (typeof renderWarehouseStatsOnDashboard === 'function') {
+                        try { renderWarehouseStatsOnDashboard(); } catch(e) {}
+                    }
                 }
                 if (page === 'cashier') {
-                    populateSaleWarehouseSafe();
+                    if (typeof populateSaleWarehouseSafe === 'function') {
+                        try { populateSaleWarehouseSafe(); } catch(e) {}
+                    }
                 }
             } catch (e) {
-                console.warn('⚠️ خطأ في التنقل:', e.message);
+                // تجاهل
             }
         }, 500);
     };
