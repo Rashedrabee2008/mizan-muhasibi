@@ -157,21 +157,20 @@ window.lockApp = function() {
     if (_originalLockApp) _originalLockApp.apply(this, arguments);
 };
 
-// ═══════════════════════════════════════════════════════════
-// 🔧 حفظ آخر صفحة
-// ═══════════════════════════════════════════════════════════
-
-const _originalNavigateTo = window.navigateTo;
-window.navigateTo = function(page) {
-    // حفظ الصفحة في الجلسة
-    const session = getSession();
-    if (session && page !== 'more' && page !== 'settings') {
-        session.lastPage = page;
-        localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+// ============================================================
+// 🔧 حفظ آخر صفحة (بدون تعارض مع navigateTo الأساسي)
+// ============================================================
+// ✅ لا نعيد تعريف navigateTo هنا، بل نستخدم حدث مخصص
+window.addEventListener('mizan_navigate', function(e) {
+    if (e.detail && e.detail.page) {
+        const page = e.detail.page;
+        const session = getSession();
+        if (session && page !== 'more' && page !== 'settings') {
+            session.lastPage = page;
+            localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        }
     }
-    
-    if (_originalNavigateTo) _originalNavigateTo.apply(this, arguments);
-};
+});
 
 // ═══════════════════════════════════════════════════════════
 // 🔧 تمديد الجلسة تلقائياً
