@@ -534,37 +534,29 @@ window.populateAllDropdowns = function() {
 };
 
 // ============================================================
-// Populate All Dropdowns (مع حماية كاملة)
+// Refresh All Views
 // ============================================================
-window.populateAllDropdowns = function() {
-    // ✅ دالة مساعدة للاستدعاء الآمن
-    function safeCall(funcName, ...args) {
-        if (typeof window[funcName] === 'function') {
-            try {
-                window[funcName](...args);
-            } catch (e) {
-                console.warn(`⚠️ خطأ في ${funcName}:`, e.message);
-            }
-        }
-    }
-
-    safeCall('populateSaleProducts');
-    safeCall('populateSaleCustomers');
-    safeCall('populatePurSuppliers');
-    safeCall('populatePurProducts');
-    safeCall('populateRetProducts');
-    safeCall('toggleReturnCustomer');
-    safeCall('populateCollectCustomers');
-    safeCall('populatePaySuppliers');
-    safeCall('populateSettleCustomers');
-    safeCall('populateSettleProducts');
-    safeCall('populateAccountDropdowns');
-    safeCall('populateWarehouseDropdowns');
-    safeCall('populateWarehouseProducts');
-    safeCall('populateWarehouseStockFilter');
-    safeCall('populateSaleWarehouse');
-    safeCall('populatePurWarehouse');
-    safeCall('populateRetWarehouse');
+window.refreshAllViews = function() {
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderCashier === 'function') renderCashier();
+    if (typeof renderPurchases === 'function') renderPurchases();
+    if (typeof renderReturns === 'function') renderReturns();
+    if (typeof renderExpenses === 'function') renderExpenses();
+    if (typeof renderInvoices === 'function') renderInvoices();
+    if (typeof renderTreasury === 'function') renderTreasury();
+    if (typeof renderCustomers === 'function') renderCustomers();
+    if (typeof renderSuppliers === 'function') renderSuppliers();
+    if (typeof renderPayments === 'function') renderPayments();
+    if (typeof renderUsers === 'function') renderUsers();
+    if (typeof renderAudit === 'function') renderAudit();
+    if (typeof renderAccounts === 'function') renderAccounts();
+    if (typeof renderJournal === 'function') renderJournal();
+    if (typeof renderInventoryMovements === 'function') renderInventoryMovements();
+    if (typeof renderWarehouses === 'function') renderWarehouses();
+    if (typeof renderWarehouseStock === 'function') renderWarehouseStock();
+    if (typeof renderWarehouseMovements === 'function') renderWarehouseMovements();
+    if (typeof updateDashboard === 'function') updateDashboard();
+    if (typeof renderSettings === 'function') renderSettings();
 };
 
 // ============================================================
