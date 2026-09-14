@@ -1,5 +1,6 @@
 // ============================================================
-// الميزان 13.0.0 - الجزء 3: العرض والتهيئة
+// الميزان 14.0.0 - الجزء 3: العرض والتهيئة
+// app-part3.js
 // التقارير + لوحة التحكم + الحسابات + الإعدادات + التهيئة
 // ============================================================
 
@@ -2379,7 +2380,7 @@ window.changePassword = function() {
 window.exportData = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const data = {
-        version: '13.0.0', exportDate: new Date().toISOString(),
+        version: '14.0.0', exportDate: new Date().toISOString(),
         products, sales, purchases, returns, expenses,
         customers, suppliers, treasury, payments, users, auditLog, companyData, vatSettings,
         accounts, journalEntries, inventoryMovements
@@ -2486,20 +2487,11 @@ window.populateAllDropdowns = function() {
     populateAccountDropdowns();
 };
 
-window.refreshAllViews = function() {
-    renderProducts(); renderCashier(); renderPurchases();
-    renderReturns(); renderExpenses(); renderInvoices();
-    renderTreasury(); renderCustomers(); renderSuppliers();
-    renderPayments(); renderUsers(); renderAudit();
-    renderAccounts(); renderJournal(); renderInventoryMovements();
-    updateDashboard(); renderSettings();
-};
-
 // ============================================================
 // التهيئة النهائية
 // ============================================================
 function init() {
-    console.log('🚀 الميزان 13.0.0 - ملفات مقسمة');
+    console.log('🚀 الميزان 14.0.0 - ملفات مقسمة');
 
     initFirebase();
 
@@ -2619,7 +2611,7 @@ function init() {
     populateAllDropdowns();
     refreshAllViews();
 
-    console.log('✅ الميزان جاهز - 3 ملفات مترابطة');
+    console.log('✅ الميزان جاهز - 4 ملفات مترابطة');
 }
 
 document.addEventListener('DOMContentLoaded', init);
