@@ -2476,16 +2476,6 @@ window.saveAll = function() {
     setData('inventoryMovements', inventoryMovements);
 };
 
-window.populateAllDropdowns = function() {
-    populateSaleProducts(); populateSaleCustomers();
-    populatePurSuppliers(); populatePurProducts();
-    populateRetProducts();
-    if (typeof toggleReturnCustomer === 'function') toggleReturnCustomer();
-    populateCollectCustomers(); populatePaySuppliers();
-    populateSettleCustomers(); populateSettleProducts();
-    populateAccountDropdowns();
-};
-
 window.refreshAllViews = function() {
     renderProducts(); renderCashier(); renderPurchases();
     renderReturns(); renderExpenses(); renderInvoices();
