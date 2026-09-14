@@ -214,7 +214,8 @@ window.addEventListener('DOMContentLoaded', function() {
             try {
                 _navOriginal.apply(this, arguments);
             } catch (e) {
-                if (!e.message.includes('renderProducts is not defined')) {
+                // تجاهل الأخطاء غير الحرجة أثناء التنقل
+                if (!e.message.includes('is not defined')) {
                     console.warn('⚠️ خطأ في navigateTo:', e.message);
                 }
             }
@@ -228,8 +229,24 @@ window.addEventListener('DOMContentLoaded', function() {
                     }
                 }
                 if (page === 'cashier') {
-                    if (typeof populateSaleWarehouseSafe === 'function') {
-                        try { populateSaleWarehouseSafe(); } catch(e) {}
+                    // ✅ استدعاء آمن للدوال
+                    if (typeof populateSaleProducts === 'function') {
+                        try { populateSaleProducts(); } catch(e) {}
+                    }
+                    if (typeof populateSaleCustomers === 'function') {
+                        try { populateSaleCustomers(); } catch(e) {}
+                    }
+                    if (typeof populateSaleWarehouse === 'function') {
+                        try { populateSaleWarehouse(); } catch(e) {}
+                    }
+                    if (typeof renderCashier === 'function') {
+                        try { renderCashier(); } catch(e) {}
+                    }
+                    if (typeof populateCashBoxDropdowns === 'function') {
+                        try { populateCashBoxDropdowns(); } catch(e) {}
+                    }
+                    if (typeof _applyAllSearch === 'function') {
+                        try { _applyAllSearch(); } catch(e) {}
                     }
                 }
             } catch (e) {
