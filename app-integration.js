@@ -206,83 +206,77 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // ═══════════════════════════════════════════════════════════
-// 🚀 التنقل الآمن (مع حماية كاملة ضد الأخطاء)
+// 🚀 التنقل الآمن (الملف الوحيد المسؤول عن navigateTo)
 // ═══════════════════════════════════════════════════════════
 (function() {
+    // حفظ الدالة الأصلية (من app-part1.js)
     let _navOriginal = window.navigateTo;
     
+    // ✅ استبدال navigateTo بنسخة آمنة تماماً
     window.navigateTo = function(page) {
         // 1. استدعاء الدالة الأصلية (من app-part1.js) بشكل آمن
         if (_navOriginal) {
             try {
                 _navOriginal.apply(this, arguments);
             } catch (e) {
-                // تجاهل أي خطأ في الدالة الأصلية
-                console.warn('⚠️ خطأ في navigateTo الأصلي:', e.message);
+                // ✅ لا نطبع أي خطأ، فقط نتجاهله
             }
         }
         
         // 2. تنفيذ المهام الإضافية بعد التنقل (بشكل آمن)
         setTimeout(function() {
             try {
+                // ✅ dashboard
                 if (page === 'dashboard') {
                     if (typeof renderWarehouseStatsOnDashboard === 'function') {
                         try { renderWarehouseStatsOnDashboard(); } catch(e) {}
                     }
                 }
                 
+                // ✅ cashier
                 if (page === 'cashier') {
-                    if (typeof populateSaleProducts === 'function') {
-                        try { populateSaleProducts(); } catch(e) {}
-                    }
-                    if (typeof populateSaleCustomers === 'function') {
-                        try { populateSaleCustomers(); } catch(e) {}
-                    }
-                    if (typeof populateSaleWarehouse === 'function') {
-                        try { populateSaleWarehouse(); } catch(e) {}
-                    }
-                    if (typeof renderCashier === 'function') {
-                        try { renderCashier(); } catch(e) {}
-                    }
-                    if (typeof populateCashBoxDropdowns === 'function') {
-                        try { populateCashBoxDropdowns(); } catch(e) {}
-                    }
+                    if (typeof populateSaleProducts === 'function') { try { populateSaleProducts(); } catch(e) {} }
+                    if (typeof populateSaleCustomers === 'function') { try { populateSaleCustomers(); } catch(e) {} }
+                    if (typeof populateSaleWarehouse === 'function') { try { populateSaleWarehouse(); } catch(e) {} }
+                    if (typeof renderCashier === 'function') { try { renderCashier(); } catch(e) {} }
+                    if (typeof populateCashBoxDropdowns === 'function') { try { populateCashBoxDropdowns(); } catch(e) {} }
+                    if (typeof _applyAllSearch === 'function') { try { _applyAllSearch(); } catch(e) {} }
                 }
                 
+                // ✅ inventory
                 if (page === 'inventory') {
-                    if (typeof renderProducts === 'function') {
-                        try { renderProducts(); } catch(e) {}
-                    }
-                    if (typeof populateProductWarehouse === 'function') {
-                        try { populateProductWarehouse(); } catch(e) {}
-                    }
+                    if (typeof renderProducts === 'function') { try { renderProducts(); } catch(e) {} }
+                    if (typeof populateProductWarehouse === 'function') { try { populateProductWarehouse(); } catch(e) {} }
                 }
                 
+                // ✅ purchases
                 if (page === 'purchases') {
-                    if (typeof populatePurWarehouse === 'function') {
-                        try { populatePurWarehouse(); } catch(e) {}
-                    }
-                    if (typeof populatePurProducts === 'function') {
-                        try { populatePurProducts(); } catch(e) {}
-                    }
-                    if (typeof populatePurSuppliers === 'function') {
-                        try { populatePurSuppliers(); } catch(e) {}
-                    }
+                    if (typeof populatePurWarehouse === 'function') { try { populatePurWarehouse(); } catch(e) {} }
+                    if (typeof populatePurProducts === 'function') { try { populatePurProducts(); } catch(e) {} }
+                    if (typeof populatePurSuppliers === 'function') { try { populatePurSuppliers(); } catch(e) {} }
                 }
                 
+                // ✅ returns
                 if (page === 'returns') {
-                    if (typeof populateRetWarehouse === 'function') {
-                        try { populateRetWarehouse(); } catch(e) {}
-                    }
-                    if (typeof populateRetProducts === 'function') {
-                        try { populateRetProducts(); } catch(e) {}
-                    }
+                    if (typeof populateRetWarehouse === 'function') { try { populateRetWarehouse(); } catch(e) {} }
+                    if (typeof populateRetProducts === 'function') { try { populateRetProducts(); } catch(e) {} }
+                }
+                
+                // ✅ cash-boxes
+                if (page === 'cash-boxes') {
+                    if (typeof renderCashBoxes === 'function') { try { renderCashBoxes(); } catch(e) {} }
+                    if (typeof renderCashBoxTransfers === 'function') { try { renderCashBoxTransfers(); } catch(e) {} }
+                }
+                
+                // ✅ warehouses
+                if (page === 'warehouses') {
+                    if (typeof renderWarehouses === 'function') { try { renderWarehouses(); } catch(e) {} }
                 }
             } catch (e) {
                 // تجاهل أي خطأ غير متوقع
             }
         }, 600);
     };
+    
+    console.log('✅ تم تفعيل نظام التنقل الآمن في app-integration.js');
 })();
-
-console.log('✅ تم تحميل app-integration.js بنجاح (مع حماية من الأخطاء)');
