@@ -6,7 +6,7 @@
 console.log('📦 تحميل app-part2.js - العمليات + البحث + الخزائن');
 
 // ═══════════════════════════════════════════════════════════
-// 🔍 نظام البحث الذكي
+// 🔍 نظام البحث الذكي (نسخة مصححة)
 // ═══════════════════════════════════════════════════════════
 window._srchTimers = {};
 
@@ -85,16 +85,37 @@ window._makeSearchable = function(selectId, placeholder, icon) {
             const pick = function(ev) {
                 ev.stopPropagation();
                 
-                // ✅ حفظ القيمة
+                // ✅ 1. تعيين القيمة في القائمة الأصلية
                 sel.value = it.dataset.v;
-                sel.dispatchEvent(new Event('change', { bubbles: true }));
                 
-                // ✅ تفضية الحقل
-                inp.value = '';
+                // ✅ 2. وضع اسم العنصر في حقل البحث (بدلاً من تفضيته)
+                inp.value = it.dataset.t;
                 
-                // ✅ إغلاق القائمة
+                // ✅ 3. إغلاق القائمة
                 dd.style.display = 'none';
                 inp.blur();
+                
+                // ✅ 4. إرسال حدث التغيير
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                
+                // ✅ 5. استدعاء دوال تحديث السعر (بشكل آمن)
+                setTimeout(function() {
+                    if (selectId === 'saleProduct' && typeof updateSalePrice === 'function') {
+                        updateSalePrice();
+                    }
+                    if (selectId === 'purProduct' && typeof updatePurPrice === 'function') {
+                        updatePurPrice();
+                    }
+                    if (selectId === 'retProduct' && typeof updateRetPrice === 'function') {
+                        updateRetPrice();
+                    }
+                    if (selectId === 'settleProduct' && typeof updateSettlePrice === 'function') {
+                        updateSettlePrice();
+                    }
+                    if (selectId === 'retParty' && typeof loadReturnInvoices === 'function') {
+                        loadReturnInvoices();
+                    }
+                }, 100);
             };
             it.addEventListener('touchend', pick, { passive: true });
             it.addEventListener('click', pick);
@@ -114,6 +135,9 @@ window._makeSearchable = function(selectId, placeholder, icon) {
     return true;
 };
 
+// ═══════════════════════════════════════════════════════════
+// 🔍 تفعيل البحث على جميع القوائم
+// ═══════════════════════════════════════════════════════════
 window._applyAllSearch = function() {
     const list = [
         ['saleCustomer', '🔍 اكتب اسم العميل...', '👤'],
