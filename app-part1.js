@@ -534,29 +534,44 @@ window.populateAllDropdowns = function() {
 };
 
 // ============================================================
-// Refresh All Views
+// Refresh All Views (مع حماية كاملة ضد الأخطاء)
 // ============================================================
 window.refreshAllViews = function() {
-    if (typeof renderProducts === 'function') renderProducts();
-    if (typeof renderCashier === 'function') renderCashier();
-    if (typeof renderPurchases === 'function') renderPurchases();
-    if (typeof renderReturns === 'function') renderReturns();
-    if (typeof renderExpenses === 'function') renderExpenses();
-    if (typeof renderInvoices === 'function') renderInvoices();
-    if (typeof renderTreasury === 'function') renderTreasury();
-    if (typeof renderCustomers === 'function') renderCustomers();
-    if (typeof renderSuppliers === 'function') renderSuppliers();
-    if (typeof renderPayments === 'function') renderPayments();
-    if (typeof renderUsers === 'function') renderUsers();
-    if (typeof renderAudit === 'function') renderAudit();
-    if (typeof renderAccounts === 'function') renderAccounts();
-    if (typeof renderJournal === 'function') renderJournal();
-    if (typeof renderInventoryMovements === 'function') renderInventoryMovements();
-    if (typeof renderWarehouses === 'function') renderWarehouses();
-    if (typeof renderWarehouseStock === 'function') renderWarehouseStock();
-    if (typeof renderWarehouseMovements === 'function') renderWarehouseMovements();
-    if (typeof updateDashboard === 'function') updateDashboard();
-    if (typeof renderSettings === 'function') renderSettings();
+    // ✅ دالة مساعدة للاستدعاء الآمن
+    function safeCall(funcName, ...args) {
+        if (typeof window[funcName] === 'function') {
+            try {
+                window[funcName](...args);
+            } catch (e) {
+                console.warn(`⚠️ خطأ في ${funcName}:`, e.message);
+            }
+        }
+    }
+
+    safeCall('renderProducts');
+    safeCall('renderCashier');
+    safeCall('renderPurchases');
+    safeCall('renderReturns');
+    safeCall('renderExpenses');
+    safeCall('renderInvoices');
+    safeCall('renderTreasury');
+    safeCall('renderCustomers');
+    safeCall('renderSuppliers');
+    safeCall('renderPayments');
+    safeCall('renderUsers');
+    safeCall('renderAudit');
+    safeCall('renderAccounts');
+    safeCall('renderJournal');
+    safeCall('renderInventoryMovements');
+    safeCall('renderWarehouses');
+    safeCall('renderWarehouseStock');
+    safeCall('renderWarehouseMovements');
+    safeCall('updateDashboard');
+    safeCall('renderSettings');
+    safeCall('populateAllDropdowns');
+    safeCall('populateCashBoxDropdowns');
+    safeCall('renderWarehouseStatsOnDashboard');
+    safeCall('initMultiTreasury');
 };
 
 // ============================================================
