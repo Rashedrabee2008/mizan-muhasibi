@@ -61,74 +61,6 @@
         </header>
 
         <!-- ============ لوحة التحكم ============ -->
-<div id="page-dashboard" class="page-container active">
-    <div class="page-content">
-        <h2><i class="fas fa-chart-pie"></i> لوحة التحكم</h2>
-        <div class="dashboard-stats">
-            <div class="dashboard-card"><div class="number" id="dashSales">0.00</div><div class="label">💰 إجمالي المبيعات</div></div>
-            <div class="dashboard-card"><div class="number" id="dashPurchases">0.00</div><div class="label">🛒 إجمالي المشتريات</div></div>
-            <div class="dashboard-card"><div class="number" id="dashExpenses">0.00</div><div class="label">💸 إجمالي المصروفات</div></div>
-            <div class="dashboard-card"><div class="number" id="dashReturns">0.00</div><div class="label">🔄 إجمالي المرتجعات</div></div>
-        </div>
-        <div class="dashboard-stats">
-            <div class="dashboard-card"><div class="number" id="dashProfit">0.00</div><div class="label">📈 صافي الربح</div></div>
-            <div class="dashboard-card"><div class="number" id="dashTreasury">0.00</div><div class="label">🏦 إجمالي الخزائن</div></div>
-            <div class="dashboard-card"><div class="number" id="dashProducts">0</div><div class="label">📦 عدد المنتجات</div></div>
-            <div class="dashboard-card"><div class="number" id="dashInventory">0</div><div class="label">📊 إجمالي الكميات</div></div>
-        </div>
-        <div class="dashboard-stats">
-            <div class="dashboard-card" style="border-right-color:#E06060;"><div class="number" style="color:#E06060;" id="dashCustomerDebt">0.00</div><div class="label">💳 مديونيات العملاء</div></div>
-            <div class="dashboard-card" style="border-right-color:#E6A830;"><div class="number" style="color:#E6A830;" id="dashSupplierDebt">0.00</div><div class="label">📋 التزامات الموردين</div></div>
-            <div class="dashboard-card" style="border-right-color:#4A8AB5;"><div class="number" style="color:#4A8AB5;" id="dashVATSales">0.00</div><div class="label">🧾 ضريبة المبيعات</div></div>
-            <div class="dashboard-card" style="border-right-color:#9B59B6;"><div class="number" style="color:#9B59B6;" id="dashVATDue">0.00</div><div class="label">🧾 الضريبة المستحقة</div></div>
-        </div>
-        <div class="chart-container">
-            <h3><i class="fas fa-chart-line"></i> آخر 7 أيام - المبيعات</h3>
-            <div id="miniChart" class="mini-chart"></div>
-        </div>
-        <div id="warehouseStatsSection">
-            <h2 style="margin-top:20px;"><i class="fas fa-warehouse"></i> إحصائيات المخازن</h2>
-            <div id="warehouseStatsGrid" class="dashboard-stats"></div>
-        </div>
-        <h2 style="margin-top:20px;"><i class="fas fa-receipt"></i> آخر المبيعات</h2>
-        <div id="dashLastSales"><div class="empty-state"><i class="fas fa-receipt"></i><span>لا توجد مبيعات</span></div></div>
-    </div>
-</div>
-
-<!-- ============ المخزون ============ -->
-<div id="page-inventory" class="page-container">
-    <div class="page-content">
-        <h2><i class="fas fa-box"></i> المخزون</h2>
-        <div class="form-card" id="productFormCard">
-            <h3 id="productFormTitle">➕ إضافة منتج جديد</h3>
-            <input type="hidden" id="productId" />
-            <div class="form-row">
-                <div class="form-group"><label>اسم المنتج</label><input type="text" id="productName" /></div>
-                <div class="form-group"><label>الباركود</label><input type="text" id="productBarcode" /></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>سعر الشراء</label><input type="number" id="productBuy" min="0" step="0.01" /></div>
-                <div class="form-group"><label>سعر البيع</label><input type="number" id="productSell" min="0" step="0.01" /></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>الكمية</label><input type="number" id="productQty" min="0" step="1" /></div>
-                <div class="form-group"><label>الحد الأدنى</label><input type="number" id="productMin" value="5" min="0" step="1" /></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>نسبة الضريبة %</label><input type="number" id="productVAT" value="14" min="0" max="100" step="0.01" /></div>
-                <div class="form-group"><label>&nbsp;</label><small style="color:#A89070;font-size:11px;">الافتراضي: 14%</small></div>
-            </div>
-            <div class="form-actions">
-                <button class="btn btn-primary" onclick="saveProduct()"><i class="fas fa-save"></i> <span id="productSaveBtnText">إضافة</span></button>
-                <button class="btn btn-secondary" onclick="resetProductForm()"><i class="fas fa-times"></i> إلغاء</button>
-            </div>
-        </div>
-        <div class="search-box"><input type="text" id="inventorySearch" placeholder="🔍 بحث..." oninput="renderProducts()" /></div>
-        <div id="productList"></div>
-    </div>
-</div>
-
-        <!-- ============ لوحة التحكم ============ -->
         <div id="page-dashboard" class="page-container active">
             <div class="page-content">
                 <h2><i class="fas fa-chart-pie"></i> لوحة التحكم</h2>
@@ -145,22 +77,10 @@
                     <div class="dashboard-card"><div class="number" id="dashInventory">0</div><div class="label">📊 إجمالي الكميات</div></div>
                 </div>
                 <div class="dashboard-stats">
-                    <div class="dashboard-card" style="border-right-color:#E06060;">
-                        <div class="number" style="color:#E06060;" id="dashCustomerDebt">0.00</div>
-                        <div class="label">💳 مديونيات العملاء</div>
-                    </div>
-                    <div class="dashboard-card" style="border-right-color:#E6A830;">
-                        <div class="number" style="color:#E6A830;" id="dashSupplierDebt">0.00</div>
-                        <div class="label">📋 التزامات الموردين</div>
-                    </div>
-                    <div class="dashboard-card" style="border-right-color:#4A8AB5;">
-                        <div class="number" style="color:#4A8AB5;" id="dashVATSales">0.00</div>
-                        <div class="label">🧾 ضريبة المبيعات</div>
-                    </div>
-                    <div class="dashboard-card" style="border-right-color:#9B59B6;">
-                        <div class="number" style="color:#9B59B6;" id="dashVATDue">0.00</div>
-                        <div class="label">🧾 الضريبة المستحقة</div>
-                    </div>
+                    <div class="dashboard-card" style="border-right-color:#E06060;"><div class="number" style="color:#E06060;" id="dashCustomerDebt">0.00</div><div class="label">💳 مديونيات العملاء</div></div>
+                    <div class="dashboard-card" style="border-right-color:#E6A830;"><div class="number" style="color:#E6A830;" id="dashSupplierDebt">0.00</div><div class="label">📋 التزامات الموردين</div></div>
+                    <div class="dashboard-card" style="border-right-color:#4A8AB5;"><div class="number" style="color:#4A8AB5;" id="dashVATSales">0.00</div><div class="label">🧾 ضريبة المبيعات</div></div>
+                    <div class="dashboard-card" style="border-right-color:#9B59B6;"><div class="number" style="color:#9B59B6;" id="dashVATDue">0.00</div><div class="label">🧾 الضريبة المستحقة</div></div>
                 </div>
                 <div class="chart-container">
                     <h3><i class="fas fa-chart-line"></i> آخر 7 أيام - المبيعات</h3>
@@ -195,21 +115,21 @@
                         <div class="form-group"><label>الحد الأدنى</label><input type="number" id="productMin" value="5" min="0" step="1" /></div>
                     </div>
                     <div class="form-row">
-    <div class="form-group"><label>نسبة الضريبة %</label><input type="number" id="productVAT" value="14" min="0" max="100" step="0.01" /></div>
-    <div class="form-group"><label>&nbsp;</label><small style="color:#A89070;font-size:11px;">الافتراضي: 14%</small></div>
-</div>
-<div class="form-row">
-    <div class="form-group">
-        <label>🏪 المخزن (لتوزيع الكمية)</label>
-        <select id="productWarehouse">
-            <option value="">توزيع على المخزن الرئيسي</option>
-        </select>
-    </div>
-    <div class="form-group">
-        <label>&nbsp;</label>
-        <small style="color:#A89070;font-size:11px;">يتم إضافة الكمية للمخزن المختار</small>
-    </div>
-</div>
+                        <div class="form-group"><label>نسبة الضريبة %</label><input type="number" id="productVAT" value="14" min="0" max="100" step="0.01" /></div>
+                        <div class="form-group"><label>&nbsp;</label><small style="color:#A89070;font-size:11px;">الافتراضي: 14%</small></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>🏪 المخزن (لتوزيع الكمية)</label>
+                            <select id="productWarehouse">
+                                <option value="">توزيع على المخزن الرئيسي</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <small style="color:#A89070;font-size:11px;">يتم إضافة الكمية للمخزن المختار</small>
+                        </div>
+                    </div>
                     <div class="form-actions">
                         <button class="btn btn-primary" onclick="saveProduct()"><i class="fas fa-save"></i> <span id="productSaveBtnText">إضافة</span></button>
                         <button class="btn btn-secondary" onclick="resetProductForm()"><i class="fas fa-times"></i> إلغاء</button>
@@ -1310,16 +1230,17 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
-    <script src="app-part1.js"></script>
-<script src="app-part2.js"></script>
-<script src="app-part3.js"></script>
-<script src="app-part4.js"></script>
-<script src="app-warehouses.js"></script>
-<script src="app-whatsapp.js"></script>
-<script src="app-integration.js"></script>
-<script src="app-sync-stock.js"></script>
-<script src="app-session.js"></script>
-<script src="app-multi-treasury.js"></script>
+    <!-- ✅ تحميل الملفات بترتيب صحيح مع defer -->
+    <script src="app-part1.js" defer></script>
+    <script src="app-part2.js" defer></script>
+    <script src="app-part3.js" defer></script>
+    <script src="app-part4.js" defer></script>
+    <script src="app-warehouses.js" defer></script>
+    <script src="app-whatsapp.js" defer></script>
+    <script src="app-integration.js" defer></script>
+    <script src="app-sync-stock.js" defer></script>
+    <script src="app-session.js" defer></script>
+    <script src="app-multi-treasury.js" defer></script>
     
     <!-- 🔍 Eruda Console للموبايل -->
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
