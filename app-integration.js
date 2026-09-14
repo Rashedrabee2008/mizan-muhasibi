@@ -212,16 +212,17 @@ window.addEventListener('DOMContentLoaded', function() {
     let _navOriginal = window.navigateTo;
     
     window.navigateTo = function(page) {
-        // 1. استدعاء الدالة الأصلية (من app-part1.js)
+        // 1. استدعاء الدالة الأصلية (من app-part1.js) بشكل آمن
         if (_navOriginal) {
             try {
                 _navOriginal.apply(this, arguments);
             } catch (e) {
                 // تجاهل أي خطأ في الدالة الأصلية
+                console.warn('⚠️ خطأ في navigateTo الأصلي:', e.message);
             }
         }
         
-        // 2. تنفيذ المهام الإضافية بعد التنقل (مع حماية كاملة)
+        // 2. تنفيذ المهام الإضافية بعد التنقل (بشكل آمن)
         setTimeout(function() {
             try {
                 if (page === 'dashboard') {
@@ -245,9 +246,6 @@ window.addEventListener('DOMContentLoaded', function() {
                     }
                     if (typeof populateCashBoxDropdowns === 'function') {
                         try { populateCashBoxDropdowns(); } catch(e) {}
-                    }
-                    if (typeof _applyAllSearch === 'function') {
-                        try { _applyAllSearch(); } catch(e) {}
                     }
                 }
                 
@@ -280,16 +278,11 @@ window.addEventListener('DOMContentLoaded', function() {
                         try { populateRetProducts(); } catch(e) {}
                     }
                 }
-                
-                if (page === 'warehouses') {
-                    if (typeof renderWarehouses === 'function') {
-                        try { renderWarehouses(); } catch(e) {}
-                    }
-                }
             } catch (e) {
                 // تجاهل أي خطأ غير متوقع
             }
         }, 600);
     };
 })();
+
 console.log('✅ تم تحميل app-integration.js بنجاح (مع حماية من الأخطاء)');
