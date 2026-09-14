@@ -218,11 +218,10 @@ window.addEventListener('DOMContentLoaded', function() {
                 _navOriginal.apply(this, arguments);
             } catch (e) {
                 // تجاهل أي خطأ في الدالة الأصلية
-                console.warn('⚠️ خطأ في navigateTo الأصلي:', e.message);
             }
         }
         
-        // 2. تنفيذ المهام الإضافية بعد التنقل
+        // 2. تنفيذ المهام الإضافية بعد التنقل (مع حماية كاملة)
         setTimeout(function() {
             try {
                 if (page === 'dashboard') {
@@ -232,7 +231,6 @@ window.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (page === 'cashier') {
-                    // ✅ استدعاء آمن لجميع الدوال
                     if (typeof populateSaleProducts === 'function') {
                         try { populateSaleProducts(); } catch(e) {}
                     }
@@ -294,5 +292,4 @@ window.addEventListener('DOMContentLoaded', function() {
         }, 600);
     };
 })();
-
 console.log('✅ تم تحميل app-integration.js بنجاح (مع حماية من الأخطاء)');
