@@ -534,9 +534,9 @@ window.populateAllDropdowns = function() {
 };
 
 // ============================================================
-// Refresh All Views (مع حماية كاملة ضد الأخطاء)
+// Populate All Dropdowns (مع حماية كاملة)
 // ============================================================
-window.refreshAllViews = function() {
+window.populateAllDropdowns = function() {
     // ✅ دالة مساعدة للاستدعاء الآمن
     function safeCall(funcName, ...args) {
         if (typeof window[funcName] === 'function') {
@@ -548,30 +548,23 @@ window.refreshAllViews = function() {
         }
     }
 
-    safeCall('renderProducts');
-    safeCall('renderCashier');
-    safeCall('renderPurchases');
-    safeCall('renderReturns');
-    safeCall('renderExpenses');
-    safeCall('renderInvoices');
-    safeCall('renderTreasury');
-    safeCall('renderCustomers');
-    safeCall('renderSuppliers');
-    safeCall('renderPayments');
-    safeCall('renderUsers');
-    safeCall('renderAudit');
-    safeCall('renderAccounts');
-    safeCall('renderJournal');
-    safeCall('renderInventoryMovements');
-    safeCall('renderWarehouses');
-    safeCall('renderWarehouseStock');
-    safeCall('renderWarehouseMovements');
-    safeCall('updateDashboard');
-    safeCall('renderSettings');
-    safeCall('populateAllDropdowns');
-    safeCall('populateCashBoxDropdowns');
-    safeCall('renderWarehouseStatsOnDashboard');
-    safeCall('initMultiTreasury');
+    safeCall('populateSaleProducts');
+    safeCall('populateSaleCustomers');
+    safeCall('populatePurSuppliers');
+    safeCall('populatePurProducts');
+    safeCall('populateRetProducts');
+    safeCall('toggleReturnCustomer');
+    safeCall('populateCollectCustomers');
+    safeCall('populatePaySuppliers');
+    safeCall('populateSettleCustomers');
+    safeCall('populateSettleProducts');
+    safeCall('populateAccountDropdowns');
+    safeCall('populateWarehouseDropdowns');
+    safeCall('populateWarehouseProducts');
+    safeCall('populateWarehouseStockFilter');
+    safeCall('populateSaleWarehouse');
+    safeCall('populatePurWarehouse');
+    safeCall('populateRetWarehouse');
 };
 
 // ============================================================
