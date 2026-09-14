@@ -1,6 +1,6 @@
 // ============================================================
-// الميزان 13.0.0 - الجزء 3: العرض والتهيئة
-// التقارير + لوحة التحكم + الحسابات + الإعدادات + التهيئة
+// الميزان 14.0.0 - الجزء 3: العرض والتهيئة (نسخة نهائية)
+// app-part3.js (بدون refreshAllViews أو populateAllDropdowns)
 // ============================================================
 
 // ============================================================
@@ -2379,7 +2379,7 @@ window.changePassword = function() {
 window.exportData = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const data = {
-        version: '13.0.0', exportDate: new Date().toISOString(),
+        version: '14.0.0', exportDate: new Date().toISOString(),
         products, sales, purchases, returns, expenses,
         customers, suppliers, treasury, payments, users, auditLog, companyData, vatSettings,
         accounts, journalEntries, inventoryMovements
@@ -2476,20 +2476,11 @@ window.saveAll = function() {
     setData('inventoryMovements', inventoryMovements);
 };
 
-window.refreshAllViews = function() {
-    renderProducts(); renderCashier(); renderPurchases();
-    renderReturns(); renderExpenses(); renderInvoices();
-    renderTreasury(); renderCustomers(); renderSuppliers();
-    renderPayments(); renderUsers(); renderAudit();
-    renderAccounts(); renderJournal(); renderInventoryMovements();
-    updateDashboard(); renderSettings();
-};
-
 // ============================================================
-// التهيئة النهائية
+// التهيئة النهائية (init فقط، لا يوجد refreshAllViews أو populateAllDropdowns هنا)
 // ============================================================
 function init() {
-    console.log('🚀 الميزان 13.0.0 - ملفات مقسمة');
+    console.log('🚀 الميزان 14.0.0 - ملفات مقسمة');
 
     initFirebase();
 
@@ -2606,10 +2597,16 @@ function init() {
 
     updateClock();
     updateHeaderCompanyName();
-    populateAllDropdowns();
-    refreshAllViews();
+    
+    // ✅ استدعاء الدوال الآمنة من app-part1.js
+    if (typeof window.populateAllDropdowns === 'function') {
+        try { window.populateAllDropdowns(); } catch(e) { console.warn('⚠️ خطأ في populateAllDropdowns:', e); }
+    }
+    if (typeof window.refreshAllViews === 'function') {
+        try { window.refreshAllViews(); } catch(e) { console.warn('⚠️ خطأ في refreshAllViews:', e); }
+    }
 
-    console.log('✅ الميزان جاهز - 3 ملفات مترابطة');
+    console.log('✅ الميزان جاهز - 4 ملفات مترابطة');
 }
 
 document.addEventListener('DOMContentLoaded', init);
