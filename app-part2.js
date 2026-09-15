@@ -5,6 +5,17 @@
 
 console.log('📦 تحميل app-part2.js - العمليات + البحث + الخزائن');
 
+// ✅ دالة آمنة للبحث في المخزون
+window.safeRenderProducts = function() {
+    if (typeof window.renderProducts === 'function') {
+        try {
+            window.renderProducts();
+        } catch (e) {
+            console.warn('⚠️ خطأ في renderProducts:', e.message);
+        }
+    }
+};
+
 // ═══════════════════════════════════════════════════════════
 // 🔍 نظام البحث الذكي (نسخة مصححة)
 // ═══════════════════════════════════════════════════════════
