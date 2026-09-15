@@ -6,6 +6,63 @@
 // ============================================================
 // الخزنة
 // ============================================================
+// ============================================================
+// ✅ دوال مساعدة (يجب إضافتها)
+// ============================================================
+
+window.updateHeaderCompanyName = function() {
+    try {
+        const el = document.getElementById('headerCompanyName');
+        if (el) el.textContent = (typeof companyData !== 'undefined' && companyData.name) ? companyData.name : 'نظام محاسبة';
+    } catch (e) {
+        console.warn('⚠️ خطأ في updateHeaderCompanyName:', e.message);
+    }
+};
+
+window.updateJournalCheck = function() {
+    try {
+        const debit = parseFloat(document.getElementById('jeDebitAmount')?.value) || 0;
+        const credit = parseFloat(document.getElementById('jeCreditAmount')?.value) || 0;
+        const checkEl = document.getElementById('jeCheck');
+        const statusEl = document.getElementById('jeBalanceStatus');
+        if (!checkEl || !statusEl) return;
+        
+        if (debit === 0 && credit === 0) {
+            checkEl.className = 'journal-check';
+            statusEl.textContent = 'أدخل المبالغ';
+            statusEl.style.color = '#A89070';
+        } else if (Math.abs(debit - credit) < 0.01 && debit > 0) {
+            checkEl.className = 'journal-check balanced';
+            statusEl.textContent = 'متوازن ✅';
+            statusEl.style.color = '#2D8F5E';
+        } else {
+            checkEl.className = 'journal-check unbalanced';
+            statusEl.textContent = `غير متوازن (فرق: ${formatMoney(Math.abs(debit - credit))})`;
+            statusEl.style.color = '#E06060';
+        }
+    } catch (e) {
+        console.warn('⚠️ خطأ في updateJournalCheck:', e.message);
+    }
+};
+
+window.updateClock = function() {
+    try {
+        const el = document.getElementById('liveDateTime');
+        if (!el) return;
+        const now = new Date();
+        const date = String(now.getDate()).padStart(2, '0') + '/' +
+                     String(now.getMonth() + 1).padStart(2, '0') + '/' + now.getFullYear();
+        const time = now.toLocaleTimeString('en-GB', { hour12: false });
+        el.textContent = date + ' ' + time;
+    } catch (e) {
+        console.warn('⚠️ خطأ في updateClock:', e.message);
+    }
+};
+
+setInterval(function() {
+    if (typeof updateClock === 'function') updateClock();
+}, 1000);
+
 window.getTreasuryBalance = function() {
     return treasury.reduce((sum, t) => t.type === 'deposit' ? sum + (t.amount || 0) : sum - (t.amount || 0), 0);
 };
