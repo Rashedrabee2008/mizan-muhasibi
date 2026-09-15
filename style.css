@@ -939,60 +939,70 @@ body {
     @page { size: auto; margin: 10mm; }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   🔘 الأزرار السفلية (Bottom Navigation)
-   ═══════════════════════════════════════════════════════════ */
+/* ============================================================
+   🚨 حل إجباري: إظهار الشريط السفلي فوق كل العناصر
+   ============================================================ */
 
+/* 1. إجبار الشريط السفلي على الظهور */
 .bottom-nav {
-    position: fixed; 
-    bottom: 0; 
-    left: 50%; 
-    transform: translateX(-50%);
-    width: 100%; 
-    max-width: 480px; 
-    background: #1C1C1C;
-    display: flex; 
-    justify-content: space-around; 
-    padding: 8px 0 12px;
-    border-top: 1px solid #3D3D3D; 
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
-    border-radius: 20px 20px 0 0; 
-    z-index: 1000; /* ✅ رفع z-index لضمان ظهوره فوق كل العناصر */
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 480px !important;
+    background: #1C1C1C !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    padding: 8px 0 12px !important;
+    border-top: 1px solid #3D3D3D !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6) !important;
+    border-radius: 20px 20px 0 0 !important;
+    z-index: 99999 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
-.nav-item {
-    display: flex; 
-    flex-direction: column; 
-    align-items: center;
-    color: #5D5D5D; 
-    font-size: 10px; 
-    font-weight: 600;
-    cursor: pointer; 
-    transition: 0.2s; 
-    padding: 4px 2px;
-    background: transparent; 
-    border: none; 
-    min-width: 46px; 
-    font-family: inherit;
+/* 2. إجبار أزرار التنقل على الظهور */
+.bottom-nav .nav-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    color: #5D5D5D !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    padding: 4px 2px !important;
+    background: transparent !important;
+    border: none !important;
+    min-width: 46px !important;
+    font-family: inherit !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
-.nav-item i { 
-    font-size: 18px; 
-    margin-bottom: 3px; 
-    color: #5D5D5D; 
+.bottom-nav .nav-item i {
+    font-size: 18px !important;
+    margin-bottom: 3px !important;
+    color: #5D5D5D !important;
 }
 
-.nav-item.active { 
-    color: #C9A94E; 
-    font-weight: 800; 
+.bottom-nav .nav-item.active {
+    color: #C9A94E !important;
+    font-weight: 800 !important;
 }
 
-.nav-item.active i { 
-    color: #C9A94E; 
-    transform: translateY(-2px); 
+.bottom-nav .nav-item.active i {
+    color: #C9A94E !important;
+    transform: translateY(-2px) !important;
 }
 
-/* ✅ تعديل مهم: إضافة مساحة أسفل الصفحة حتى لا يغطي الشريط المحتوى */
+/* 3. إضافة مساحة أسفل الصفحة حتى لا يغطي الشريط المحتوى */
 body {
-    padding-bottom: 90px !important; /* مساحة للشريط السفلي */
+    padding-bottom: 90px !important;
+}
+
+/* 4. التأكد من أن الصفحات لا تغطي الشريط */
+.page-container.active {
+    padding-bottom: 20px !important;
 }
