@@ -135,7 +135,7 @@
                         <button class="btn btn-secondary" onclick="resetProductForm()"><i class="fas fa-times"></i> إلغاء</button>
                     </div>
                 </div>
-                <div class="search-box"><input type="text" id="inventorySearch" placeholder="🔍 بحث..." oninput="renderProducts()" /></div>
+                <div class="search-box"><input type="text" id="inventorySearch" placeholder="🔍 بحث..." oninput="safeRenderProducts()" />
                 <div id="productList"></div>
             </div>
         </div>
