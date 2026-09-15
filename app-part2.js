@@ -1,18 +1,17 @@
 // ============================================================
 // الميزان 14.0.0 - الجزء 2: العمليات
-// app-part2.js (نسخة كاملة - مع renderProducts)
+// app-part2.js (نسخة كاملة - مع renderProducts وإصلاح الكميات)
 // ============================================================
 
 console.log('📦 تحميل app-part2.js - العمليات + البحث + المخزون');
 
 // ═══════════════════════════════════════════════════════════
-// 📦 عرض المنتجات في المخزون (أساسي)
+// 📦 عرض المنتجات في المخزون
 // ═══════════════════════════════════════════════════════════
 window.renderProducts = function() {
     const c = document.getElementById('productList');
     if (!c) return;
     
-    // البحث
     const search = (document.getElementById('inventorySearch')?.value || '').trim().toLowerCase();
     let filtered = products || [];
     if (search) {
@@ -316,9 +315,13 @@ window.populateSaleProducts = function() {
     sel.innerHTML = '<option value="">اختر منتج...</option>';
     if (typeof products !== 'undefined') {
         products.forEach(function(p) {
-            let qty = p.qty;
+            let qty = p.qty; // ✅ القيمة الافتراضية من المنتج نفسه
             if (whId && typeof getProductStockInWarehouse === 'function') {
-                qty = getProductStockInWarehouse(p.id, whId);
+                const warehouseQty = getProductStockInWarehouse(p.id, whId);
+                // ✅ إذا كانت الكمية في المخزن > 0، استخدمها، وإلا استخدم p.qty
+                if (warehouseQty > 0) {
+                    qty = warehouseQty;
+                }
             }
             sel.innerHTML += '<option value="' + p.id + '">' + p.name + ' (متاح: ' + qty + ')</option>';
         });
@@ -404,7 +407,8 @@ window.addSaleItem = function() {
     
     let availableQty = p.qty;
     if (whId && typeof getProductStockInWarehouse === 'function') {
-        availableQty = getProductStockInWarehouse(id, whId);
+        const warehouseQty = getProductStockInWarehouse(id, whId);
+        if (warehouseQty > 0) availableQty = warehouseQty;
     }
     
     const ex = currentSaleItems.find(function(i) { return i.productId == id; });
@@ -593,7 +597,8 @@ window.saveSale = function() {
         if (!p) { if (typeof showToast === 'function') showToast('⚠️ المنتج غير موجود: ' + it.name, 'error'); return; }
         let available = p.qty;
         if (whId && typeof getProductStockInWarehouse === 'function') {
-            available = getProductStockInWarehouse(it.productId, whId);
+            const warehouseQty = getProductStockInWarehouse(it.productId, whId);
+            if (warehouseQty > 0) available = warehouseQty;
         }
         if (available < it.qty) {
             if (typeof showToast === 'function') showToast('⚠️ الكمية غير كافية: ' + it.name + ' (متاح: ' + available + ')', 'error');
@@ -1126,7 +1131,6 @@ window.addEventListener('DOMContentLoaded', function() {
         populateRetWarehouse();
         const n = _applyAllSearch();
         console.log('🔍 تم تفعيل البحث على ' + n + ' قائمة');
-        // ✅ عرض المنتجات عند التحميل
         if (typeof renderProducts === 'function') {
             try { renderProducts(); } catch(e) {}
         }
