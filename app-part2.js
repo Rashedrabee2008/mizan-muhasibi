@@ -734,6 +734,102 @@ window.clearSale = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
+// 📦 عرض المنتجات في المخزون
+// ═══════════════════════════════════════════════════════════
+window.renderProducts = function() {
+    const c = document.getElementById('productList');
+    if (!c) return;
+    
+    // البحث
+    const search = (document.getElementById('inventorySearch')?.value || '').trim().toLowerCase();
+    let filtered = products || [];
+    if (search) {
+        filtered = filtered.filter(p => 
+            (p.name || '').toLowerCase().includes(search) ||
+            (p.barcode || '').includes(search)
+        );
+    }
+    
+    if (filtered.length === 0) {
+        c.innerHTML = '<div class="empty-state"><i class="fas fa-box"></i><span>لا توجد منتجات</span></div>';
+        return;
+    }
+    
+    let html = '<div class="table-header" style="grid-template-columns: 0.5fr 1.5fr 1fr 1fr 1fr 1.5fr;">' +
+        '<span>#</span><span>الاسم</span><span>الشراء</span><span>البيع</span><span>الكمية</span><span></span>' +
+        '</div>';
+    
+    filtered.forEach(function(p) {
+        const qtyColor = p.qty > (p.min || 5) ? '#C9A94E' : '#E06060';
+        html += '<div class="table-row" style="grid-template-columns: 0.5fr 1.5fr 1fr 1fr 1fr 1.5fr;">' +
+            '<span style="color:#A89070;font-size:11px;">#' + String(p.id).slice(-4) + '</span>' +
+            '<span><strong>' + p.name + '</strong>' + (p.barcode ? '<br><small style="color:#A89070;font-size:9px;">' + p.barcode + '</small>' : '') + '</span>' +
+            '<span style="color:#E06060;">' + formatMoney(p.buy) + '</span>' +
+            '<span style="color:#2D8F5E;">' + formatMoney(p.sell) + '</span>' +
+            '<span style="color:' + qtyColor + ';font-weight:900;">' + p.qty + '</span>' +
+            '<div style="display:flex;gap:4px;">' +
+            (canEdit() ? '<button class="btn btn-warning btn-sm" onclick="editProduct(' + p.id + ')"><i class="fas fa-edit"></i></button>' : '') +
+            (canDelete() ? '<button class="btn btn-danger btn-sm" onclick="deleteProduct(' + p.id + ')"><i class="fas fa-trash"></i></button>' : '') +
+            '</div></div>';
+    });
+    
+    c.innerHTML = html;
+};
+
+// ═══════════════════════════════════════════════════════════
+// ✅ دالة آمنة للبحث
+// ═══════════════════════════════════════════════════════════
+window.safeRenderProducts = function() {
+    if (typeof window.renderProducts === 'function') {
+        try {
+            window.renderProducts();
+        } catch (e) {
+            console.warn('⚠️ خطأ في renderProducts:', e.message);
+        }
+    }
+};
+
+// ═══════════════════════════════════════════════════════════
+// ✏️ تعديل منتج (إذا لم تكن موجودة)
+// ═══════════════════════════════════════════════════════════
+if (typeof window.editProduct !== 'function') {
+    window.editProduct = function(id) {
+        const p = products.find(pr => pr.id == id);
+        if (!p) return;
+        document.getElementById('productId').value = p.id;
+        document.getElementById('productName').value = p.name;
+        document.getElementById('productBarcode').value = p.barcode || '';
+        document.getElementById('productBuy').value = p.buy;
+        document.getElementById('productSell').value = p.sell;
+        document.getElementById('productQty').value = p.qty;
+        document.getElementById('productMin').value = p.min || 5;
+        document.getElementById('productVAT').value = p.vat || 14;
+        document.getElementById('productFormTitle').textContent = '✏️ تعديل المنتج';
+        document.getElementById('productSaveBtnText').textContent = 'حفظ التعديل';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🗑️ حذف منتج (إذا لم تكن موجودة)
+// ═══════════════════════════════════════════════════════════
+if (typeof window.deleteProduct !== 'function') {
+    window.deleteProduct = function(id) {
+        if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+        const p = products.find(pr => pr.id == id);
+        if (!p) return;
+        if (!confirm('⚠️ حذف المنتج "' + p.name + '"؟')) return;
+        
+        window.products = products.filter(pr => pr.id !== id);
+        setData('products', products);
+        addAuditLog('delete', 'product', 'حذف منتج: ' + p.name);
+        renderProducts();
+        updateDashboard();
+        showToast('🗑️ تم حذف المنتج', 'info');
+    };
+}
+
+// ═══════════════════════════════════════════════════════════
 // 🛍️ نظام المشتريات
 // ═══════════════════════════════════════════════════════════
 
