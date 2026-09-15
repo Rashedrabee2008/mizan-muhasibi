@@ -1,6 +1,6 @@
 // ============================================================
 // الميزان 14.0.0 - ربط المخازن بالنظام
-// app-integration.js (نسخة محسّنة مع حماية من الأخطاء)
+// app-integration.js (نسخة كاملة - مع إصلاح إحصائيات المخازن)
 // ============================================================
 
 console.log('🔗 تحميل app-integration.js - ربط المخازن بالنظام');
@@ -23,7 +23,7 @@ window.getWarehouseName = function(id) {
 };
 
 // ═══════════════════════════════════════════════════════════
-// ✅ 1. تعبئة المخازن في الفواتير (حماية)
+// ✅ 1. تعبئة المخازن في الفواتير
 // ═══════════════════════════════════════════════════════════
 
 window.populateSaleWarehouseSafe = function() {
@@ -67,14 +67,18 @@ window.populateSaleWarehouseSafe = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// ✅ 2. عرض إحصائيات المخازن (مع حماية كاملة)
+// ✅ 2. عرض إحصائيات المخازن في لوحة التحكم
 // ═══════════════════════════════════════════════════════════
 
 window.renderWarehouseStatsOnDashboard = function() {
     try {
         const grid = document.getElementById('warehouseStatsGrid');
-        if (!grid) return;
+        if (!grid) {
+            console.warn('⚠️ warehouseStatsGrid غير موجودة في HTML');
+            return;
+        }
         
+        // ✅ التأكد من وجود المتغيرات
         if (typeof warehouses === 'undefined' || !Array.isArray(warehouses) || warehouses.length === 0) {
             grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-warehouse"></i><span>لا توجد مخازن</span></div>';
             return;
@@ -124,6 +128,7 @@ window.renderWarehouseStatsOnDashboard = function() {
         }
         
         grid.innerHTML = html;
+        console.log('✅ تم عرض إحصائيات ' + warehouses.length + ' مخزن');
     } catch (e) {
         console.warn('⚠️ خطأ في renderWarehouseStatsOnDashboard:', e.message);
         const grid = document.getElementById('warehouseStatsGrid');
@@ -134,20 +139,12 @@ window.renderWarehouseStatsOnDashboard = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// ✅ 3. تحسينات إضافية على الفواتير (حماية)
+// ✅ 3. تحسينات على الفواتير
 // ═══════════════════════════════════════════════════════════
 
-window.enhanceCashierWithWarehouse = function() {
-    return true;
-};
-
-window.enhancePurchaseWithWarehouse = function() {
-    return true;
-};
-
-window.enhanceReturnWithWarehouse = function() {
-    return true;
-};
+window.enhanceCashierWithWarehouse = function() { return true; };
+window.enhancePurchaseWithWarehouse = function() { return true; };
+window.enhanceReturnWithWarehouse = function() { return true; };
 
 // ═══════════════════════════════════════════════════════════
 // ✅ 4. التهيئة
@@ -203,33 +200,39 @@ window.addEventListener('DOMContentLoaded', function() {
             console.warn('⚠️ خطأ في التهيئة:', e.message);
         }
     }, 3000);
+    
+    // ✅ استدعاء إحصائيات المخازن عند التحميل الأولي
+    setTimeout(function() {
+        if (typeof renderWarehouseStatsOnDashboard === 'function') {
+            try { renderWarehouseStatsOnDashboard(); } catch(e) {}
+        }
+    }, 4000);
 });
 
 // ═══════════════════════════════════════════════════════════
-// 🚀 التنقل الآمن (الملف الوحيد المسؤول عن navigateTo)
+// 🚀 التنقل الآمن (مع استدعاء إحصائيات المخازن)
 // ═══════════════════════════════════════════════════════════
+
 (function() {
-    // حفظ الدالة الأصلية (من app-part1.js)
     let _navOriginal = window.navigateTo;
     
-    // ✅ استبدال navigateTo بنسخة آمنة تماماً
     window.navigateTo = function(page) {
-        // 1. استدعاء الدالة الأصلية (من app-part1.js) بشكل آمن
+        // 1. استدعاء الدالة الأصلية
         if (_navOriginal) {
             try {
                 _navOriginal.apply(this, arguments);
             } catch (e) {
-                // ✅ لا نطبع أي خطأ، فقط نتجاهله
+                // تجاهل الأخطاء غير الحرجة
             }
         }
         
-        // 2. تنفيذ المهام الإضافية بعد التنقل (بشكل آمن)
+        // 2. تنفيذ المهام الإضافية بعد التنقل
         setTimeout(function() {
             try {
-                // ✅ dashboard
+                // ✅ dashboard - إحصائيات المخازن
                 if (page === 'dashboard') {
                     if (typeof renderWarehouseStatsOnDashboard === 'function') {
-                        try { renderWarehouseStatsOnDashboard(); } catch(e) {}
+                        try { renderWarehouseStatsOnDashboard(); } catch(e) { console.warn('⚠️ خطأ:', e.message); }
                     }
                 }
                 
@@ -262,21 +265,21 @@ window.addEventListener('DOMContentLoaded', function() {
                     if (typeof populateRetProducts === 'function') { try { populateRetProducts(); } catch(e) {} }
                 }
                 
+                // ✅ warehouses
+                if (page === 'warehouses') {
+                    if (typeof renderWarehouses === 'function') { try { renderWarehouses(); } catch(e) {} }
+                }
+                
                 // ✅ cash-boxes
                 if (page === 'cash-boxes') {
                     if (typeof renderCashBoxes === 'function') { try { renderCashBoxes(); } catch(e) {} }
                     if (typeof renderCashBoxTransfers === 'function') { try { renderCashBoxTransfers(); } catch(e) {} }
                 }
-                
-                // ✅ warehouses
-                if (page === 'warehouses') {
-                    if (typeof renderWarehouses === 'function') { try { renderWarehouses(); } catch(e) {} }
-                }
             } catch (e) {
-                // تجاهل أي خطأ غير متوقع
+                // تجاهل
             }
         }, 600);
     };
-    
-    console.log('✅ تم تفعيل نظام التنقل الآمن في app-integration.js');
 })();
+
+console.log('✅ تم تحميل app-integration.js بنجاح (مع إحصائيات المخازن)');
