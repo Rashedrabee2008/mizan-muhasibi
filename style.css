@@ -1,5 +1,5 @@
 /* ============================================================
-   الميزان 14.0.0 - التصميم الكامل
+   الميزان 14.0.0 - التصميم الكامل (نسخة نهائية)
    style.css
    ============================================================ */
 
@@ -8,7 +8,7 @@ html { font-size: 14px; }
 body {
     background: #0D0D0D;
     color: #F5E6C8;
-    padding: 10px 10px 85px;
+    padding: 10px 10px 100px !important; /* ✅ مساحة كبيرة للشريط السفلي */
     max-width: 480px;
     margin: 0 auto;
     min-height: 100vh;
@@ -274,7 +274,7 @@ body {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   🛒 الكاشير - التصميم الجديد
+   🛒 الكاشير
    ═══════════════════════════════════════════════════════════ */
 
 .invoice-header-card {
@@ -457,7 +457,7 @@ body {
 .grand-value { font-size: 26px; font-weight: 900; color: #0D0D0D; font-family: 'Courier New', monospace; }
 
 /* ═══════════════════════════════════════════════════════════
-   💰 الخزائن المتعددة (جديد)
+   💰 الخزائن المتعددة
    ═══════════════════════════════════════════════════════════ */
 
 .cash-boxes-summary {
@@ -515,14 +515,6 @@ body {
 .btn-icon-sm:hover { background: #2A2A2A; border-color: #C9A94E; }
 .btn-icon-sm.danger:hover { border-color: #E06060; background: rgba(224, 96, 96, 0.1); }
 
-/* حقل الخزنة في الفواتير */
-#saleCashBoxField, #purCashBoxField, #retCashBoxField {
-    transition: 0.3s;
-}
-#saleCashBoxField.hidden, #purCashBoxField.hidden, #retCashBoxField.hidden {
-    display: none;
-}
-
 /* ═══════════════════════════════════════════════════════════
    🎨 العناصر الأخرى
    ═══════════════════════════════════════════════════════════ */
@@ -544,25 +536,59 @@ body {
 .balance-card .amount { font-size: 28px; font-weight: 900; color: #0D0D0D; }
 
 /* ═══════════════════════════════════════════════════════════
-   🔘 الأزرار السفلية
+   🔘 الأزرار السفلية (Bottom Navigation) - إجباري
    ═══════════════════════════════════════════════════════════ */
 
 .bottom-nav {
-    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; max-width: 480px; background: #1C1C1C;
-    display: flex; justify-content: space-around; padding: 8px 0 12px;
-    border-top: 1px solid #3D3D3D; box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
-    border-radius: 20px 20px 0 0; z-index: 100;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 100% !important;
+    max-width: 480px !important;
+    background: #1C1C1C !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    padding: 8px 0 12px !important;
+    border-top: 1px solid #3D3D3D !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6) !important;
+    border-radius: 20px 20px 0 0 !important;
+    z-index: 99999 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 60px !important;
 }
-.nav-item {
-    display: flex; flex-direction: column; align-items: center;
-    color: #5D5D5D; font-size: 10px; font-weight: 600;
-    cursor: pointer; transition: 0.2s; padding: 4px 2px;
-    background: transparent; border: none; min-width: 46px; font-family: inherit;
+.bottom-nav .nav-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    color: #5D5D5D !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: 0.2s !important;
+    padding: 4px 2px !important;
+    background: transparent !important;
+    border: none !important;
+    min-width: 46px !important;
+    font-family: inherit !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
-.nav-item i { font-size: 18px; margin-bottom: 3px; color: #5D5D5D; }
-.nav-item.active { color: #C9A94E; font-weight: 800; }
-.nav-item.active i { color: #C9A94E; transform: translateY(-2px); }
+.bottom-nav .nav-item i {
+    font-size: 18px !important;
+    margin-bottom: 3px !important;
+    color: #5D5D5D !important;
+}
+.bottom-nav .nav-item.active {
+    color: #C9A94E !important;
+    font-weight: 800 !important;
+}
+.bottom-nav .nav-item.active i {
+    color: #C9A94E !important;
+    transform: translateY(-2px) !important;
+}
 
 /* ═══════════════════════════════════════════════════════════
    🔔 Toast
@@ -937,72 +963,4 @@ body {
         border: 1px solid #000 !important; padding: 15px !important;
     }
     @page { size: auto; margin: 10mm; }
-}
-
-/* ============================================================
-   🚨 حل إجباري: إظهار الشريط السفلي فوق كل العناصر
-   ============================================================ */
-
-/* 1. إجبار الشريط السفلي على الظهور */
-.bottom-nav {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    width: 100% !important;
-    max-width: 480px !important;
-    background: #1C1C1C !important;
-    display: flex !important;
-    justify-content: space-around !important;
-    padding: 8px 0 12px !important;
-    border-top: 1px solid #3D3D3D !important;
-    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6) !important;
-    border-radius: 20px 20px 0 0 !important;
-    z-index: 99999 !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-/* 2. إجبار أزرار التنقل على الظهور */
-.bottom-nav .nav-item {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    color: #5D5D5D !important;
-    font-size: 10px !important;
-    font-weight: 600 !important;
-    cursor: pointer !important;
-    padding: 4px 2px !important;
-    background: transparent !important;
-    border: none !important;
-    min-width: 46px !important;
-    font-family: inherit !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-.bottom-nav .nav-item i {
-    font-size: 18px !important;
-    margin-bottom: 3px !important;
-    color: #5D5D5D !important;
-}
-
-.bottom-nav .nav-item.active {
-    color: #C9A94E !important;
-    font-weight: 800 !important;
-}
-
-.bottom-nav .nav-item.active i {
-    color: #C9A94E !important;
-    transform: translateY(-2px) !important;
-}
-
-/* 3. إضافة مساحة أسفل الصفحة حتى لا يغطي الشريط المحتوى */
-body {
-    padding-bottom: 90px !important;
-}
-
-/* 4. التأكد من أن الصفحات لا تغطي الشريط */
-.page-container.active {
-    padding-bottom: 20px !important;
 }
