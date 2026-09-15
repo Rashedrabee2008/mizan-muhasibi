@@ -246,7 +246,7 @@ window.getSupplierBalance = function(supplierName) {
 };
 
 // ============================================================
-// العملاء
+// العملاء (مع حماية كاملة)
 // ============================================================
 window.saveCustomer = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
@@ -256,6 +256,7 @@ window.saveCustomer = function() {
     const whatsapp = $('customerWhatsapp').value.trim();
     const address = $('customerAddress').value.trim();
     if (!name) { showToast('⚠️ أدخل اسم العميل', 'error'); return; }
+    
     if (id) {
         if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
         const idx = customers.findIndex(c => c.id == id);
@@ -270,10 +271,16 @@ window.saveCustomer = function() {
         addAuditLog('add', 'customer', `إضافة عميل: ${name}`);
         showToast('✅ تم إضافة العميل', 'success');
     }
+    
     setData('customers', customers);
-    resetCustomerForm(); renderCustomers();
-    populateSaleCustomers(); populateRetCustomers();
-    populateCollectCustomers(); populateSettleCustomers();
+    resetCustomerForm(); 
+    renderCustomers();
+    
+    // ✅ استدعاء آمن للدوال (بدون أخطاء)
+    if (typeof populateSaleCustomers === 'function') { try { populateSaleCustomers(); } catch(e) {} }
+    if (typeof populateRetCustomers === 'function') { try { populateRetCustomers(); } catch(e) {} }
+    if (typeof populateCollectCustomers === 'function') { try { populateCollectCustomers(); } catch(e) {} }
+    if (typeof populateSettleCustomers === 'function') { try { populateSettleCustomers(); } catch(e) {} }
 };
 
 window.editCustomer = function(id) {
@@ -300,8 +307,11 @@ window.deleteCustomer = function(id) {
     window.customers = customers.filter(cu => cu.id != id);
     setData('customers', customers);
     addAuditLog('delete', 'customer', `حذف عميل: ${c.name}`);
-    renderCustomers(); populateSaleCustomers(); populateRetCustomers();
-    populateCollectCustomers(); populateSettleCustomers();
+    renderCustomers();
+    if (typeof populateSaleCustomers === 'function') { try { populateSaleCustomers(); } catch(e) {} }
+    if (typeof populateRetCustomers === 'function') { try { populateRetCustomers(); } catch(e) {} }
+    if (typeof populateCollectCustomers === 'function') { try { populateCollectCustomers(); } catch(e) {} }
+    if (typeof populateSettleCustomers === 'function') { try { populateSettleCustomers(); } catch(e) {} }
     showToast('🗑️ تم حذف العميل', 'info');
 };
 
@@ -412,7 +422,7 @@ window.viewCustomerStatement = function(customerName) {
 };
 
 // ============================================================
-// الموردين
+// الموردين (مع حماية كاملة)
 // ============================================================
 window.saveSupplier = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
@@ -438,7 +448,10 @@ window.saveSupplier = function() {
     }
     setData('suppliers', suppliers);
     resetSupplierForm(); renderSuppliers();
-    populatePurSuppliers(); populateRetSuppliers(); populatePaySuppliers();
+    
+    if (typeof populatePurSuppliers === 'function') { try { populatePurSuppliers(); } catch(e) {} }
+    if (typeof populateRetSuppliers === 'function') { try { populateRetSuppliers(); } catch(e) {} }
+    if (typeof populatePaySuppliers === 'function') { try { populatePaySuppliers(); } catch(e) {} }
 };
 
 window.editSupplier = function(id) {
@@ -465,7 +478,10 @@ window.deleteSupplier = function(id) {
     window.suppliers = suppliers.filter(su => su.id != id);
     setData('suppliers', suppliers);
     addAuditLog('delete', 'supplier', `حذف مورد: ${s.name}`);
-    renderSuppliers(); populatePurSuppliers(); populateRetSuppliers(); populatePaySuppliers();
+    renderSuppliers();
+    if (typeof populatePurSuppliers === 'function') { try { populatePurSuppliers(); } catch(e) {} }
+    if (typeof populateRetSuppliers === 'function') { try { populateRetSuppliers(); } catch(e) {} }
+    if (typeof populatePaySuppliers === 'function') { try { populatePaySuppliers(); } catch(e) {} }
     showToast('🗑️ تم حذف المورد', 'info');
 };
 
@@ -1931,7 +1947,9 @@ window.deleteInvoice = function(id) {
     window.sales = sales.filter(s => s.id !== id);
     setData('products', products); setData('sales', sales); setData('treasury', treasury);
     addAuditLog('delete', 'sale', `حذف فاتورة بيع #${inv.number}`);
-    renderInvoices(); renderProducts(); updateDashboard();
+    renderInvoices(); 
+    if (typeof renderProducts === 'function') renderProducts();
+    updateDashboard();
     renderTreasury(); renderInventoryMovements();
     showToast(`🗑️ تم الحذف`, 'info');
 };
@@ -2423,9 +2441,9 @@ window.importData = function(event) {
             if (data.journalEntries) window.journalEntries = data.journalEntries;
             if (data.inventoryMovements) window.inventoryMovements = data.inventoryMovements;
             saveAll();
-            populateAllDropdowns();
+            if (typeof populateAllDropdowns === 'function') populateAllDropdowns();
             populateLoginUsers();
-            refreshAllViews();
+            if (typeof refreshAllViews === 'function') refreshAllViews();
             addAuditLog('edit', 'backup', 'استيراد نسخة احتياطية');
             showToast('✅ تم الاستيراد', 'success');
         } catch (err) { showToast('❌ ملف غير صالح', 'error'); }
@@ -2477,7 +2495,7 @@ window.saveAll = function() {
 };
 
 // ============================================================
-// التهيئة النهائية (init فقط، لا يوجد refreshAllViews أو populateAllDropdowns هنا)
+// التهيئة النهائية (init فقط)
 // ============================================================
 function init() {
     console.log('🚀 الميزان 14.0.0 - ملفات مقسمة');
@@ -2500,7 +2518,6 @@ function init() {
     window.journalEntries = getData('journalEntries', []);
     window.inventoryMovements = getData('inventoryMovements', []);
 
-    // ترحيل البيانات القديمة
     window.sales = sales.map(s => ({
         ...s,
         customerId: s.customerId || customers.find(c => c.name === s.customer)?.id || null,
@@ -2598,12 +2615,15 @@ function init() {
     updateClock();
     updateHeaderCompanyName();
     
-    // ✅ استدعاء الدوال الآمنة من app-part1.js
+    // ✅ استدعاء الدوال الآمنة
     if (typeof window.populateAllDropdowns === 'function') {
         try { window.populateAllDropdowns(); } catch(e) { console.warn('⚠️ خطأ في populateAllDropdowns:', e); }
     }
     if (typeof window.refreshAllViews === 'function') {
         try { window.refreshAllViews(); } catch(e) { console.warn('⚠️ خطأ في refreshAllViews:', e); }
+    }
+    if (typeof window.renderProducts === 'function') {
+        try { window.renderProducts(); } catch(e) { console.warn('⚠️ خطأ في renderProducts:', e); }
     }
 
     console.log('✅ الميزان جاهز - 4 ملفات مترابطة');
