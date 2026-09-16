@@ -1,6 +1,6 @@
 // ============================================================
 // الميزان 14.0.0 - الجزء 2: العمليات
-// app-part2.js (نسخة كاملة - مع نافذة تأكيد الدفع والطباعة)
+// app-part2.js (نسخة كاملة - مع إصلاح الضريبة)
 // ============================================================
 
 console.log('📦 تحميل app-part2.js - العمليات + البحث + المخزون');
@@ -290,44 +290,87 @@ window.addEventListener('DOMContentLoaded', function() {
     }, 2000);
 });
 
+// ═══════════════════════════════════════════════════════════
+// ✅ إضافة صنف للفاتورة (بدون ضريبة)
+// ═══════════════════════════════════════════════════════════
 window.addSaleItem = function() {
-    if (typeof canAdd === 'function' && !canAdd()) { if (typeof showToast === 'function') showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    if (typeof canAdd === 'function' && !canAdd()) {
+        if (typeof showToast === 'function') showToast('⚠️ ليس لديك صلاحية', 'error');
+        return;
+    }
+    
     const productSelect = document.getElementById('saleProduct');
     const qtyInput = document.getElementById('saleQty');
     const priceInput = document.getElementById('salePrice');
     const whSelect = document.getElementById('saleWarehouse');
+    
     const id = productSelect?.value;
     let qty = parseInt(qtyInput?.value) || 0;
     let price = parseFloat(priceInput?.value) || 0;
     const whId = whSelect?.value;
+    
     if (!id || id === '') { if (typeof showToast === 'function') showToast('⚠️ اختر منتج', 'error'); return; }
+    
     const p = products.find(function(pr) { return pr.id == id; });
     if (!p) { if (typeof showToast === 'function') showToast('⚠️ المنتج غير موجود', 'error'); return; }
+    
     if (price <= 0) { price = p.sell; if (priceInput) priceInput.value = price; }
     if (qty <= 0) { qty = 1; if (qtyInput) qtyInput.value = 1; }
+    
     let availableQty = p.qty;
     if (whId && typeof getProductStockInWarehouse === 'function') {
         const warehouseQty = getProductStockInWarehouse(id, whId);
         if (warehouseQty > 0) availableQty = warehouseQty;
     }
+    
     const ex = currentSaleItems.find(function(i) { return i.productId == id; });
     const totalQty = qty + (ex ? ex.qty : 0);
-    if (totalQty > availableQty) { if (typeof showToast === 'function') showToast('⚠️ الكمية المتاحة: ' + availableQty, 'error'); return; }
-    const vatPercent = p.vat || vatSettings.defaultVAT || 14;
-    const subtotal = qty * price;
-    const vatAmount = subtotal * (vatPercent / 100);
-    const totalWithVAT = subtotal + vatAmount;
-    if (ex) { ex.qty += qty; ex.price = price; ex.subtotal = ex.qty * ex.price; ex.vatAmount = ex.subtotal * (ex.vatPercent / 100); ex.total = ex.subtotal + ex.vatAmount; }
-    else { currentSaleItems.push({ productId: p.id, name: p.name, qty: qty, price: price, costPrice: p.buy, vatPercent: vatPercent, subtotal: subtotal, vatAmount: vatAmount, total: totalWithVAT }); }
+    if (totalQty > availableQty) {
+        if (typeof showToast === 'function') showToast('⚠️ الكمية المتاحة: ' + availableQty, 'error');
+        return;
+    }
+    
+    // ✅ إضافة الصنف بدون ضريبة (الضريبة تُحسب لاحقاً عند الحفظ)
+    if (ex) {
+        ex.qty += qty;
+        ex.price = price;
+        ex.subtotal = ex.qty * ex.price;
+        ex.total = ex.subtotal;
+    } else {
+        currentSaleItems.push({
+            productId: p.id,
+            name: p.name,
+            qty: qty,
+            price: price,
+            costPrice: p.buy,
+            subtotal: qty * price,
+            total: qty * price
+        });
+    }
+    
     if (qtyInput) qtyInput.value = 1;
     if (priceInput) priceInput.value = '';
-    if (productSelect) { productSelect.value = ''; const wrap = productSelect.closest('.srch-wrap'); if (wrap) { const inp = wrap.querySelector('input'); if (inp) inp.value = ''; } productSelect.dispatchEvent(new Event('change', { bubbles: true })); }
-    renderCashier(); updateSaleTotals();
+    if (productSelect) {
+        productSelect.value = '';
+        const wrap = productSelect.closest('.srch-wrap');
+        if (wrap) { const inp = wrap.querySelector('input'); if (inp) inp.value = ''; }
+        productSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    
+    renderCashier();
+    updateSaleTotals();
     if (typeof showToast === 'function') showToast('✅ تم إضافة ' + p.name, 'success');
 };
 
-window.removeSaleItem = function(i) { currentSaleItems.splice(i, 1); renderCashier(); updateSaleTotals(); };
+window.removeSaleItem = function(i) {
+    currentSaleItems.splice(i, 1);
+    renderCashier();
+    updateSaleTotals();
+};
 
+// ═══════════════════════════════════════════════════════════
+// ✅ عرض أصناف الفاتورة (بدون ضريبة في كل صنف)
+// ═══════════════════════════════════════════════════════════
 window.renderCashier = function() {
     const c = document.getElementById('saleItemsContainer');
     const tb = document.getElementById('saleTotalBox');
@@ -344,13 +387,15 @@ window.renderCashier = function() {
         const prod = products.find(function(p) { return p.id == it.productId; });
         const unit = prod?.unit || 'قطعة';
         const itemId = String(it.productId).slice(-4);
+        // ✅ الإجمالي = الكمية × السعر (بدون ضريبة)
+        const itemTotal = it.qty * it.price;
         html += '<div class="item-row">' +
             '<span class="item-id">#' + itemId + '</span>' +
             '<span class="item-name">' + it.name + '</span>' +
             '<span class="item-unit">' + unit + '</span>' +
             '<span class="item-qty">' + it.qty + '</span>' +
             '<span class="item-price">' + formatMoney(it.price) + '</span>' +
-            '<span class="item-total">' + formatMoney(it.total) + '</span>' +
+            '<span class="item-total">' + formatMoney(itemTotal) + '</span>' +
             '<button class="item-delete" onclick="removeSaleItem(' + i + ')"><i class="fas fa-times"></i></button>' +
             '</div>';
     });
@@ -358,14 +403,30 @@ window.renderCashier = function() {
     if (tb) tb.style.display = 'block';
 };
 
+// ═══════════════════════════════════════════════════════════
+// ✅ حساب الإجماليات (الضريبة فقط للفواتير الضريبية)
+// ═══════════════════════════════════════════════════════════
 window.updateSaleTotals = function() {
     const subtotal = currentSaleItems.reduce(function(s, i) { return s + (i.subtotal || i.total); }, 0);
-    const vatTotal = currentSaleItems.reduce(function(s, i) { return s + (i.vatAmount || 0); }, 0);
     const totalQty = currentSaleItems.reduce(function(s, i) { return s + i.qty; }, 0);
+    
+    // ✅ الضريبة تُحسب فقط إذا كانت الفاتورة ضريبية
     const invoiceType = typeof getRadioValue === 'function' ? getRadioValue('saleInvoiceType', 'simple') : 'simple';
     const isTaxInvoice = invoiceType === 'tax';
+    
+    let vatTotal = 0;
+    if (isTaxInvoice) {
+        // حساب الضريبة لكل منتج حسب نسبته
+        currentSaleItems.forEach(function(it) {
+            const prod = products.find(function(p) { return p.id == it.productId; });
+            const vatPercent = prod?.vat || vatSettings.defaultVAT || 14;
+            vatTotal += (it.qty * it.price) * (vatPercent / 100);
+        });
+    }
+    
     const finalVAT = isTaxInvoice ? vatTotal : 0;
     const grandTotal = subtotal + finalVAT;
+    
     const e1 = document.getElementById('statItemsCount'); if (e1) e1.textContent = currentSaleItems.length;
     const e2 = document.getElementById('statTotalQty'); if (e2) e2.textContent = totalQty;
     const e3 = document.getElementById('saleSubtotal'); if (e3) e3.textContent = formatMoney(subtotal);
@@ -389,7 +450,9 @@ window.updateInvoiceHeader = function() {
 window.saveSale = function() {
     if (typeof canAdd === 'function' && !canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     if (currentSaleItems.length === 0) { showToast('⚠️ لا توجد أصناف', 'error'); return; }
+    
     const whId = document.getElementById('saleWarehouse')?.value;
+    
     for (let i = 0; i < currentSaleItems.length; i++) {
         const it = currentSaleItems[i];
         const p = products.find(function(pr) { return pr.id == it.productId; });
@@ -401,16 +464,29 @@ window.saveSale = function() {
         }
         if (available < it.qty) { showToast('⚠️ الكمية غير كافية: ' + it.name, 'error'); return; }
     }
+    
     const subtotal = currentSaleItems.reduce(function(s, i) { return s + (i.subtotal || i.total); }, 0);
-    const vatTotal = currentSaleItems.reduce(function(s, i) { return s + (i.vatAmount || 0); }, 0);
     const invoiceType = typeof getRadioValue === 'function' ? getRadioValue('saleInvoiceType', 'simple') : 'simple';
     const isTaxInvoice = invoiceType === 'tax';
+    
+    // ✅ حساب الضريبة فقط إذا كانت الفاتورة ضريبية
+    let vatTotal = 0;
+    if (isTaxInvoice) {
+        currentSaleItems.forEach(function(it) {
+            const prod = products.find(function(p) { return p.id == it.productId; });
+            const vatPercent = prod?.vat || vatSettings.defaultVAT || 14;
+            vatTotal += (it.qty * it.price) * (vatPercent / 100);
+        });
+    }
+    
     const finalVAT = isTaxInvoice ? vatTotal : 0;
     const total = subtotal + finalVAT;
+    
     const customer = document.getElementById('saleCustomer')?.value || 'عميل نقدي';
     const paymentMethod = typeof getRadioValue === 'function' ? getRadioValue('salePaymentMethod', 'cash') : 'cash';
     const cashBoxId = typeof getSaleCashBox === 'function' ? getSaleCashBox() : null;
     const cashBoxName = document.getElementById('saleCashBox')?.selectedOptions[0]?.text || 'نقدي';
+    
     showPaymentConfirmModal({
         customer: customer, total: total, subtotal: subtotal, vatTotal: finalVAT,
         isTaxInvoice: isTaxInvoice, paymentMethod: paymentMethod,
@@ -567,7 +643,7 @@ window.clearSale = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🖨️ طباعة الفاتورة الحالية (مع نوع الدفع)
+// 🖨️ طباعة الفاتورة الحالية
 // ═══════════════════════════════════════════════════════════
 window.printCurrentInvoice = function() {
     if (currentSaleItems.length === 0) { showToast('⚠️ لا توجد أصناف للطباعة', 'warning'); return; }
@@ -575,9 +651,16 @@ window.printCurrentInvoice = function() {
     const whName = document.getElementById('saleWarehouse')?.selectedOptions[0]?.text || 'المخزن';
     const cashBoxName = document.getElementById('saleCashBox')?.selectedOptions[0]?.text || 'نقدي';
     const subtotal = currentSaleItems.reduce(function(s, i) { return s + (i.subtotal || i.total); }, 0);
-    const vatTotal = currentSaleItems.reduce(function(s, i) { return s + (i.vatAmount || 0); }, 0);
     const invoiceType = document.querySelector('input[name="saleInvoiceType"]:checked')?.value || 'simple';
     const isTax = invoiceType === 'tax';
+    let vatTotal = 0;
+    if (isTax) {
+        currentSaleItems.forEach(function(it) {
+            const prod = products.find(function(p) { return p.id == it.productId; });
+            const vatPercent = prod?.vat || vatSettings.defaultVAT || 14;
+            vatTotal += (it.qty * it.price) * (vatPercent / 100);
+        });
+    }
     const finalVAT = isTax ? vatTotal : 0;
     const total = subtotal + finalVAT;
     const paymentMethod = document.querySelector('input[name="salePaymentMethod"]:checked')?.value || 'cash';
@@ -585,7 +668,7 @@ window.printCurrentInvoice = function() {
     const paymentMethodColor = paymentMethod === 'cash' ? '#2D8F5E' : '#E6A830';
     let itemsHtml = '';
     currentSaleItems.forEach(function(it, i) {
-        itemsHtml += '<tr><td style="padding:8px;border:1px solid #ddd;text-align:center;">' + (i + 1) + '</td><td style="padding:8px;border:1px solid #ddd;">' + it.name + '</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">' + it.qty + '</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">' + formatMoney(it.price) + '</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">' + formatMoney(it.total) + '</td></tr>';
+        itemsHtml += '<tr><td style="padding:8px;border:1px solid #ddd;text-align:center;">' + (i + 1) + '</td><td style="padding:8px;border:1px solid #ddd;">' + it.name + '</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">' + it.qty + '</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">' + formatMoney(it.price) + '</td><td style="padding:8px;border:1px solid #ddd;text-align:center;">' + formatMoney(it.qty * it.price) + '</td></tr>';
     });
     const logoHtml = companyData.logo ? '<img src="' + companyData.logo + '" style="max-width:80px;max-height:80px;margin:0 auto 10px;display:block;" />' : '';
     const printHtml = '<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"><title>فاتورة بيع</title>' +
@@ -648,13 +731,9 @@ window.addPurItem = function() {
     const p = products.find(function(pr) { return pr.id == id; }); if (!p) return;
     if (qty <= 0) qty = 1;
     if (price <= 0) price = p.buy;
-    const vatPercent = p.vat || vatSettings.defaultVAT;
-    const subtotal = qty * price;
-    const vatAmount = subtotal * (vatPercent / 100);
-    const totalWithVAT = subtotal + vatAmount;
     const ex = currentPurItems.find(function(i) { return i.productId == id; });
-    if (ex) { ex.qty += qty; ex.price = price; ex.subtotal = ex.qty * ex.price; ex.vatAmount = ex.subtotal * (ex.vatPercent / 100); ex.total = ex.subtotal + ex.vatAmount; }
-    else { currentPurItems.push({ productId: p.id, name: p.name, qty: qty, price: price, vatPercent: vatPercent, subtotal: subtotal, vatAmount: vatAmount, total: totalWithVAT }); }
+    if (ex) { ex.qty += qty; ex.price = price; ex.subtotal = ex.qty * ex.price; ex.total = ex.subtotal; }
+    else { currentPurItems.push({ productId: p.id, name: p.name, qty: qty, price: price, subtotal: qty * price, total: qty * price }); }
     const qtyEl = document.getElementById('purQty'); if (qtyEl) qtyEl.value = 1;
     const priceEl = document.getElementById('purPrice'); if (priceEl) priceEl.value = '';
     const prodEl = document.getElementById('purProduct');
@@ -674,7 +753,7 @@ window.renderPurItems = function() {
     currentPurItems.forEach(function(it, i) {
         const prod = products.find(function(p) { return p.id == it.productId; });
         const unit = prod?.unit || 'قطعة';
-        html += '<div class="item-row"><span class="item-id">#' + String(it.productId).slice(-4) + '</span><span class="item-name">' + it.name + '</span><span class="item-unit">' + unit + '</span><span class="item-qty">' + it.qty + '</span><span class="item-price">' + formatMoney(it.price) + '</span><span class="item-total" style="color:#E06060;">' + formatMoney(it.total) + '</span><button class="item-delete" onclick="removePurItem(' + i + ')"><i class="fas fa-times"></i></button></div>';
+        html += '<div class="item-row"><span class="item-id">#' + String(it.productId).slice(-4) + '</span><span class="item-name">' + it.name + '</span><span class="item-unit">' + unit + '</span><span class="item-qty">' + it.qty + '</span><span class="item-price">' + formatMoney(it.price) + '</span><span class="item-total" style="color:#E06060;">' + formatMoney(it.qty * it.price) + '</span><button class="item-delete" onclick="removePurItem(' + i + ')"><i class="fas fa-times"></i></button></div>';
     });
     c.innerHTML = html;
     if (tb) tb.style.display = 'block';
@@ -682,10 +761,17 @@ window.renderPurItems = function() {
 
 window.updatePurTotals = function() {
     const subtotal = currentPurItems.reduce(function(s, i) { return s + (i.subtotal || i.total); }, 0);
-    const vatTotal = currentPurItems.reduce(function(s, i) { return s + (i.vatAmount || 0); }, 0);
     const totalQty = currentPurItems.reduce(function(s, i) { return s + i.qty; }, 0);
     const invoiceType = typeof getRadioValue === 'function' ? getRadioValue('purInvoiceType', 'simple') : 'simple';
     const isTaxInvoice = invoiceType === 'tax';
+    let vatTotal = 0;
+    if (isTaxInvoice) {
+        currentPurItems.forEach(function(it) {
+            const prod = products.find(function(p) { return p.id == it.productId; });
+            const vatPercent = prod?.vat || vatSettings.defaultVAT || 14;
+            vatTotal += (it.qty * it.price) * (vatPercent / 100);
+        });
+    }
     const finalVAT = isTaxInvoice ? vatTotal : 0;
     const grandTotal = subtotal + finalVAT;
     const e1 = document.getElementById('purStatItemsCount'); if (e1) e1.textContent = currentPurItems.length;
@@ -708,7 +794,14 @@ window.savePurchase = function() {
     const invoiceType = typeof getRadioValue === 'function' ? getRadioValue('purInvoiceType', 'simple') : 'simple';
     const isTaxInvoice = invoiceType === 'tax';
     const subtotal = currentPurItems.reduce(function(s, i) { return s + (i.subtotal || i.total); }, 0);
-    const vatTotal = currentPurItems.reduce(function(s, i) { return s + (i.vatAmount || 0); }, 0);
+    let vatTotal = 0;
+    if (isTaxInvoice) {
+        currentPurItems.forEach(function(it) {
+            const prod = products.find(function(p) { return p.id == it.productId; });
+            const vatPercent = prod?.vat || vatSettings.defaultVAT || 14;
+            vatTotal += (it.qty * it.price) * (vatPercent / 100);
+        });
+    }
     const finalVAT = isTaxInvoice ? vatTotal : 0;
     const total = subtotal + finalVAT;
     const today = getTodayDate();
