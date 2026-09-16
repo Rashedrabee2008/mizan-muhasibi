@@ -1103,3 +1103,117 @@ body {
     .receipt-print .rec-amount .value { color: #000 !important; }
     @page { size: auto; margin: 10mm; }
 }
+
+/* ============================================================
+   💰 نافذة تأكيد الدفع
+   ============================================================ */
+
+.payment-confirm-modal {
+    background: #0D0D0D;
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid #2D2D2D;
+}
+
+.pc-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 13px;
+    border-bottom: 1px dotted #2D2D2D;
+}
+.pc-info-row:last-child { border-bottom: none; }
+.pc-label { color: #A89070; font-weight: 700; }
+.pc-value { color: #F5E6C8; font-weight: 800; }
+
+.pc-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #C9A94E, transparent);
+    margin: 15px 0;
+    border-radius: 2px;
+}
+
+.pc-total-display {
+    text-align: center;
+    background: linear-gradient(135deg, #1A1A1A, #0D0D0D);
+    border: 2px solid #C9A94E;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.pc-total-label {
+    font-size: 12px;
+    color: #A89070;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+.pc-total-value {
+    font-size: 28px;
+    font-weight: 900;
+    color: #C9A94E;
+    font-family: 'Courier New', monospace;
+}
+
+.pc-form-group {
+    margin-bottom: 12px;
+}
+.pc-form-group label {
+    display: block;
+    font-size: 12px;
+    color: #A89070;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+.pc-input {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 2px solid #3D3D3D;
+    background: #0D0D0D;
+    color: #F5E6C8;
+    font-family: inherit;
+    box-sizing: border-box;
+    text-align: center;
+    font-weight: 900;
+}
+.pc-input:focus {
+    outline: none;
+    border-color: #C9A94E;
+    box-shadow: 0 0 0 3px rgba(201, 169, 78, 0.15);
+}
+
+.pc-remaining-display {
+    text-align: center;
+    background: #1A1A1A;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 15px;
+    border-right: 4px solid #E06060;
+    transition: 0.3s;
+}
+.pc-remaining-label {
+    font-size: 11px;
+    color: #A89070;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.pc-remaining-value {
+    font-size: 22px;
+    font-weight: 900;
+    color: #E06060;
+    font-family: 'Courier New', monospace;
+}
+
+.pc-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+}
+.pc-actions .btn {
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 900;
+}
