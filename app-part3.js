@@ -1,6 +1,6 @@
 // ============================================================
 // الميزان 14.0.0 - الجزء 3: العرض والتهيئة
-// app-part3.js (نسخة كاملة مع كل الإصلاحات)
+// app-part3.js (نسخة كاملة - مع إصلاح changePassword لـ Firebase)
 // ============================================================
 
 console.log('📊 تحميل app-part3.js - العرض والتهيئة');
@@ -255,7 +255,9 @@ window.renderCustomers = function() {
 
 window.viewCustomerStatement = function(customerName) {
     const balance = getCustomerBalance(customerName);
-    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>📋 كشف حساب: ${customerName}</h3><div class="invoice-print"><div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب</p></div><div class="inv-info"><div>الرصيد: ${formatMoney(balance)} 🇪🇬</div></div></div><button class="btn btn-secondary btn-block" onclick="closeModal()">إغلاق</button>`;
+    const customer = customers.find(c => c.name === customerName);
+    const hasWhatsapp = !!(customer?.whatsapp || customer?.phone);
+    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>📋 كشف حساب: ${customerName}</h3><div class="invoice-print"><div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب</p></div><div class="inv-info"><div>الرصيد: ${formatMoney(balance)} 🇪🇬</div></div></div><div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="window.print()" style="flex:1;"><i class="fas fa-print"></i> طباعة</button>${hasWhatsapp && balance > 0 && typeof remindCustomerWhatsApp === 'function' ? `<button class="whatsapp-btn" onclick="remindCustomerWhatsApp('${customerName}')" style="flex:1;justify-content:center;"><i class="fab fa-whatsapp"></i> تذكير</button>` : ''}<button class="btn btn-secondary" onclick="closeModal()" style="flex:1;"><i class="fas fa-times"></i> إغلاق</button></div>`;
     openModal(html);
 };
 
@@ -317,7 +319,9 @@ window.renderSuppliers = function() {
 
 window.viewSupplierStatement = function(supplierName) {
     const balance = getSupplierBalance(supplierName);
-    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>📋 كشف حساب: ${supplierName}</h3><div class="invoice-print"><div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب مورد</p></div><div class="inv-info"><div>الرصيد: ${formatMoney(balance)} 🇪🇬</div></div></div><button class="btn btn-secondary btn-block" onclick="closeModal()">إغلاق</button>`;
+    const supplier = suppliers.find(s => s.name === supplierName);
+    const hasWhatsapp = !!(supplier?.whatsapp || supplier?.phone);
+    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>📋 كشف حساب: ${supplierName}</h3><div class="invoice-print"><div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب مورد</p></div><div class="inv-info"><div>الرصيد: ${formatMoney(balance)} 🇪🇬</div></div></div><div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="window.print()" style="flex:1;"><i class="fas fa-print"></i> طباعة</button>${hasWhatsapp && balance > 0 && typeof remindSupplierWhatsApp === 'function' ? `<button class="whatsapp-btn" onclick="remindSupplierWhatsApp('${supplierName}')" style="flex:1;justify-content:center;"><i class="fab fa-whatsapp"></i> إشعار</button>` : ''}<button class="btn btn-secondary" onclick="closeModal()" style="flex:1;"><i class="fas fa-times"></i> إغلاق</button></div>`;
     openModal(html);
 };
 
@@ -564,7 +568,11 @@ window.showReceiptById = function(id) { const pay = payments.find(p => p.id === 
 window.showReceipt = function(pay) {
     const isCollect = pay.type === 'collect';
     const label = isCollect ? 'إيصال استلام نقدية' : 'إيصال دفع نقدية';
-    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>🧾 ${label}</h3><div class="receipt-print"><div class="rec-header"><h2>${companyData.name || 'الميزان'}</h2><p>${label}</p></div><div class="rec-info"><div><span class="lbl">رقم الإيصال:</span><span>#${pay.id.toString().slice(-6)}</span></div><div><span class="lbl">التاريخ:</span><span>${pay.date}</span></div><div><span class="lbl">الوقت:</span><span>${pay.time}</span></div><div><span class="lbl">${isCollect ? 'العميل' : 'المورد'}:</span><span>${pay.party}</span></div></div><div class="rec-amount"><div class="lbl">${isCollect ? 'المبلغ المستلم' : 'المبلغ المدفوع'}</div><div class="value">${formatMoney(pay.amount)} ج.م</div></div><div class="rec-footer">${companyData.footer || 'شكراً لتعاملكم معنا 🌟'}</div></div><div style="display:flex;gap:6px;margin-top:12px;"><button class="btn btn-primary btn-block" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button><button class="btn btn-secondary btn-block" onclick="closeModal()"><i class="fas fa-times"></i> إغلاق</button></div>`;
+    const person = isCollect 
+        ? customers.find(c => c.name === pay.party)
+        : suppliers.find(s => s.name === pay.party);
+    const hasWhatsapp = !!(person?.whatsapp || person?.phone);
+    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>🧾 ${label}</h3><div class="receipt-print"><div class="rec-header"><h2>${companyData.name || 'الميزان'}</h2><p>${label}</p></div><div class="rec-info"><div><span class="lbl">رقم الإيصال:</span><span>#${pay.id.toString().slice(-6)}</span></div><div><span class="lbl">التاريخ:</span><span>${pay.date}</span></div><div><span class="lbl">الوقت:</span><span>${pay.time}</span></div><div><span class="lbl">${isCollect ? 'العميل' : 'المورد'}:</span><span>${pay.party}</span></div></div><div class="rec-amount"><div class="lbl">${isCollect ? 'المبلغ المستلم' : 'المبلغ المدفوع'}</div><div class="value">${formatMoney(pay.amount)} ج.م</div></div><div class="rec-footer">${companyData.footer || 'شكراً لتعاملكم معنا 🌟'}</div></div><div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="window.print()" style="flex:1;"><i class="fas fa-print"></i> طباعة</button>${hasWhatsapp && typeof sendReceiptWhatsApp === 'function' ? `<button class="whatsapp-btn" onclick="sendReceiptWhatsApp(${pay.id})" style="flex:1;justify-content:center;"><i class="fab fa-whatsapp"></i> واتساب</button>` : ''}<button class="btn btn-secondary" onclick="closeModal()" style="flex:1;"><i class="fas fa-times"></i> إغلاق</button></div>`;
     openModal(html);
 };
 
@@ -584,7 +592,7 @@ window.renderInvoices = function() {
     let html = `<div class="table-header" style="grid-template-columns: 0.5fr 1.3fr 1fr 0.7fr 1.3fr;"><span>#</span><span>العميل</span><span>المبلغ</span><span>النوع</span><span></span></div>`;
     sorted.forEach(inv => { 
         const statusLabel = inv.status === 'paid' ? '✅' : inv.status === 'partial' ? '⚠️' : '❌';
-        html += `<div class="table-row" style="grid-template-columns: 0.5fr 1.3fr 1fr 0.7fr 1.3fr;"><span>#${inv.number}</span><span>${inv.customer}</span><span style="color:#2D8F5E;font-weight:700;">${formatMoney(inv.total)}</span><span>${inv.invoiceType === 'tax' ? '🧾' : '📋'} ${statusLabel}</span><div><button class="btn btn-danger btn-sm" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button></div></div>`; 
+        html += `<div class="table-row" style="grid-template-columns: 0.5fr 1.3fr 1fr 0.7fr 1.3fr;"><span>#${inv.number}</span><span>${inv.customer}</span><span style="color:#2D8F5E;font-weight:700;">${formatMoney(inv.total)}</span><span>${inv.invoiceType === 'tax' ? '🧾' : '📋'} ${statusLabel}</span><div style="display:flex;gap:4px;"><button class="btn btn-info btn-sm" onclick="showSaleInvoiceDetails(${inv.id})"><i class="fas fa-eye"></i></button><button class="btn btn-danger btn-sm" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button></div></div>`; 
     });
     c.innerHTML = html;
 };
@@ -617,32 +625,20 @@ window.editAccount = function(id) { const a = accounts.find(acc => acc.id == id)
 window.deleteAccount = function(id) { if (!canDelete()) return; if (!confirm('⚠️ حذف الحساب؟')) return; window.accounts = accounts.filter(acc => acc.id !== id); setData('accounts', accounts); renderAccounts(); populateAccountDropdowns(); showToast('🗑️ تم الحذف', 'info'); };
 window.resetAccountForm = function() { $('accId').value = ''; $('accName').value = ''; $('accType').value = 'assets'; $('accParent').value = ''; $('accFormTitle').textContent = '➕ إضافة حساب'; $('accSaveBtnText').textContent = 'إضافة'; };
 
-// ✅ عرض شجرة الحسابات (النسخة المصححة)
 window.renderAccounts = function() {
     const container = document.getElementById('accountsTree'); 
-    if (!container) {
-        console.warn('⚠️ accountsTree غير موجود');
-        return;
-    }
-    
-    console.log('🎨 عرض شجرة الحسابات...');
-    console.log('عدد الحسابات:', accounts ? accounts.length : 0);
-    
+    if (!container) return;
     if (!accounts || accounts.length === 0) {
         container.innerHTML = '<div class="empty-state"><i class="fas fa-sitemap"></i><span>لا توجد حسابات</span></div>';
         return;
     }
-    
     const typeNames = { assets: '🏛️ الأصول', liabilities: '💳 الخصوم', equity: '👑 حقوق الملكية', revenue: '💰 الإيرادات', expenses: '💸 المصروفات' };
     const typeOrder = ['assets', 'liabilities', 'equity', 'revenue', 'expenses'];
-    
     let html = '';
     typeOrder.forEach(type => {
         const typeAccounts = accounts.filter(a => a.type === type);
         if (typeAccounts.length === 0) return;
-        
         html += `<div class="acc-type-header">${typeNames[type]}</div>`;
-        
         const renderTree = (parentId, level) => {
             const children = accounts.filter(a => a.type === type && a.parentId === parentId);
             children.forEach(a => {
@@ -661,10 +657,8 @@ window.renderAccounts = function() {
         };
         renderTree(null, 0);
     });
-    
     if (!html) html = '<div class="empty-state"><i class="fas fa-sitemap"></i><span>لا توجد حسابات</span></div>';
     container.innerHTML = html;
-    console.log('✅ تم عرض ' + accounts.length + ' حساب');
 };
 
 window.calculateAccountBalance = function(accountId) { let balance = 0; journalEntries.forEach(entry => { (entry.lines || []).forEach(line => { if (line.accountId === accountId) balance += (line.debit || 0) - (line.credit || 0); }); }); return balance; };
@@ -717,21 +711,17 @@ window.renderJournal = function() {
 };
 window.deleteJournalEntry = function(id) { if (!canDelete()) return; if (!confirm('⚠️ حذف القيد؟')) return; window.journalEntries = journalEntries.filter(e => e.id !== id); setData('journalEntries', journalEntries); renderJournal(); renderAccounts(); showToast('🗑️ تم الحذف', 'info'); };
 
-// ✅ التبديل بين تبويبات الحسابات (النسخة المصححة)
 window.switchAccountsTab = function(tab, btn) {
     document.querySelectorAll('#page-accounts .tab-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
-    
     const tree = document.getElementById('accTabTree');
     const journal = document.getElementById('accTabJournal');
     const reports = document.getElementById('accTabReports');
-    
     if (tree) tree.style.display = (tab === 'tree') ? 'block' : 'none';
     if (journal) journal.style.display = (tab === 'journal') ? 'block' : 'none';
     if (reports) reports.style.display = (tab === 'reports') ? 'block' : 'none';
-    
     if (tab === 'tree') {
-        if (typeof renderAccounts === 'function') { try { renderAccounts(); } catch(e) { console.warn('⚠️ خطأ:', e.message); } }
+        if (typeof renderAccounts === 'function') { try { renderAccounts(); } catch(e) {} }
         if (typeof populateAccountDropdowns === 'function') { try { populateAccountDropdowns(); } catch(e) {} }
     }
     if (tab === 'journal') {
@@ -746,7 +736,7 @@ window.showAccountingReport = function(type) {
 };
 
 // ============================================================
-// التقارير (النسخة الكاملة)
+// التقارير
 // ============================================================
 window.switchReport = function(type, btn) {
     window.currentReport = type;
@@ -758,13 +748,10 @@ window.switchReport = function(type, btn) {
 window.renderReport = function(type) {
     const container = document.getElementById('reportContent'); 
     if (!container) return;
-    
     if (type === 'vat') { renderVATReport(); return; }
-    
     const today = new Date();
     let title = '';
     let rows = [];
-    
     if (type === 'daily') {
         title = 'تقرير يومي - آخر 7 أيام';
         const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
@@ -819,13 +806,11 @@ window.renderReport = function(type) {
             rows.push({ label: 'سنة ' + year, sales: sT, cogs: cogs, purchases: pT, expenses: eT, returns: rT, profit: sT - cogs - eT + rPurchase - rCOGS });
         }
     }
-    
     const tS = rows.reduce((s, r) => s + r.sales, 0);
     const tCOGS = rows.reduce((s, r) => s + (r.cogs || 0), 0);
     const tE = rows.reduce((s, r) => s + r.expenses, 0);
     const tPr = rows.reduce((s, r) => s + r.profit, 0);
     const maxV = Math.max(...rows.flatMap(r => [r.sales, r.cogs, r.expenses]), 1);
-    
     container.innerHTML = `
         <h3 style="font-size:14px;color:#C9A94E;margin-bottom:10px;">${title}</h3>
         <div class="report-summary">
@@ -923,11 +908,11 @@ window.saveUser = function() {
     if (!name || !password || password.length < 4) { showToast('⚠️ أدخل بيانات صحيحة', 'error'); return; }
     if (id) { const idx = users.findIndex(u => u.id == id); if (idx > -1) { users[idx] = { ...users[idx], name, password, role }; showToast('✅ تم تعديل المستخدم', 'success'); } }
     else { if (users.find(u => u.name === name)) { showToast('⚠️ الاسم موجود', 'warning'); return; } users.push({ id: Date.now(), name, password, role, active: true }); showToast('✅ تم إضافة المستخدم', 'success'); }
-    setData('users', users); resetUserForm(); renderUsers(); populateLoginUsers();
+    setData('users', users); resetUserForm(); renderUsers();
 };
 window.editUser = function(id) { const u = users.find(us => us.id == id); if (!u) return; $('userId').value = u.id; $('userName').value = u.name; $('userPassword').value = u.password; $('userRole').value = u.role; $('userFormTitle').textContent = '✏️ تعديل'; $('userSaveBtnText').textContent = 'حفظ'; };
-window.toggleUserActive = function(id) { const u = users.find(us => us.id == id); if (!u) return; if (u.id === (currentUser ? currentUser.id : null)) { showToast('⚠️ لا يمكنك تعطيل حسابك', 'error'); return; } u.active = !u.active; setData('users', users); renderUsers(); populateLoginUsers(); };
-window.deleteUser = function(id) { if (!confirm('⚠️ حذف المستخدم؟')) return; window.users = users.filter(us => us.id !== id); setData('users', users); renderUsers(); populateLoginUsers(); showToast('🗑️ تم الحذف', 'info'); };
+window.toggleUserActive = function(id) { const u = users.find(us => us.id == id); if (!u) return; if (u.id === (currentUser ? currentUser.id : null)) { showToast('⚠️ لا يمكنك تعطيل حسابك', 'error'); return; } u.active = !u.active; setData('users', users); renderUsers(); };
+window.deleteUser = function(id) { if (!confirm('⚠️ حذف المستخدم؟')) return; window.users = users.filter(us => us.id !== id); setData('users', users); renderUsers(); showToast('🗑️ تم الحذف', 'info'); };
 window.resetUserForm = function() { $('userId').value = ''; $('userName').value = ''; $('userPassword').value = ''; $('userRole').value = 'cashier'; $('userFormTitle').textContent = '➕ إضافة مستخدم'; $('userSaveBtnText').textContent = 'إضافة'; };
 window.renderUsers = function() {
     const c = $('userList'); if (!c) return;
@@ -964,21 +949,49 @@ window.renderSettings = function() {
     if ($('setAccountsCount')) $('setAccountsCount').textContent = accounts.length;
     if ($('setJournalCount')) $('setJournalCount').textContent = journalEntries.length;
     if ($('setMovementsCount')) $('setMovementsCount').textContent = inventoryMovements.length;
+    if ($('setCashBoxesCount') && typeof cashBoxes !== 'undefined') $('setCashBoxesCount').textContent = cashBoxes.length;
     if ($('setDefaultVAT')) $('setDefaultVAT').value = vatSettings.defaultVAT || 14;
     let size = 0; for (let k in localStorage) { if (k.startsWith('mizan_')) size += (localStorage[k] || '').length; }
     if ($('setDataSize')) $('setDataSize').textContent = (size / 1024).toFixed(1) + ' KB';
-    if ($('currentUserForPassword')) $('currentUserForPassword').textContent = currentUser ? currentUser.name : '-';
+    if ($('currentUserForPassword')) $('currentUserForPassword').textContent = currentUser ? (currentUser.email || currentUser.name) : '-';
 };
-window.changePassword = function() {
-    if (!currentUser) return;
-    const oldP = $('oldPassword').value, newP = $('newPassword').value, conP = $('confirmPassword').value;
-    if (oldP !== currentUser.password) { showToast('❌ كلمة المرور الحالية خاطئة', 'error'); return; }
-    if (newP.length < 4 || newP !== conP) { showToast('❌ كلمة المرور غير صحيحة', 'error'); return; }
-    const idx = users.findIndex(u => u.id === currentUser.id);
-    if (idx > -1) { users[idx].password = newP; currentUser.password = newP; setData('users', users); }
-    $('oldPassword').value = ''; $('newPassword').value = ''; $('confirmPassword').value = '';
-    showToast('✅ تم تغيير كلمة المرور', 'success');
+
+// ✅ changePassword - نسخة Firebase Auth الجديدة
+window.changePassword = async function() {
+    if (!currentUser) { showToast('⚠️ غير مسجل دخول', 'error'); return; }
+    if (!currentUser.email) { showToast('⚠️ لا يوجد بريد إلكتروني', 'error'); return; }
+    
+    const oldP = $('oldPassword').value;
+    const newP = $('newPassword').value;
+    const conP = $('confirmPassword').value;
+    
+    if (newP.length < 6) { showToast('❌ كلمة المرور 6 أحرف على الأقل', 'error'); return; }
+    if (newP !== conP) { showToast('❌ غير متطابقة', 'error'); return; }
+    
+    try {
+        const user = firebase.auth().currentUser;
+        if (!user) { showToast('❌ غير مسجل', 'error'); return; }
+        
+        // إعادة المصادقة
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldP);
+        await user.reauthenticateWithCredential(credential);
+        
+        // تغيير كلمة المرور
+        await user.updatePassword(newP);
+        
+        $('oldPassword').value = ''; $('newPassword').value = ''; $('confirmPassword').value = '';
+        if (typeof addAuditLog === 'function') addAuditLog('edit', 'user', `تغيير كلمة المرور: ${currentUser.name}`);
+        showToast('✅ تم تغيير كلمة المرور بنجاح', 'success');
+    } catch (e) {
+        console.error('❌ خطأ تغيير كلمة المرور:', e);
+        let msg = '❌ فشل تغيير كلمة المرور';
+        if (e.code === 'auth/wrong-password') msg = '❌ كلمة المرور الحالية خاطئة';
+        if (e.code === 'auth/weak-password') msg = '❌ كلمة المرور الجديدة ضعيفة';
+        if (e.code === 'auth/requires-recent-login') msg = '⚠️ يرجى إعادة تسجيل الدخول أولاً';
+        showToast(msg, 'error');
+    }
 };
+
 window.exportData = function() {
     const data = { version: '14.0.0', exportDate: new Date().toISOString(), products, sales, purchases, returns, expenses, customers, suppliers, treasury, payments, users, auditLog, companyData, vatSettings, accounts, journalEntries, inventoryMovements };
     const json = JSON.stringify(data, null, 2);
@@ -986,6 +999,7 @@ window.exportData = function() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `mizan_backup_${new Date().toISOString().split('T')[0]}.json`; a.click();
     showToast('✅ تم التصدير', 'success');
 };
+
 window.importData = function(event) {
     if (!isAdmin()) return;
     const file = event.target.files[0]; if (!file) return;
@@ -995,12 +1009,13 @@ window.importData = function(event) {
         try {
             const data = JSON.parse(e.target.result);
             ['products', 'sales', 'purchases', 'returns', 'expenses', 'customers', 'suppliers', 'treasury', 'payments', 'users', 'auditLog', 'companyData', 'vatSettings', 'accounts', 'journalEntries', 'inventoryMovements'].forEach(key => { if (data[key]) window[key] = data[key]; });
-            saveAll(); populateAllDropdowns(); populateLoginUsers(); refreshAllViews();
+            saveAll(); populateAllDropdowns(); refreshAllViews();
             showToast('✅ تم الاستيراد', 'success');
         } catch (err) { showToast('❌ ملف غير صالح', 'error'); }
     };
     reader.readAsText(file); event.target.value = '';
 };
+
 window.clearAllData = function() {
     if (!confirm('⚠️ مسح جميع البيانات؟')) return;
     if (!confirm('✅ تأكيد نهائي؟')) return;
@@ -1008,6 +1023,7 @@ window.clearAllData = function() {
     localStorage.removeItem('mizan_seeded');
     location.reload();
 };
+
 window.saveAll = function() {
     setData('products', products); setData('sales', sales); setData('purchases', purchases);
     setData('returns', returns); setData('expenses', expenses); setData('customers', customers);
@@ -1048,7 +1064,6 @@ function init() {
         window.products = [{ id: 1, name: 'قلم جاف', barcode: '1001', buy: 2, sell: 5, qty: 50, min: 10, vat: 14 }, { id: 2, name: 'كشكول 60 ورقة', barcode: '1002', buy: 8, sell: 15, qty: 30, min: 5, vat: 14 }, { id: 3, name: 'مسطرة 30 سم', barcode: '1003', buy: 3, sell: 7, qty: 40, min: 10, vat: 14 }];
         setData('products', products); localStorage.setItem('mizan_seeded', 'true');
     } else { setData('products', products); }
-    if (typeof populateLoginUsers === 'function') populateLoginUsers();
     if ($('expDate')) $('expDate').value = getTodayDate();
     if ($('collectDate')) $('collectDate').value = getTodayDate();
     if ($('payDate')) $('payDate').value = getTodayDate();
