@@ -1,14 +1,13 @@
 // ============================================================
-// الميزان 14.0.0 - الجزء 3: العرض والتهيئة
-// app-part3.js (النسخة الكاملة النهائية 100%)
+// الميزان 14.0.0 - الجزء 3: العرض والتهيئة (نسخة كاملة نهائية)
+// app-part3.js
 // ============================================================
 
 console.log('📊 تحميل app-part3.js - العرض والتهيئة');
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // ✅ دوال مساعدة أساسية
-// ============================================================
-
+// ═══════════════════════════════════════════════════════════
 window.updateHeaderCompanyName = function() {
     try {
         const el = document.getElementById('headerCompanyName');
@@ -44,8 +43,7 @@ window.updateClock = function() {
         const el = document.getElementById('liveDateTime');
         if (!el) return;
         const now = new Date();
-        const date = String(now.getDate()).padStart(2, '0') + '/' +
-                     String(now.getMonth() + 1).padStart(2, '0') + '/' + now.getFullYear();
+        const date = String(now.getDate()).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' + now.getFullYear();
         const time = now.toLocaleTimeString('en-GB', { hour12: false });
         el.textContent = date + ' ' + time;
     } catch (e) {}
@@ -53,9 +51,9 @@ window.updateClock = function() {
 
 setInterval(function() { if (typeof updateClock === 'function') updateClock(); }, 1000);
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // الخزنة
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.getTreasuryBalance = function() {
     return treasury.reduce((sum, t) => t.type === 'deposit' ? sum + (t.amount || 0) : sum - (t.amount || 0), 0);
 };
@@ -105,20 +103,14 @@ window.renderTreasury = function() {
         const isDep = t.type === 'deposit';
         const color = isDep ? '#2D8F5E' : '#E06060';
         const refIcons = { 'sale': '💰', 'purchase': '🛒', 'return': '🔄', 'collect': '✅', 'pay': '💸', 'expense': '💸', 'manual': '✋' };
-        html += `<div class="table-row" style="grid-template-columns: 2.2fr 1fr 1fr 1fr 0.6fr;">
-            <span style="font-size:11px;">${refIcons[t.refType] || '📋'} ${t.note}</span>
-            <span style="color:${color};font-weight:700;">${isDep ? '+' : '-'}${formatMoney(t.amount)}</span>
-            <span style="color:${color};font-size:10px;">${isDep ? '💚 إيداع' : '❤️ سحب'}</span>
-            <span style="font-size:10px;color:#A89070;">${t.date}<br>${t.time || ''}</span>
-            <span></span>
-        </div>`;
+        html += `<div class="table-row" style="grid-template-columns: 2.2fr 1fr 1fr 1fr 0.6fr;"><span style="font-size:11px;">${refIcons[t.refType] || '📋'} ${t.note}</span><span style="color:${color};font-weight:700;">${isDep ? '+' : '-'}${formatMoney(t.amount)}</span><span style="color:${color};font-size:10px;">${isDep ? '💚 إيداع' : '❤️ سحب'}</span><span style="font-size:10px;color:#A89070;">${t.date}<br>${t.time || ''}</span><span></span></div>`;
     });
     c.innerHTML = html;
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // لوحة التحكم
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.updateDashboard = function() {
     const totalSales = sales.reduce((s, i) => s + (i.total || 0), 0);
     const totalPurchases = purchases.reduce((s, i) => s + (i.total || 0), 0);
@@ -185,31 +177,26 @@ window.getSupplierBalance = function(name) {
     return Math.max(0, purchases.filter(p => p.supplierName === name && p.payment === 'credit').reduce((sum, p) => sum + (p.remainingAmount !== undefined ? p.remainingAmount : p.total), 0));
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // العملاء
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.saveCustomer = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const id = $('customerId').value, name = $('customerName').value.trim();
     const phone = $('customerPhone').value.trim(), whatsapp = $('customerWhatsapp').value.trim(), address = $('customerAddress').value.trim();
     if (!name) { showToast('⚠️ أدخل اسم العميل', 'error'); return; }
     if (id) { const idx = customers.findIndex(c => c.id == id); if (idx > -1) { customers[idx] = { ...customers[idx], name, phone, whatsapp, address }; showToast('✅ تم تعديل العميل', 'success'); } }
-    else {
-        if (customers.find(c => c.name === name)) { showToast('⚠️ العميل موجود', 'warning'); return; }
-        customers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() });
-        showToast('✅ تم إضافة العميل', 'success');
-    }
+    else { if (customers.find(c => c.name === name)) { showToast('⚠️ العميل موجود', 'warning'); return; } customers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() }); showToast('✅ تم إضافة العميل', 'success'); }
     setData('customers', customers); resetCustomerForm(); renderCustomers();
-    if (typeof populateSaleCustomers === 'function') try { populateSaleCustomers(); } catch(e) {}
-    if (typeof populateRetCustomers === 'function') try { populateRetCustomers(); } catch(e) {}
-    if (typeof populateCollectCustomers === 'function') try { populateCollectCustomers(); } catch(e) {}
-    if (typeof populateSettleCustomers === 'function') try { populateSettleCustomers(); } catch(e) {}
+    if (typeof populateSaleCustomers === 'function') { try { populateSaleCustomers(); } catch(e) {} }
+    if (typeof populateRetCustomers === 'function') { try { populateRetCustomers(); } catch(e) {} }
+    if (typeof populateCollectCustomers === 'function') { try { populateCollectCustomers(); } catch(e) {} }
+    if (typeof populateSettleCustomers === 'function') { try { populateSettleCustomers(); } catch(e) {} }
 };
 
 window.editCustomer = function(id) {
     const c = customers.find(cu => cu.id == id); if (!c) return;
-    $('customerId').value = c.id; $('customerName').value = c.name;
-    $('customerPhone').value = c.phone || ''; $('customerWhatsapp').value = c.whatsapp || ''; $('customerAddress').value = c.address || '';
+    $('customerId').value = c.id; $('customerName').value = c.name; $('customerPhone').value = c.phone || ''; $('customerWhatsapp').value = c.whatsapp || ''; $('customerAddress').value = c.address || '';
     $('customerFormTitle').textContent = '✏️ تعديل العميل'; $('customerSaveBtnText').textContent = 'حفظ التعديل';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
@@ -220,16 +207,15 @@ window.deleteCustomer = function(id) {
     if (!confirm(`⚠️ حذف العميل "${c.name}"؟`)) return;
     window.customers = customers.filter(cu => cu.id != id);
     setData('customers', customers); renderCustomers();
-    if (typeof populateSaleCustomers === 'function') try { populateSaleCustomers(); } catch(e) {}
-    if (typeof populateRetCustomers === 'function') try { populateRetCustomers(); } catch(e) {}
-    if (typeof populateCollectCustomers === 'function') try { populateCollectCustomers(); } catch(e) {}
-    if (typeof populateSettleCustomers === 'function') try { populateSettleCustomers(); } catch(e) {}
+    if (typeof populateSaleCustomers === 'function') { try { populateSaleCustomers(); } catch(e) {} }
+    if (typeof populateRetCustomers === 'function') { try { populateRetCustomers(); } catch(e) {} }
+    if (typeof populateCollectCustomers === 'function') { try { populateCollectCustomers(); } catch(e) {} }
+    if (typeof populateSettleCustomers === 'function') { try { populateSettleCustomers(); } catch(e) {} }
     showToast('🗑️ تم حذف العميل', 'info');
 };
 
 window.resetCustomerForm = function() {
-    $('customerId').value = ''; $('customerName').value = ''; $('customerPhone').value = '';
-    $('customerWhatsapp').value = ''; $('customerAddress').value = '';
+    $('customerId').value = ''; $('customerName').value = ''; $('customerPhone').value = ''; $('customerWhatsapp').value = ''; $('customerAddress').value = '';
     $('customerFormTitle').textContent = '➕ إضافة عميل'; $('customerSaveBtnText').textContent = 'إضافة';
 };
 
@@ -242,53 +228,36 @@ window.renderCustomers = function() {
     let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.8fr' : '0'};"><span>الاسم</span><span>الهاتف</span><span>المديونية</span>${showActions ? '<span></span>' : ''}</div>`;
     filtered.forEach(cu => {
         const balance = getCustomerBalance(cu.name);
-        html += `<div class="table-row" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.8fr' : '0'};">
-            <span><strong>${cu.name}</strong></span>
-            <span style="font-size:11px;">${cu.phone || '-'}</span>
-            <span style="color:${balance > 0 ? '#E06060' : '#2D8F5E'};font-weight:900;">${formatMoney(balance)}</span>
-            ${showActions ? `<div style="display:flex;gap:4px;">
-                <button class="btn btn-info btn-sm" onclick="viewCustomerStatement('${cu.name}')"><i class="fas fa-file-invoice-dollar"></i></button>
-                ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editCustomer(${cu.id})"><i class="fas fa-edit"></i></button>` : ''}
-                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomer(${cu.id})"><i class="fas fa-trash"></i></button>` : ''}
-            </div>` : ''}
-        </div>`;
+        html += `<div class="table-row" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.8fr' : '0'};"><span><strong>${cu.name}</strong></span><span style="font-size:11px;">${cu.phone || '-'}</span><span style="color:${balance > 0 ? '#E06060' : '#2D8F5E'};font-weight:900;">${formatMoney(balance)}</span>${showActions ? `<div style="display:flex;gap:4px;"><button class="btn btn-info btn-sm" onclick="viewCustomerStatement('${cu.name}')"><i class="fas fa-file-invoice-dollar"></i></button>${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editCustomer(${cu.id})"><i class="fas fa-edit"></i></button>` : ''}${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomer(${cu.id})"><i class="fas fa-trash"></i></button>` : ''}</div>` : ''}</div>`;
     });
     c.innerHTML = html;
 };
 
 window.viewCustomerStatement = function(customerName) {
     const balance = getCustomerBalance(customerName);
-    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>📋 كشف حساب: ${customerName}</h3>
-        <div class="invoice-print"><div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب</p></div>
-        <div class="inv-info"><div>الرصيد: ${formatMoney(balance)} 🇪🇬</div></div></div>
-        <button class="btn btn-secondary btn-block" onclick="closeModal()">إغلاق</button>`;
+    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>📋 كشف حساب: ${customerName}</h3><div class="invoice-print"><div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب</p></div><div class="inv-info"><div>الرصيد: ${formatMoney(balance)} 🇪🇬</div></div></div><button class="btn btn-secondary btn-block" onclick="closeModal()">إغلاق</button>`;
     openModal(html);
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // الموردين
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.saveSupplier = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const id = $('supplierId').value, name = $('supplierName').value.trim();
     const phone = $('supplierPhone').value.trim(), whatsapp = $('supplierWhatsapp').value.trim(), address = $('supplierAddress').value.trim();
     if (!name) { showToast('⚠️ أدخل اسم المورد', 'error'); return; }
     if (id) { const idx = suppliers.findIndex(s => s.id == id); if (idx > -1) { suppliers[idx] = { ...suppliers[idx], name, phone, whatsapp, address }; showToast('✅ تم تعديل المورد', 'success'); } }
-    else {
-        if (suppliers.find(s => s.name === name)) { showToast('⚠️ المورد موجود', 'warning'); return; }
-        suppliers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() });
-        showToast('✅ تم إضافة المورد', 'success');
-    }
+    else { if (suppliers.find(s => s.name === name)) { showToast('⚠️ المورد موجود', 'warning'); return; } suppliers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() }); showToast('✅ تم إضافة المورد', 'success'); }
     setData('suppliers', suppliers); resetSupplierForm(); renderSuppliers();
-    if (typeof populatePurSuppliers === 'function') try { populatePurSuppliers(); } catch(e) {}
-    if (typeof populateRetSuppliers === 'function') try { populateRetSuppliers(); } catch(e) {}
-    if (typeof populatePaySuppliers === 'function') try { populatePaySuppliers(); } catch(e) {}
+    if (typeof populatePurSuppliers === 'function') { try { populatePurSuppliers(); } catch(e) {} }
+    if (typeof populateRetSuppliers === 'function') { try { populateRetSuppliers(); } catch(e) {} }
+    if (typeof populatePaySuppliers === 'function') { try { populatePaySuppliers(); } catch(e) {} }
 };
 
 window.editSupplier = function(id) {
     const s = suppliers.find(su => su.id == id); if (!s) return;
-    $('supplierId').value = s.id; $('supplierName').value = s.name;
-    $('supplierPhone').value = s.phone || ''; $('supplierWhatsapp').value = s.whatsapp || ''; $('supplierAddress').value = s.address || '';
+    $('supplierId').value = s.id; $('supplierName').value = s.name; $('supplierPhone').value = s.phone || ''; $('supplierWhatsapp').value = s.whatsapp || ''; $('supplierAddress').value = s.address || '';
     $('supplierFormTitle').textContent = '✏️ تعديل المورد'; $('supplierSaveBtnText').textContent = 'حفظ التعديل';
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
@@ -299,15 +268,14 @@ window.deleteSupplier = function(id) {
     if (!confirm(`⚠️ حذف المورد "${s.name}"؟`)) return;
     window.suppliers = suppliers.filter(su => su.id != id);
     setData('suppliers', suppliers); renderSuppliers();
-    if (typeof populatePurSuppliers === 'function') try { populatePurSuppliers(); } catch(e) {}
-    if (typeof populateRetSuppliers === 'function') try { populateRetSuppliers(); } catch(e) {}
-    if (typeof populatePaySuppliers === 'function') try { populatePaySuppliers(); } catch(e) {}
+    if (typeof populatePurSuppliers === 'function') { try { populatePurSuppliers(); } catch(e) {} }
+    if (typeof populateRetSuppliers === 'function') { try { populateRetSuppliers(); } catch(e) {} }
+    if (typeof populatePaySuppliers === 'function') { try { populatePaySuppliers(); } catch(e) {} }
     showToast('🗑️ تم حذف المورد', 'info');
 };
 
 window.resetSupplierForm = function() {
-    $('supplierId').value = ''; $('supplierName').value = ''; $('supplierPhone').value = '';
-    $('supplierWhatsapp').value = ''; $('supplierAddress').value = '';
+    $('supplierId').value = ''; $('supplierName').value = ''; $('supplierPhone').value = ''; $('supplierWhatsapp').value = ''; $('supplierAddress').value = '';
     $('supplierFormTitle').textContent = '➕ إضافة مورد'; $('supplierSaveBtnText').textContent = 'إضافة';
 };
 
@@ -320,60 +288,158 @@ window.renderSuppliers = function() {
     let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.8fr' : '0'};"><span>الاسم</span><span>الهاتف</span><span>المديونية</span>${showActions ? '<span></span>' : ''}</div>`;
     filtered.forEach(s => {
         const balance = getSupplierBalance(s.name);
-        html += `<div class="table-row" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.8fr' : '0'};">
-            <span><strong>${s.name}</strong></span>
-            <span style="font-size:11px;">${s.phone || '-'}</span>
-            <span style="color:${balance > 0 ? '#E6A830' : '#2D8F5E'};font-weight:900;">${formatMoney(balance)}</span>
-            ${showActions ? `<div style="display:flex;gap:4px;">
-                <button class="btn btn-info btn-sm" onclick="viewSupplierStatement('${s.name}')"><i class="fas fa-file-invoice"></i></button>
-                ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button>` : ''}
-                ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button>` : ''}
-            </div>` : ''}
-        </div>`;
+        html += `<div class="table-row" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.8fr' : '0'};"><span><strong>${s.name}</strong></span><span style="font-size:11px;">${s.phone || '-'}</span><span style="color:${balance > 0 ? '#E6A830' : '#2D8F5E'};font-weight:900;">${formatMoney(balance)}</span>${showActions ? `<div style="display:flex;gap:4px;"><button class="btn btn-info btn-sm" onclick="viewSupplierStatement('${s.name}')"><i class="fas fa-file-invoice"></i></button>${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button>` : ''}${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button>` : ''}</div>` : ''}</div>`;
     });
     c.innerHTML = html;
 };
 
 window.viewSupplierStatement = function(supplierName) {
     const balance = getSupplierBalance(supplierName);
-    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>📋 كشف حساب: ${supplierName}</h3>
-        <div class="invoice-print"><div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب مورد</p></div>
-        <div class="inv-info"><div>الرصيد: ${formatMoney(balance)} 🇪🇬</div></div></div>
-        <button class="btn btn-secondary btn-block" onclick="closeModal()">إغلاق</button>`;
+    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>📋 كشف حساب: ${supplierName}</h3><div class="invoice-print"><div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب مورد</p></div><div class="inv-info"><div>الرصيد: ${formatMoney(balance)} 🇪🇬</div></div></div><button class="btn btn-secondary btn-block" onclick="closeModal()">إغلاق</button>`;
     openModal(html);
 };
 
-// ============================================================
-// التحصيل والسداد
-// ============================================================
-window.populateCollectCustomers = function() { const sel = $('collectCustomer'); if (!sel) return; const cv = sel.value; sel.innerHTML = '<option value="">اختر عميل...</option>'; customers.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`); sel.value = cv; };
-window.populatePaySuppliers = function() { const sel = $('paySupplier'); if (!sel) return; const cv = sel.value; sel.innerHTML = '<option value="">اختر مورد...</option>'; suppliers.forEach(s => sel.innerHTML += `<option value="${s.name}">${s.name}</option>`); sel.value = cv; };
-window.populateSettleCustomers = function() { const sel = $('settleCustomer'); if (!sel) return; const cv = sel.value; sel.innerHTML = '<option value="">اختر عميل...</option>'; customers.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`); sel.value = cv; };
-window.populateSettleProducts = function() { const sel = $('settleProduct'); if (!sel) return; const cv = sel.value; sel.innerHTML = '<option value="">اختر منتج...</option>'; products.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name}</option>`); sel.value = cv; };
+// ═══════════════════════════════════════════════════════════
+// التحصيل والسداد والمقاصة
+// ═══════════════════════════════════════════════════════════
+window.populateCollectCustomers = function() {
+    const sel = document.getElementById('collectCustomer');
+    if (!sel) { console.warn('⚠️ collectCustomer غير موجود'); return; }
+    const cv = sel.value;
+    sel.innerHTML = '<option value="">اختر عميل...</option>';
+    if (typeof customers !== 'undefined' && Array.isArray(customers) && customers.length > 0) {
+        customers.forEach(function(c) {
+            const balance = typeof getCustomerBalance === 'function' ? getCustomerBalance(c.name) : 0;
+            const balanceText = balance > 0 ? ' (مديونية: ' + formatMoney(balance) + ')' : '';
+            sel.innerHTML += '<option value="' + c.name + '">' + c.name + balanceText + '</option>';
+        });
+        console.log('✅ تم تعبئة ' + customers.length + ' عميل في قائمة التحصيل');
+    } else {
+        sel.innerHTML += '<option value="" disabled>لا يوجد عملاء مسجلون</option>';
+        console.log('⚠️ لا يوجد عملاء في المصفوفة');
+    }
+    sel.value = cv;
+    if (typeof _applyAllSearch === 'function') setTimeout(_applyAllSearch, 50);
+};
+
+window.populatePaySuppliers = function() {
+    const sel = document.getElementById('paySupplier');
+    if (!sel) return;
+    const cv = sel.value;
+    sel.innerHTML = '<option value="">اختر مورد...</option>';
+    if (typeof suppliers !== 'undefined' && Array.isArray(suppliers) && suppliers.length > 0) {
+        suppliers.forEach(function(s) {
+            const balance = typeof getSupplierBalance === 'function' ? getSupplierBalance(s.name) : 0;
+            const balanceText = balance > 0 ? ' (مديونية: ' + formatMoney(balance) + ')' : '';
+            sel.innerHTML += '<option value="' + s.name + '">' + s.name + balanceText + '</option>';
+        });
+        console.log('✅ تم تعبئة ' + suppliers.length + ' مورد في قائمة السداد');
+    } else {
+        sel.innerHTML += '<option value="" disabled>لا يوجد موردون مسجلون</option>';
+    }
+    sel.value = cv;
+    if (typeof _applyAllSearch === 'function') setTimeout(_applyAllSearch, 50);
+};
+
+window.populateSettleCustomers = function() {
+    const sel = document.getElementById('settleCustomer'); if (!sel) return;
+    const cv = sel.value;
+    sel.innerHTML = '<option value="">اختر عميل...</option>';
+    if (typeof customers !== 'undefined' && Array.isArray(customers)) {
+        customers.forEach(c => {
+            const bal = getCustomerBalance(c.name);
+            sel.innerHTML += `<option value="${c.name}">${c.name}${bal > 0 ? ' (مديونية: ' + formatMoney(bal) + ')' : ''}</option>`;
+        });
+    }
+    sel.value = cv;
+    if (typeof _applyAllSearch === 'function') setTimeout(_applyAllSearch, 50);
+};
+
+window.populateSettleProducts = function() {
+    const sel = document.getElementById('settleProduct'); if (!sel) return;
+    const cv = sel.value;
+    sel.innerHTML = '<option value="">اختر منتج...</option>';
+    if (typeof products !== 'undefined' && Array.isArray(products)) {
+        products.forEach(p => { sel.innerHTML += `<option value="${p.id}">${p.name} (متاح: ${p.qty})</option>`; });
+    }
+    sel.value = cv;
+    if (typeof _applyAllSearch === 'function') setTimeout(_applyAllSearch, 50);
+};
 
 window.switchPayTab = function(tab, btn) {
     document.querySelectorAll('#page-payments .tab-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
-    const collect = $('payTabCollect'), pay = $('payTabPay'), settle = $('payTabSettle');
+    const collect = document.getElementById('payTabCollect');
+    const pay = document.getElementById('payTabPay');
+    const settle = document.getElementById('payTabSettle');
     if (collect) collect.style.display = tab === 'collect' ? 'block' : 'none';
     if (pay) pay.style.display = tab === 'pay' ? 'block' : 'none';
     if (settle) settle.style.display = tab === 'settle' ? 'block' : 'none';
+    if (tab === 'collect') { if (typeof populateCollectCustomers === 'function') { try { populateCollectCustomers(); } catch(e) {} } }
+    if (tab === 'pay') { if (typeof populatePaySuppliers === 'function') { try { populatePaySuppliers(); } catch(e) {} } }
+    if (tab === 'settle') {
+        if (typeof populateSettleCustomers === 'function') { try { populateSettleCustomers(); } catch(e) {} }
+        if (typeof populateSettleProducts === 'function') { try { populateSettleProducts(); } catch(e) {} }
+    }
 };
 
-window.updateCollectInfo = function() { const name = $('collectCustomer').value; const box = $('collectInfoBox'); if (!box) return; if (!name) { box.style.display = 'none'; return; } box.style.display = 'block'; if ($('collectCurrentDebt')) $('collectCurrentDebt').textContent = formatMoney(getCustomerBalance(name)); };
-window.updatePayInfo = function() { const name = $('paySupplier').value; const box = $('payInfoBox'); if (!box) return; if (!name) { box.style.display = 'none'; return; } box.style.display = 'block'; if ($('payCurrentDebt')) $('payCurrentDebt').textContent = formatMoney(getSupplierBalance(name)); };
+window.updateCollectInfo = function() {
+    const name = $('collectCustomer').value;
+    const box = $('collectInfoBox');
+    if (!box) return;
+    if (!name) { box.style.display = 'none'; return; }
+    const balance = getCustomerBalance(name);
+    box.style.display = 'block';
+    if ($('collectCurrentDebt')) $('collectCurrentDebt').textContent = formatMoney(balance);
+    const amountInput = $('collectAmount');
+    if (amountInput) { amountInput.max = balance; amountInput.value = balance > 0 ? balance.toFixed(2) : ''; }
+};
+
+window.updatePayInfo = function() {
+    const name = $('paySupplier').value;
+    const box = $('payInfoBox');
+    if (!box) return;
+    if (!name) { box.style.display = 'none'; return; }
+    const balance = getSupplierBalance(name);
+    box.style.display = 'block';
+    if ($('payCurrentDebt')) $('payCurrentDebt').textContent = formatMoney(balance);
+    const amountInput = $('payAmount');
+    if (amountInput) { amountInput.max = balance; amountInput.value = balance > 0 ? balance.toFixed(2) : ''; }
+};
 
 window.distributePayment = function(customerName, amount) {
     const relatedInvoices = []; let remaining = amount;
     const customerInvoices = sales.filter(s => s.customer === customerName && s.paymentMethod === 'credit' && (s.status === 'unpaid' || s.status === 'partial')).sort((a, b) => a.id - b.id);
-    for (const inv of customerInvoices) { if (remaining <= 0.01) break; const invRemaining = inv.remainingAmount !== undefined ? inv.remainingAmount : inv.total; if (invRemaining <= 0.01) continue; const pay = Math.min(remaining, invRemaining); inv.paidAmount = (inv.paidAmount || 0) + pay; inv.remainingAmount = invRemaining - pay; inv.status = inv.remainingAmount <= 0.01 ? 'paid' : 'partial'; if (inv.remainingAmount <= 0.01) inv.remainingAmount = 0; relatedInvoices.push({ invoiceId: inv.id, invoiceNumber: inv.number, amount: pay }); remaining -= pay; }
+    for (const inv of customerInvoices) {
+        if (remaining <= 0.01) break;
+        const invRemaining = inv.remainingAmount !== undefined ? inv.remainingAmount : inv.total;
+        if (invRemaining <= 0.01) continue;
+        const pay = Math.min(remaining, invRemaining);
+        inv.paidAmount = (inv.paidAmount || 0) + pay;
+        inv.remainingAmount = invRemaining - pay;
+        inv.status = inv.remainingAmount <= 0.01 ? 'paid' : 'partial';
+        if (inv.remainingAmount <= 0.01) inv.remainingAmount = 0;
+        relatedInvoices.push({ invoiceId: inv.id, invoiceNumber: inv.number, amount: pay });
+        remaining -= pay;
+    }
     return relatedInvoices;
 };
 
 window.distributePay = function(supplierName, amount) {
     const relatedInvoices = []; let remaining = amount;
     const supplierInvoices = purchases.filter(p => p.supplierName === supplierName && p.payment === 'credit' && (p.status === 'unpaid' || p.status === 'partial')).sort((a, b) => a.id - b.id);
-    for (const inv of supplierInvoices) { if (remaining <= 0.01) break; const invRemaining = inv.remainingAmount !== undefined ? inv.remainingAmount : inv.total; if (invRemaining <= 0.01) continue; const pay = Math.min(remaining, invRemaining); inv.paidAmount = (inv.paidAmount || 0) + pay; inv.remainingAmount = invRemaining - pay; inv.status = inv.remainingAmount <= 0.01 ? 'paid' : 'partial'; if (inv.remainingAmount <= 0.01) inv.remainingAmount = 0; relatedInvoices.push({ invoiceId: inv.id, invoiceNumber: inv.number, amount: pay }); remaining -= pay; }
+    for (const inv of supplierInvoices) {
+        if (remaining <= 0.01) break;
+        const invRemaining = inv.remainingAmount !== undefined ? inv.remainingAmount : inv.total;
+        if (invRemaining <= 0.01) continue;
+        const pay = Math.min(remaining, invRemaining);
+        inv.paidAmount = (inv.paidAmount || 0) + pay;
+        inv.remainingAmount = invRemaining - pay;
+        inv.status = inv.remainingAmount <= 0.01 ? 'paid' : 'partial';
+        if (inv.remainingAmount <= 0.01) inv.remainingAmount = 0;
+        relatedInvoices.push({ invoiceId: inv.id, invoiceNumber: inv.number, amount: pay });
+        remaining -= pay;
+    }
     return relatedInvoices;
 };
 
@@ -413,11 +479,25 @@ window.savePay = function() {
     showToast(`✅ تم سداد ${formatMoney(amount)} 🇪🇬`, 'success');
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // المقاصة
-// ============================================================
-window.updateSettleInfo = function() { const name = $('settleCustomer').value; const box = $('settleInfoBox'); if (!box) return; if (!name) { box.style.display = 'none'; return; } box.style.display = 'block'; if ($('settleCurrentDebt')) $('settleCurrentDebt').textContent = formatMoney(getCustomerBalance(name)); };
-window.updateSettlePrice = function() { const id = $('settleProduct').value; if (!id) { $('settlePrice').value = ''; return; } const p = products.find(pr => pr.id == id); if (p) $('settlePrice').value = p.sell; };
+// ═══════════════════════════════════════════════════════════
+window.updateSettleInfo = function() {
+    const name = $('settleCustomer').value;
+    const box = $('settleInfoBox');
+    if (!box) return;
+    if (!name) { box.style.display = 'none'; return; }
+    const balance = getCustomerBalance(name);
+    box.style.display = 'block';
+    if ($('settleCurrentDebt')) $('settleCurrentDebt').textContent = formatMoney(balance);
+};
+
+window.updateSettlePrice = function() {
+    const id = $('settleProduct').value;
+    if (!id) { $('settlePrice').value = ''; return; }
+    const p = products.find(pr => pr.id == id);
+    if (p) $('settlePrice').value = p.sell;
+};
 
 window.addSettleItem = function() {
     if (!canAdd()) return;
@@ -467,9 +547,9 @@ window.saveSettle = function() {
     showToast(`✅ تم تسجيل مقاصة بـ ${formatMoney(total)} 🇪🇬`, 'success');
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // عرض الإيصالات
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.renderPayments = function() {
     const c = $('paymentsList'); if (!c) return;
     if (payments.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-hand-holding-usd"></i><span>لا توجد عمليات</span></div>`; return; }
@@ -477,13 +557,7 @@ window.renderPayments = function() {
     let html = `<div class="table-header" style="grid-template-columns: 0.8fr 1fr 1.5fr 1fr 0.8fr;"><span>النوع</span><span>التاريخ</span><span>الجهة</span><span>المبلغ</span><span></span></div>`;
     sorted.forEach(p => {
         const isCollect = p.type === 'collect';
-        html += `<div class="table-row" style="grid-template-columns: 0.8fr 1fr 1.5fr 1fr 0.8fr;">
-            <span style="color:${isCollect ? '#2D8F5E' : '#E06060'};font-weight:700;font-size:11px;">${isCollect ? '💰 تحصيل' : '💸 سداد'}</span>
-            <span style="font-size:10px;color:#A89070;">${p.date}</span>
-            <span style="font-size:11px;">${p.party}</span>
-            <span style="color:${isCollect ? '#2D8F5E' : '#E06060'};font-weight:700;">${formatMoney(p.amount)}</span>
-            <div><button class="btn btn-info btn-sm" onclick="showReceiptById(${p.id})"><i class="fas fa-receipt"></i></button></div>
-        </div>`;
+        html += `<div class="table-row" style="grid-template-columns: 0.8fr 1fr 1.5fr 1fr 0.8fr;"><span style="color:${isCollect ? '#2D8F5E' : '#E06060'};font-weight:700;font-size:11px;">${isCollect ? '💰 تحصيل' : '💸 سداد'}</span><span style="font-size:10px;color:#A89070;">${p.date}</span><span style="font-size:11px;">${p.party}</span><span style="color:${isCollect ? '#2D8F5E' : '#E06060'};font-weight:700;">${formatMoney(p.amount)}</span><div><button class="btn btn-info btn-sm" onclick="showReceiptById(${p.id})"><i class="fas fa-receipt"></i></button></div></div>`;
     });
     c.innerHTML = html;
 };
@@ -493,29 +567,13 @@ window.showReceiptById = function(id) { const pay = payments.find(p => p.id === 
 window.showReceipt = function(pay) {
     const isCollect = pay.type === 'collect';
     const label = isCollect ? 'إيصال استلام نقدية' : 'إيصال دفع نقدية';
-    const html = `<button class="modal-close" onclick="closeModal()">&times;</button>
-        <h3>🧾 ${label}</h3>
-        <div class="receipt-print">
-            <div class="rec-header"><h2>${companyData.name || 'الميزان'}</h2><p>${label}</p></div>
-            <div class="rec-info">
-                <div><span class="lbl">رقم الإيصال:</span><span>#${pay.id.toString().slice(-6)}</span></div>
-                <div><span class="lbl">التاريخ:</span><span>${pay.date}</span></div>
-                <div><span class="lbl">الوقت:</span><span>${pay.time}</span></div>
-                <div><span class="lbl">${isCollect ? 'العميل' : 'المورد'}:</span><span>${pay.party}</span></div>
-            </div>
-            <div class="rec-amount"><div class="lbl">${isCollect ? 'المبلغ المستلم' : 'المبلغ المدفوع'}</div><div class="value">${formatMoney(pay.amount)} ج.م</div></div>
-            <div class="rec-footer">${companyData.footer || 'شكراً لتعاملكم معنا 🌟'}</div>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:12px;">
-            <button class="btn btn-primary btn-block" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button>
-            <button class="btn btn-secondary btn-block" onclick="closeModal()"><i class="fas fa-times"></i> إغلاق</button>
-        </div>`;
+    const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>🧾 ${label}</h3><div class="receipt-print"><div class="rec-header"><h2>${companyData.name || 'الميزان'}</h2><p>${label}</p></div><div class="rec-info"><div><span class="lbl">رقم الإيصال:</span><span>#${pay.id.toString().slice(-6)}</span></div><div><span class="lbl">التاريخ:</span><span>${pay.date}</span></div><div><span class="lbl">الوقت:</span><span>${pay.time}</span></div><div><span class="lbl">${isCollect ? 'العميل' : 'المورد'}:</span><span>${pay.party}</span></div></div><div class="rec-amount"><div class="lbl">${isCollect ? 'المبلغ المستلم' : 'المبلغ المدفوع'}</div><div class="value">${formatMoney(pay.amount)} ج.م</div></div><div class="rec-footer">${companyData.footer || 'شكراً لتعاملكم معنا 🌟'}</div></div><div style="display:flex;gap:6px;margin-top:12px;"><button class="btn btn-primary btn-block" onclick="window.print()"><i class="fas fa-print"></i> طباعة</button><button class="btn btn-secondary btn-block" onclick="closeModal()"><i class="fas fa-times"></i> إغلاق</button></div>`;
     openModal(html);
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // الفواتير
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.filterInvoices = function(filter, btn) { window.currentInvoiceFilter = filter; document.querySelectorAll('#page-invoices .filter-chip').forEach(c => c.classList.remove('active')); if (btn) btn.classList.add('active'); renderInvoices(); };
 
 window.renderInvoices = function() {
@@ -541,9 +599,9 @@ window.deleteInvoice = function(id) {
     showToast(`🗑️ تم الحذف`, 'info');
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // الحسابات
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.saveAccount = function() {
     if (!canAdd()) return;
     const id = $('accId').value, name = $('accName').value.trim(), type = $('accType').value, parentId = parseInt($('accParent').value) || null;
@@ -589,9 +647,9 @@ window.deleteJournalEntry = function(id) { if (!confirm('⚠️ حذف القي�
 window.switchAccountsTab = function(tab, btn) { document.querySelectorAll('#page-accounts .tab-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); const tree = $('accTabTree'), journal = $('accTabJournal'), reports = $('accTabReports'); if (tree) tree.style.display = (tab === 'tree') ? 'block' : 'none'; if (journal) journal.style.display = (tab === 'journal') ? 'block' : 'none'; if (reports) reports.style.display = (tab === 'reports') ? 'block' : 'none'; };
 window.showAccountingReport = function(type) { const c = $('accountingReportContent'); if (!c) return; c.innerHTML = '<div class="empty-state"><span>قريباً</span></div>'; };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // التقارير
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.switchReport = function(type, btn) { window.currentReport = type; document.querySelectorAll('.report-tab').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); renderReport(type); };
 window.renderReport = function(type) {
     const container = $('reportContent'); if (!container) return;
@@ -614,9 +672,9 @@ window.renderReport = function(type) {
 };
 window.renderVATReport = function() { const container = $('reportContent'); if (!container) return; container.innerHTML = `<h3>🧾 التقرير الضريبي</h3><div class="empty-state"><span>لا توجد بيانات</span></div>`; };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // حركات المخزون
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.filterInventoryMovements = function(filter, btn) { window.currentMovementFilter = filter; document.querySelectorAll('#page-inventory-movements .filter-chip').forEach(c => c.classList.remove('active')); if (btn) btn.classList.add('active'); renderInventoryMovements(); };
 window.renderInventoryMovements = function() {
     const c = $('inventoryMovementsList'); if (!c) return;
@@ -626,9 +684,9 @@ window.renderInventoryMovements = function() {
     c.innerHTML = html;
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // بيانات الشركة
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.renderCompanyPage = function() {
     if ($('setCompanyName')) $('setCompanyName').value = companyData.name || '';
     if ($('setCompanyPhone')) $('setCompanyPhone').value = companyData.phone || '';
@@ -644,20 +702,18 @@ window.renderLogoPreview = function() { const box = $('logoPreviewBox'); if (!bo
 window.uploadLogo = function(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { companyData.logo = e.target.result; setData('companyData', companyData); renderCompanyPage(); showToast('✅ تم رفع الشعار', 'success'); }; reader.readAsDataURL(file); };
 window.removeLogo = function() { if (!confirm('⚠️ حذف الشعار؟')) return; companyData.logo = null; setData('companyData', companyData); renderCompanyPage(); showToast('🗑️ تم الحذف', 'info'); };
 window.saveCompanySettings = function() {
-    companyData.name = $('setCompanyName').value.trim(); companyData.phone = $('setCompanyPhone').value.trim();
-    companyData.address = $('setCompanyAddress').value.trim(); companyData.tax = $('setCompanyTax').value.trim();
-    companyData.cr = $('setCompanyCR')?.value?.trim() || ''; companyData.footer = $('setCompanyFooter').value.trim();
+    companyData.name = $('setCompanyName').value.trim(); companyData.phone = $('setCompanyPhone').value.trim(); companyData.address = $('setCompanyAddress').value.trim(); companyData.tax = $('setCompanyTax').value.trim(); companyData.cr = $('setCompanyCR')?.value?.trim() || ''; companyData.footer = $('setCompanyFooter').value.trim();
     setData('companyData', companyData); renderCompanyPage(); showToast('✅ تم حفظ البيانات', 'success');
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // إعدادات الضريبة
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.saveVATSettings = function() { const vat = parseFloat($('setDefaultVAT')?.value) || 14; if (vat < 0 || vat > 100) { showToast('⚠️ النسبة بين 0 و 100', 'error'); return; } vatSettings.defaultVAT = vat; setData('vatSettings', vatSettings); showToast(`✅ تم حفظ النسبة: ${vat}%`, 'success'); };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // المستخدمين
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.saveUser = function() {
     if (!canManageUsers()) return;
     const id = $('userId').value, name = $('userName').value.trim(), password = $('userPassword').value.trim(), role = $('userRole').value;
@@ -679,9 +735,9 @@ window.renderUsers = function() {
     c.innerHTML = html;
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // سجل النشاطات
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.renderAudit = function() {
     const c = $('auditList'); if (!c) return;
     if (!isAdmin()) { c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>المدير فقط</span></div>`; return; }
@@ -695,9 +751,9 @@ window.exportAuditLog = function() { if (auditLog.length === 0) { showToast('⚠
 window.exportAuditLogText = function() { if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; } let text = 'سجل النشاطات\n\n'; auditLog.forEach(log => { text += `[${log.date}] ${log.userName} - ${log.details}\n`; }); const blob = new Blob([text], { type: 'text/plain;charset=utf-8' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `audit_${new Date().toISOString().split('T')[0]}.txt`; a.click(); showToast('✅ تم التصدير', 'success'); };
 window.clearAuditLog = function() { if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; } if (!confirm('⚠️ مسح السجل؟')) return; window.auditLog = []; setData('auditLog', auditLog); renderAudit(); showToast('🗑️ تم المسح', 'info'); };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // الإعدادات
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 window.renderSettings = function() {
     if ($('setProductsCount')) $('setProductsCount').textContent = products.length;
     if ($('setSalesCount')) $('setSalesCount').textContent = sales.length;
@@ -710,7 +766,6 @@ window.renderSettings = function() {
     if ($('setDataSize')) $('setDataSize').textContent = (size / 1024).toFixed(1) + ' KB';
     if ($('currentUserForPassword')) $('currentUserForPassword').textContent = currentUser ? currentUser.name : '-';
 };
-
 window.changePassword = function() {
     if (!currentUser) return;
     const oldP = $('oldPassword').value, newP = $('newPassword').value, conP = $('confirmPassword').value;
@@ -721,7 +776,6 @@ window.changePassword = function() {
     $('oldPassword').value = ''; $('newPassword').value = ''; $('confirmPassword').value = '';
     showToast('✅ تم تغيير كلمة المرور', 'success');
 };
-
 window.exportData = function() {
     const data = { version: '14.0.0', exportDate: new Date().toISOString(), products, sales, purchases, returns, expenses, customers, suppliers, treasury, payments, users, auditLog, companyData, vatSettings, accounts, journalEntries, inventoryMovements };
     const json = JSON.stringify(data, null, 2);
@@ -729,7 +783,6 @@ window.exportData = function() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `mizan_backup_${new Date().toISOString().split('T')[0]}.json`; a.click();
     showToast('✅ تم التصدير', 'success');
 };
-
 window.importData = function(event) {
     if (!isAdmin()) return;
     const file = event.target.files[0]; if (!file) return;
@@ -745,7 +798,6 @@ window.importData = function(event) {
     };
     reader.readAsText(file); event.target.value = '';
 };
-
 window.clearAllData = function() {
     if (!confirm('⚠️ مسح جميع البيانات؟')) return;
     if (!confirm('✅ تأكيد نهائي؟')) return;
@@ -753,7 +805,6 @@ window.clearAllData = function() {
     localStorage.removeItem('mizan_seeded');
     location.reload();
 };
-
 window.saveAll = function() {
     setData('products', products); setData('sales', sales); setData('purchases', purchases);
     setData('returns', returns); setData('expenses', expenses); setData('customers', customers);
@@ -763,13 +814,12 @@ window.saveAll = function() {
     setData('journalEntries', journalEntries); setData('inventoryMovements', inventoryMovements);
 };
 
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 // التهيئة النهائية
-// ============================================================
+// ═══════════════════════════════════════════════════════════
 function init() {
     console.log('🚀 الميزان 14.0.0');
     if (typeof initFirebase === 'function') initFirebase();
-
     const rawProducts = getData('products', []);
     window.sales = getData('sales', []);
     window.purchases = getData('purchases', []);
@@ -785,36 +835,26 @@ function init() {
     window.accounts = getData('accounts', []);
     window.journalEntries = getData('journalEntries', []);
     window.inventoryMovements = getData('inventoryMovements', []);
-
     if (accounts.length === 0 && typeof DEFAULT_ACCOUNTS !== 'undefined') { window.accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS)); setData('accounts', accounts); }
-
     window.users = getData('users', []);
     if (users.length === 0) { window.users = [{ id: 1, name: 'المدير', password: '123456', role: 'admin', active: true }, { id: 2, name: 'مشرف', password: '123456', role: 'manager', active: true }, { id: 3, name: 'كاشير', password: '123456', role: 'cashier', active: true }, { id: 4, name: 'مشاهد', password: '123456', role: 'viewer', active: true }]; setData('users', users); }
-
     window.products = typeof migrateOldProducts === 'function' ? migrateOldProducts(rawProducts) : rawProducts;
     const allZero = products.length > 0 && products.every(p => p.qty === 0);
     if (allZero) { window.products = []; localStorage.removeItem('mizan_products'); }
-
     if (products.length === 0 && !localStorage.getItem('mizan_seeded')) {
         window.products = [{ id: 1, name: 'قلم جاف', barcode: '1001', buy: 2, sell: 5, qty: 50, min: 10, vat: 14 }, { id: 2, name: 'كشكول 60 ورقة', barcode: '1002', buy: 8, sell: 15, qty: 30, min: 5, vat: 14 }, { id: 3, name: 'مسطرة 30 سم', barcode: '1003', buy: 3, sell: 7, qty: 40, min: 10, vat: 14 }];
         setData('products', products); localStorage.setItem('mizan_seeded', 'true');
     } else { setData('products', products); }
-
     if (typeof populateLoginUsers === 'function') populateLoginUsers();
     if ($('expDate')) $('expDate').value = getTodayDate();
     if ($('collectDate')) $('collectDate').value = getTodayDate();
     if ($('payDate')) $('payDate').value = getTodayDate();
     if ($('jeDate')) $('jeDate').value = getTodayDate();
-
     setTimeout(() => { const d = $('jeDebitAmount'), c = $('jeCreditAmount'); if (d) d.addEventListener('input', updateJournalCheck); if (c) c.addEventListener('input', updateJournalCheck); }, 500);
-
     updateClock(); updateHeaderCompanyName();
-    
     if (typeof window.populateAllDropdowns === 'function') try { window.populateAllDropdowns(); } catch(e) {}
     if (typeof window.refreshAllViews === 'function') try { window.refreshAllViews(); } catch(e) {}
     if (typeof window.renderProducts === 'function') try { window.renderProducts(); } catch(e) {}
-
     console.log('✅ الميزان جاهز');
 }
-
 document.addEventListener('DOMContentLoaded', init);
