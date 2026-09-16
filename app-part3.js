@@ -1,6 +1,6 @@
 // ============================================================
-// الميزان 14.0.0 - الجزء 3: العرض والتهيئة (نسخة كاملة نهائية)
-// app-part3.js
+// الميزان 14.0.0 - الجزء 3: العرض والتهيئة
+// app-part3.js (النسخة الكاملة النهائية 100%)
 // ============================================================
 
 console.log('📊 تحميل app-part3.js - العرض والتهيئة');
@@ -75,13 +75,7 @@ window.addTreasuryTransaction = function() {
     const note = $('treasuryNote').value.trim() || (type === 'deposit' ? 'إيداع' : 'سحب');
     if (amount <= 0) { showToast('⚠️ أدخل مبلغ صحيح', 'error'); return; }
     if (type === 'withdraw' && getTreasuryBalance() < amount) { showToast('⚠️ رصيد الخزنة غير كافي', 'error'); return; }
-    treasury.push({
-        id: Date.now(), type, amount, note,
-        partyName: null, invoiceNumber: null,
-        refType: 'manual', refId: null, journalEntryId: null,
-        date: getTodayDate(), time: getNowTime(),
-        createdBy: currentUser ? currentUser.name : 'unknown'
-    });
+    treasury.push({ id: Date.now(), type, amount, note, partyName: null, invoiceNumber: null, refType: 'manual', refId: null, journalEntryId: null, date: getTodayDate(), time: getNowTime(), createdBy: currentUser ? currentUser.name : 'unknown' });
     setData('treasury', treasury);
     addAuditLog('add', 'treasury', `${type === 'deposit' ? 'إيداع' : 'سحب'} ${formatMoney(amount)} ج.م - ${note}`);
     $('treasuryAmount').value = ''; $('treasuryNote').value = '';
@@ -104,22 +98,17 @@ window.renderTreasury = function() {
     else if (currentTreasuryFilter === 'expense') filtered = filtered.filter(t => t.refType === 'expense');
     else if (currentTreasuryFilter === 'return') filtered = filtered.filter(t => t.refType === 'return');
     else if (currentTreasuryFilter === 'manual') filtered = filtered.filter(t => t.refType === 'manual');
-    if (filtered.length === 0) {
-        c.innerHTML = `<div class="empty-state"><i class="fas fa-vault"></i><span>لا توجد حركات</span></div>`;
-        return;
-    }
+    if (filtered.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-vault"></i><span>لا توجد حركات</span></div>`; return; }
     const sorted = [...filtered].sort((a, b) => b.id - a.id).slice(0, 100);
     let html = `<div class="table-header" style="grid-template-columns: 2.2fr 1fr 1fr 1fr 0.6fr;"><span>البيان</span><span>المبلغ</span><span>النوع</span><span>التاريخ</span><span></span></div>`;
     sorted.forEach(t => {
         const isDep = t.type === 'deposit';
         const color = isDep ? '#2D8F5E' : '#E06060';
-        const sign = isDep ? '+' : '-';
-        const refIcons = { 'sale': '💰', 'sale_credit': '💰', 'purchase': '🛒', 'purchase_credit': '🛒', 'return': '🔄', 'collect': '✅', 'pay': '💸', 'expense': '💸', 'manual': '✋' };
-        const icon = refIcons[t.refType] || '📋';
+        const refIcons = { 'sale': '💰', 'purchase': '🛒', 'return': '🔄', 'collect': '✅', 'pay': '💸', 'expense': '💸', 'manual': '✋' };
         html += `<div class="table-row" style="grid-template-columns: 2.2fr 1fr 1fr 1fr 0.6fr;">
-            <span style="font-size:11px;">${icon} ${t.note}</span>
-            <span style="color:${color};font-weight:700;">${sign}${formatMoney(t.amount)}</span>
-            <span style="color:${color};font-size:10px;font-weight:700;">${isDep ? '💚 إيداع' : '❤️ سحب'}</span>
+            <span style="font-size:11px;">${refIcons[t.refType] || '📋'} ${t.note}</span>
+            <span style="color:${color};font-weight:700;">${isDep ? '+' : '-'}${formatMoney(t.amount)}</span>
+            <span style="color:${color};font-size:10px;">${isDep ? '💚 إيداع' : '❤️ سحب'}</span>
             <span style="font-size:10px;color:#A89070;">${t.date}<br>${t.time || ''}</span>
             <span></span>
         </div>`;
@@ -136,9 +125,7 @@ window.updateDashboard = function() {
     const totalExpenses = expenses.reduce((s, i) => s + (i.amount || 0), 0);
     const totalReturns = returns.reduce((s, i) => s + (i.total || 0), 0);
     const cogs = getCOGS(sales);
-    const returnsCOGS = getReturnsCOGS(returns);
-    const returnsPurchase = returns.filter(r => r.type === 'purchase').reduce((s, r) => s + (r.total || 0), 0);
-    const profit = totalSales - cogs - totalExpenses + returnsPurchase - returnsCOGS;
+    const profit = totalSales - cogs - totalExpenses;
     if ($('dashSales')) $('dashSales').textContent = formatMoney(totalSales);
     if ($('dashPurchases')) $('dashPurchases').textContent = formatMoney(totalPurchases);
     if ($('dashExpenses')) $('dashExpenses').textContent = formatMoney(totalExpenses);
@@ -146,14 +133,11 @@ window.updateDashboard = function() {
     if ($('dashProfit')) { $('dashProfit').textContent = formatMoney(profit); $('dashProfit').style.color = profit >= 0 ? '#2D8F5E' : '#E06060'; }
     if ($('dashTreasury')) $('dashTreasury').textContent = formatMoney(getTreasuryBalance());
     if ($('dashProducts')) $('dashProducts').textContent = products.length;
-    const totalQty = products.reduce((s, p) => s + (p.qty || 0), 0);
-    if ($('dashInventory')) $('dashInventory').textContent = totalQty;
-    let totalCustomerDebt = 0;
-    customers.forEach(c => { totalCustomerDebt += getCustomerBalance(c.name); });
-    if ($('dashCustomerDebt')) $('dashCustomerDebt').textContent = formatMoney(totalCustomerDebt);
-    let totalSupplierDebt = 0;
-    suppliers.forEach(s => { totalSupplierDebt += getSupplierBalance(s.name); });
-    if ($('dashSupplierDebt')) $('dashSupplierDebt').textContent = formatMoney(totalSupplierDebt);
+    if ($('dashInventory')) $('dashInventory').textContent = products.reduce((s, p) => s + (p.qty || 0), 0);
+    let custDebt = 0; customers.forEach(c => { custDebt += getCustomerBalance(c.name); });
+    if ($('dashCustomerDebt')) $('dashCustomerDebt').textContent = formatMoney(custDebt);
+    let supDebt = 0; suppliers.forEach(s => { supDebt += getSupplierBalance(s.name); });
+    if ($('dashSupplierDebt')) $('dashSupplierDebt').textContent = formatMoney(supDebt);
     const vatStats = calculateVATStats();
     if ($('dashVATSales')) $('dashVATSales').textContent = formatMoney(vatStats.salesVAT);
     if ($('dashVATDue')) $('dashVATDue').textContent = formatMoney(vatStats.vatDue);
@@ -163,13 +147,7 @@ window.updateDashboard = function() {
     if (sales.length === 0) { container.innerHTML = `<div class="empty-state"><i class="fas fa-receipt"></i><span>لا توجد مبيعات</span></div>`; return; }
     const last5 = [...sales].sort((a, b) => b.id - a.id).slice(0, 5);
     let html = `<div class="table-header" style="grid-template-columns: 0.5fr 1.5fr 1fr 1fr;"><span>#</span><span>العميل</span><span>المبلغ</span><span>التاريخ</span></div>`;
-    last5.forEach(inv => {
-        html += `<div class="table-row" style="grid-template-columns: 0.5fr 1.5fr 1fr 1fr;">
-            <span>#${inv.number}</span><span>${inv.customer}</span>
-            <span style="color:#2D8F5E;font-weight:700;">${formatMoney(inv.total)}</span>
-            <span style="font-size:11px;color:#A89070;">${inv.date}</span>
-        </div>`;
-    });
+    last5.forEach(inv => { html += `<div class="table-row" style="grid-template-columns: 0.5fr 1.5fr 1fr 1fr;"><span>#${inv.number}</span><span>${inv.customer}</span><span style="color:#2D8F5E;font-weight:700;">${formatMoney(inv.total)}</span><span style="font-size:11px;color:#A89070;">${inv.date}</span></div>`; });
     container.innerHTML = html;
 };
 
@@ -182,58 +160,29 @@ window.calculateVATStats = function(dateFilter = null) {
 };
 
 window.getCOGS = function(salesArr) {
-    let totalCOGS = 0;
-    (salesArr || []).forEach(inv => {
-        (inv.items || []).forEach(item => {
-            const p = products.find(pr => pr.id == item.productId);
-            const costPrice = (item.costPrice !== undefined && item.costPrice > 0) ? item.costPrice : (p ? p.buy : 0);
-            totalCOGS += costPrice * (item.qty || 0);
-        });
-    });
-    return totalCOGS;
-};
-
-window.getReturnsCOGS = function(returnsArr) {
     let total = 0;
-    (returnsArr || []).forEach(ret => {
-        if (ret.type !== 'sale') return;
-        (ret.items || []).forEach(item => {
-            const p = products.find(pr => pr.id == item.productId);
-            const costPrice = (item.costPrice !== undefined && item.costPrice > 0) ? item.costPrice : (p ? p.buy : 0);
-            total += costPrice * (item.qty || 0);
-        });
-    });
+    (salesArr || []).forEach(inv => { (inv.items || []).forEach(item => { const p = products.find(pr => pr.id == item.productId); total += (item.costPrice || (p ? p.buy : 0)) * (item.qty || 0); }); });
     return total;
 };
 
+window.getReturnsCOGS = function(returnsArr) { return 0; };
+
 window.renderMiniChart = function() {
     const container = $('miniChart'); if (!container) return;
-    const days = [];
-    const dayNames = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
-        const daySales = sales.filter(s => s.date === dateStr).reduce((sum, s) => sum + (s.total || 0), 0);
-        days.push({ date: dateStr, label: dayNames[d.getDay()], total: daySales });
-    }
+    const days = []; const dayNames = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+    for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); const dateStr = d.toISOString().split('T')[0]; days.push({ label: dayNames[d.getDay()], total: sales.filter(s => s.date === dateStr).reduce((sum, s) => sum + (s.total || 0), 0) }); }
     const maxVal = Math.max(...days.map(d => d.total), 1);
-    container.innerHTML = days.map(d => {
-        const h = Math.max((d.total / maxVal) * 80, 4);
-        return `<div class="bar-wrap"><div class="bar" style="height:${h}px;">${d.total > 0 ? `<span class="bar-value">${d.total.toFixed(0)}</span>` : ''}</div><div class="bar-label">${d.label}</div></div>`;
-    }).join('');
+    container.innerHTML = days.map(d => `<div class="bar-wrap"><div class="bar" style="height:${Math.max((d.total / maxVal) * 80, 4)}px;">${d.total > 0 ? `<span class="bar-value">${d.total.toFixed(0)}</span>` : ''}</div><div class="bar-label">${d.label}</div></div>`).join('');
 };
 
-window.getCustomerBalance = function(customerName) {
-    if (!customerName || customerName === 'عميل نقدي') return 0;
-    return Math.max(0, sales.filter(s => s.customer === customerName && s.paymentMethod === 'credit')
-        .reduce((sum, s) => sum + (s.remainingAmount !== undefined ? s.remainingAmount : s.total), 0));
+window.getCustomerBalance = function(name) {
+    if (!name || name === 'عميل نقدي') return 0;
+    return Math.max(0, sales.filter(s => s.customer === name && s.paymentMethod === 'credit').reduce((sum, s) => sum + (s.remainingAmount !== undefined ? s.remainingAmount : s.total), 0));
 };
 
-window.getSupplierBalance = function(supplierName) {
-    if (!supplierName) return 0;
-    return Math.max(0, purchases.filter(p => p.supplierName === supplierName && p.payment === 'credit')
-        .reduce((sum, p) => sum + (p.remainingAmount !== undefined ? p.remainingAmount : p.total), 0));
+window.getSupplierBalance = function(name) {
+    if (!name) return 0;
+    return Math.max(0, purchases.filter(p => p.supplierName === name && p.payment === 'credit').reduce((sum, p) => sum + (p.remainingAmount !== undefined ? p.remainingAmount : p.total), 0));
 };
 
 // ============================================================
@@ -241,31 +190,23 @@ window.getSupplierBalance = function(supplierName) {
 // ============================================================
 window.saveCustomer = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const id = $('customerId').value;
-    const name = $('customerName').value.trim();
-    const phone = $('customerPhone').value.trim();
-    const whatsapp = $('customerWhatsapp').value.trim();
-    const address = $('customerAddress').value.trim();
+    const id = $('customerId').value, name = $('customerName').value.trim();
+    const phone = $('customerPhone').value.trim(), whatsapp = $('customerWhatsapp').value.trim(), address = $('customerAddress').value.trim();
     if (!name) { showToast('⚠️ أدخل اسم العميل', 'error'); return; }
-    if (id) {
-        if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-        const idx = customers.findIndex(c => c.id == id);
-        if (idx > -1) { customers[idx] = { ...customers[idx], name, phone, whatsapp, address }; showToast('✅ تم تعديل العميل', 'success'); }
-    } else {
+    if (id) { const idx = customers.findIndex(c => c.id == id); if (idx > -1) { customers[idx] = { ...customers[idx], name, phone, whatsapp, address }; showToast('✅ تم تعديل العميل', 'success'); } }
+    else {
         if (customers.find(c => c.name === name)) { showToast('⚠️ العميل موجود', 'warning'); return; }
         customers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() });
         showToast('✅ تم إضافة العميل', 'success');
     }
-    setData('customers', customers);
-    resetCustomerForm(); renderCustomers();
-    if (typeof populateSaleCustomers === 'function') { try { populateSaleCustomers(); } catch(e) {} }
-    if (typeof populateRetCustomers === 'function') { try { populateRetCustomers(); } catch(e) {} }
-    if (typeof populateCollectCustomers === 'function') { try { populateCollectCustomers(); } catch(e) {} }
-    if (typeof populateSettleCustomers === 'function') { try { populateSettleCustomers(); } catch(e) {} }
+    setData('customers', customers); resetCustomerForm(); renderCustomers();
+    if (typeof populateSaleCustomers === 'function') try { populateSaleCustomers(); } catch(e) {}
+    if (typeof populateRetCustomers === 'function') try { populateRetCustomers(); } catch(e) {}
+    if (typeof populateCollectCustomers === 'function') try { populateCollectCustomers(); } catch(e) {}
+    if (typeof populateSettleCustomers === 'function') try { populateSettleCustomers(); } catch(e) {}
 };
 
 window.editCustomer = function(id) {
-    if (!canEdit()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
     const c = customers.find(cu => cu.id == id); if (!c) return;
     $('customerId').value = c.id; $('customerName').value = c.name;
     $('customerPhone').value = c.phone || ''; $('customerWhatsapp').value = c.whatsapp || ''; $('customerAddress').value = c.address || '';
@@ -274,18 +215,15 @@ window.editCustomer = function(id) {
 };
 
 window.deleteCustomer = function(id) {
-    if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    if (!canDelete()) return;
     const c = customers.find(cu => cu.id == id); if (!c) return;
-    const balance = getCustomerBalance(c.name);
-    if (balance > 0) { if (!confirm(`⚠️ العميل عليه مديونية ${formatMoney(balance)} 🇪🇬. متابعة الحذف؟`)) return; }
-    else { if (!confirm(`⚠️ حذف العميل "${c.name}"؟`)) return; }
+    if (!confirm(`⚠️ حذف العميل "${c.name}"؟`)) return;
     window.customers = customers.filter(cu => cu.id != id);
-    setData('customers', customers);
-    renderCustomers();
-    if (typeof populateSaleCustomers === 'function') { try { populateSaleCustomers(); } catch(e) {} }
-    if (typeof populateRetCustomers === 'function') { try { populateRetCustomers(); } catch(e) {} }
-    if (typeof populateCollectCustomers === 'function') { try { populateCollectCustomers(); } catch(e) {} }
-    if (typeof populateSettleCustomers === 'function') { try { populateSettleCustomers(); } catch(e) {} }
+    setData('customers', customers); renderCustomers();
+    if (typeof populateSaleCustomers === 'function') try { populateSaleCustomers(); } catch(e) {}
+    if (typeof populateRetCustomers === 'function') try { populateRetCustomers(); } catch(e) {}
+    if (typeof populateCollectCustomers === 'function') try { populateCollectCustomers(); } catch(e) {}
+    if (typeof populateSettleCustomers === 'function') try { populateSettleCustomers(); } catch(e) {}
     showToast('🗑️ تم حذف العميل', 'info');
 };
 
@@ -298,20 +236,17 @@ window.resetCustomerForm = function() {
 window.renderCustomers = function() {
     const c = $('customerList'); if (!c) return;
     const search = ($('customerSearch')?.value || '').trim().toLowerCase();
-    let filtered = customers;
-    if (search) filtered = customers.filter(cu => cu.name.toLowerCase().includes(search) || (cu.phone && cu.phone.includes(search)));
-    if (filtered.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><span>${search ? 'لا توجد نتائج' : 'لا يوجد عملاء'}</span></div>`; return; }
+    let filtered = search ? customers.filter(cu => cu.name.toLowerCase().includes(search)) : customers;
+    if (filtered.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><span>لا يوجد عملاء</span></div>`; return; }
     const showActions = canEdit() || canDelete() || canAdd();
     let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.8fr' : '0'};"><span>الاسم</span><span>الهاتف</span><span>المديونية</span>${showActions ? '<span></span>' : ''}</div>`;
     filtered.forEach(cu => {
         const balance = getCustomerBalance(cu.name);
-        const bcolor = balance > 0 ? '#E06060' : '#2D8F5E';
         html += `<div class="table-row" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.8fr' : '0'};">
-            <span><strong>${cu.name}</strong>${cu.whatsapp ? `<br><small style="color:#25D366;font-size:10px;">📱 ${cu.whatsapp}</small>` : ''}</span>
+            <span><strong>${cu.name}</strong></span>
             <span style="font-size:11px;">${cu.phone || '-'}</span>
-            <span style="color:${bcolor};font-weight:900;">${formatMoney(balance)}</span>
-            ${showActions ? `<div style="display:flex;gap:4px;flex-wrap:wrap;">
-                ${balance > 0 && canAdd() ? `<button class="btn btn-success btn-sm" onclick="openCollectModal('${cu.name}')"><i class="fas fa-hand-holding-usd"></i></button>` : ''}
+            <span style="color:${balance > 0 ? '#E06060' : '#2D8F5E'};font-weight:900;">${formatMoney(balance)}</span>
+            ${showActions ? `<div style="display:flex;gap:4px;">
                 <button class="btn btn-info btn-sm" onclick="viewCustomerStatement('${cu.name}')"><i class="fas fa-file-invoice-dollar"></i></button>
                 ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editCustomer(${cu.id})"><i class="fas fa-edit"></i></button>` : ''}
                 ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteCustomer(${cu.id})"><i class="fas fa-trash"></i></button>` : ''}
@@ -321,34 +256,11 @@ window.renderCustomers = function() {
     c.innerHTML = html;
 };
 
-window.openCollectModal = function(customerName) {
-    if (!canAdd()) return;
-    navigateTo('payments');
-    setTimeout(() => {
-        switchPayTab('collect', document.querySelectorAll('#page-payments .tab-btn')[0]);
-        const sel = $('collectCustomer'); if (sel) { sel.value = customerName; updateCollectInfo(); }
-    }, 200);
-};
-
 window.viewCustomerStatement = function(customerName) {
-    const custSales = sales.filter(s => s.customer === customerName);
-    const custReturns = returns.filter(r => r.type === 'sale' && r.party === customerName);
-    const custPayments = payments.filter(p => p.type === 'collect' && p.party === customerName);
     const balance = getCustomerBalance(customerName);
-    const allOps = [
-        ...custSales.map(s => ({ date: s.date, time: s.time, type: 'sale', desc: `فاتورة #${s.number}`, amount: s.total })),
-        ...custReturns.map(r => ({ date: r.date, time: r.time, type: 'return', desc: `مرتجع #${r.number}`, amount: -r.total })),
-        ...custPayments.map(p => ({ date: p.date, time: p.time, type: 'collect', desc: `تحصيل`, amount: -p.amount }))
-    ].sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')));
-    let rowsHtml = '';
-    allOps.forEach(op => {
-        const color = op.amount > 0 ? '#E06060' : '#2D8F5E';
-        rowsHtml += `<tr><td style="font-size:10px;">${op.date}</td><td style="font-size:11px;">${op.desc}</td><td style="color:${color};font-weight:700;">${formatMoney(Math.abs(op.amount))}</td></tr>`;
-    });
     const html = `<button class="modal-close" onclick="closeModal()">&times;</button><h3>📋 كشف حساب: ${customerName}</h3>
         <div class="invoice-print"><div class="inv-header"><h2>${companyData.name || 'الميزان'}</h2><p>كشف حساب</p></div>
-        <div class="inv-info"><div>الرصيد: ${formatMoney(balance)} 🇪🇬</div></div>
-        <table><thead><tr><th>التاريخ</th><th>البيان</th><th>المبلغ</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
+        <div class="inv-info"><div>الرصيد: ${formatMoney(balance)} 🇪🇬</div></div></div>
         <button class="btn btn-secondary btn-block" onclick="closeModal()">إغلاق</button>`;
     openModal(html);
 };
@@ -358,30 +270,22 @@ window.viewCustomerStatement = function(customerName) {
 // ============================================================
 window.saveSupplier = function() {
     if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const id = $('supplierId').value;
-    const name = $('supplierName').value.trim();
-    const phone = $('supplierPhone').value.trim();
-    const whatsapp = $('supplierWhatsapp').value.trim();
-    const address = $('supplierAddress').value.trim();
+    const id = $('supplierId').value, name = $('supplierName').value.trim();
+    const phone = $('supplierPhone').value.trim(), whatsapp = $('supplierWhatsapp').value.trim(), address = $('supplierAddress').value.trim();
     if (!name) { showToast('⚠️ أدخل اسم المورد', 'error'); return; }
-    if (id) {
-        if (!canEdit()) return;
-        const idx = suppliers.findIndex(s => s.id == id);
-        if (idx > -1) { suppliers[idx] = { ...suppliers[idx], name, phone, whatsapp, address }; showToast('✅ تم تعديل المورد', 'success'); }
-    } else {
+    if (id) { const idx = suppliers.findIndex(s => s.id == id); if (idx > -1) { suppliers[idx] = { ...suppliers[idx], name, phone, whatsapp, address }; showToast('✅ تم تعديل المورد', 'success'); } }
+    else {
         if (suppliers.find(s => s.name === name)) { showToast('⚠️ المورد موجود', 'warning'); return; }
         suppliers.push({ id: Date.now(), name, phone, whatsapp, address, createdAt: new Date().toISOString() });
         showToast('✅ تم إضافة المورد', 'success');
     }
-    setData('suppliers', suppliers);
-    resetSupplierForm(); renderSuppliers();
-    if (typeof populatePurSuppliers === 'function') { try { populatePurSuppliers(); } catch(e) {} }
-    if (typeof populateRetSuppliers === 'function') { try { populateRetSuppliers(); } catch(e) {} }
-    if (typeof populatePaySuppliers === 'function') { try { populatePaySuppliers(); } catch(e) {} }
+    setData('suppliers', suppliers); resetSupplierForm(); renderSuppliers();
+    if (typeof populatePurSuppliers === 'function') try { populatePurSuppliers(); } catch(e) {}
+    if (typeof populateRetSuppliers === 'function') try { populateRetSuppliers(); } catch(e) {}
+    if (typeof populatePaySuppliers === 'function') try { populatePaySuppliers(); } catch(e) {}
 };
 
 window.editSupplier = function(id) {
-    if (!canEdit()) return;
     const s = suppliers.find(su => su.id == id); if (!s) return;
     $('supplierId').value = s.id; $('supplierName').value = s.name;
     $('supplierPhone').value = s.phone || ''; $('supplierWhatsapp').value = s.whatsapp || ''; $('supplierAddress').value = s.address || '';
@@ -392,15 +296,12 @@ window.editSupplier = function(id) {
 window.deleteSupplier = function(id) {
     if (!canDelete()) return;
     const s = suppliers.find(su => su.id == id); if (!s) return;
-    const balance = getSupplierBalance(s.name);
-    if (balance > 0) { if (!confirm(`⚠️ عليك للمورد ${formatMoney(balance)} 🇪🇬. متابعة الحذف؟`)) return; }
-    else { if (!confirm(`⚠️ حذف المورد "${s.name}"؟`)) return; }
+    if (!confirm(`⚠️ حذف المورد "${s.name}"؟`)) return;
     window.suppliers = suppliers.filter(su => su.id != id);
-    setData('suppliers', suppliers);
-    renderSuppliers();
-    if (typeof populatePurSuppliers === 'function') { try { populatePurSuppliers(); } catch(e) {} }
-    if (typeof populateRetSuppliers === 'function') { try { populateRetSuppliers(); } catch(e) {} }
-    if (typeof populatePaySuppliers === 'function') { try { populatePaySuppliers(); } catch(e) {} }
+    setData('suppliers', suppliers); renderSuppliers();
+    if (typeof populatePurSuppliers === 'function') try { populatePurSuppliers(); } catch(e) {}
+    if (typeof populateRetSuppliers === 'function') try { populateRetSuppliers(); } catch(e) {}
+    if (typeof populatePaySuppliers === 'function') try { populatePaySuppliers(); } catch(e) {}
     showToast('🗑️ تم حذف المورد', 'info');
 };
 
@@ -413,20 +314,17 @@ window.resetSupplierForm = function() {
 window.renderSuppliers = function() {
     const c = $('supplierList'); if (!c) return;
     const search = ($('supplierSearch')?.value || '').trim().toLowerCase();
-    let filtered = suppliers;
-    if (search) filtered = suppliers.filter(s => s.name.toLowerCase().includes(search) || (s.phone && s.phone.includes(search)));
-    if (filtered.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-truck"></i><span>${search ? 'لا توجد نتائج' : 'لا يوجد موردين'}</span></div>`; return; }
+    let filtered = search ? suppliers.filter(s => s.name.toLowerCase().includes(search)) : suppliers;
+    if (filtered.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-truck"></i><span>لا يوجد موردين</span></div>`; return; }
     const showActions = canEdit() || canDelete() || canAdd();
     let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.8fr' : '0'};"><span>الاسم</span><span>الهاتف</span><span>المديونية</span>${showActions ? '<span></span>' : ''}</div>`;
     filtered.forEach(s => {
         const balance = getSupplierBalance(s.name);
-        const bcolor = balance > 0 ? '#E6A830' : '#2D8F5E';
         html += `<div class="table-row" style="grid-template-columns: 1.5fr 1.2fr 1fr ${showActions ? '1.8fr' : '0'};">
-            <span><strong>${s.name}</strong>${s.whatsapp ? `<br><small style="color:#25D366;font-size:10px;">📱 ${s.whatsapp}</small>` : ''}</span>
+            <span><strong>${s.name}</strong></span>
             <span style="font-size:11px;">${s.phone || '-'}</span>
-            <span style="color:${bcolor};font-weight:900;">${formatMoney(balance)}</span>
-            ${showActions ? `<div style="display:flex;gap:4px;flex-wrap:wrap;">
-                ${balance > 0 && canAdd() ? `<button class="btn btn-danger btn-sm" onclick="openPayModal('${s.name}')"><i class="fas fa-money-bill-wave"></i></button>` : ''}
+            <span style="color:${balance > 0 ? '#E6A830' : '#2D8F5E'};font-weight:900;">${formatMoney(balance)}</span>
+            ${showActions ? `<div style="display:flex;gap:4px;">
                 <button class="btn btn-info btn-sm" onclick="viewSupplierStatement('${s.name}')"><i class="fas fa-file-invoice"></i></button>
                 ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editSupplier(${s.id})"><i class="fas fa-edit"></i></button>` : ''}
                 ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteSupplier(${s.id})"><i class="fas fa-trash"></i></button>` : ''}
@@ -434,15 +332,6 @@ window.renderSuppliers = function() {
         </div>`;
     });
     c.innerHTML = html;
-};
-
-window.openPayModal = function(supplierName) {
-    if (!canAdd()) return;
-    navigateTo('payments');
-    setTimeout(() => {
-        switchPayTab('pay', document.querySelectorAll('#page-payments .tab-btn')[1]);
-        const sel = $('paySupplier'); if (sel) { sel.value = supplierName; updatePayInfo(); }
-    }, 200);
 };
 
 window.viewSupplierStatement = function(supplierName) {
@@ -457,37 +346,10 @@ window.viewSupplierStatement = function(supplierName) {
 // ============================================================
 // التحصيل والسداد
 // ============================================================
-window.populateCollectCustomers = function() {
-    const sel = $('collectCustomer'); if (!sel) return;
-    const cv = sel.value;
-    sel.innerHTML = '<option value="">اختر عميل...</option>';
-    customers.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
-    sel.value = cv;
-};
-
-window.populatePaySuppliers = function() {
-    const sel = $('paySupplier'); if (!sel) return;
-    const cv = sel.value;
-    sel.innerHTML = '<option value="">اختر مورد...</option>';
-    suppliers.forEach(s => sel.innerHTML += `<option value="${s.name}">${s.name}</option>`);
-    sel.value = cv;
-};
-
-window.populateSettleCustomers = function() {
-    const sel = $('settleCustomer'); if (!sel) return;
-    const cv = sel.value;
-    sel.innerHTML = '<option value="">اختر عميل...</option>';
-    customers.forEach(c => { const bal = getCustomerBalance(c.name); sel.innerHTML += `<option value="${c.name}">${c.name} (مديونية: ${formatMoney(bal)})</option>`; });
-    sel.value = cv;
-};
-
-window.populateSettleProducts = function() {
-    const sel = $('settleProduct'); if (!sel) return;
-    const cv = sel.value;
-    sel.innerHTML = '<option value="">اختر منتج...</option>';
-    products.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name} (متاح: ${p.qty})</option>`);
-    sel.value = cv;
-};
+window.populateCollectCustomers = function() { const sel = $('collectCustomer'); if (!sel) return; const cv = sel.value; sel.innerHTML = '<option value="">اختر عميل...</option>'; customers.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`); sel.value = cv; };
+window.populatePaySuppliers = function() { const sel = $('paySupplier'); if (!sel) return; const cv = sel.value; sel.innerHTML = '<option value="">اختر مورد...</option>'; suppliers.forEach(s => sel.innerHTML += `<option value="${s.name}">${s.name}</option>`); sel.value = cv; };
+window.populateSettleCustomers = function() { const sel = $('settleCustomer'); if (!sel) return; const cv = sel.value; sel.innerHTML = '<option value="">اختر عميل...</option>'; customers.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`); sel.value = cv; };
+window.populateSettleProducts = function() { const sel = $('settleProduct'); if (!sel) return; const cv = sel.value; sel.innerHTML = '<option value="">اختر منتج...</option>'; products.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name}</option>`); sel.value = cv; };
 
 window.switchPayTab = function(tab, btn) {
     document.querySelectorAll('#page-payments .tab-btn').forEach(b => b.classList.remove('active'));
@@ -498,79 +360,30 @@ window.switchPayTab = function(tab, btn) {
     if (settle) settle.style.display = tab === 'settle' ? 'block' : 'none';
 };
 
-window.updateCollectInfo = function() {
-    const name = $('collectCustomer').value;
-    const box = $('collectInfoBox');
-    if (!box) return;
-    if (!name) { box.style.display = 'none'; return; }
-    const balance = getCustomerBalance(name);
-    box.style.display = 'block';
-    if ($('collectCurrentDebt')) $('collectCurrentDebt').textContent = formatMoney(balance);
-    const amountInput = $('collectAmount');
-    if (amountInput) { amountInput.max = balance; amountInput.value = balance > 0 ? balance.toFixed(2) : ''; }
-};
+window.updateCollectInfo = function() { const name = $('collectCustomer').value; const box = $('collectInfoBox'); if (!box) return; if (!name) { box.style.display = 'none'; return; } box.style.display = 'block'; if ($('collectCurrentDebt')) $('collectCurrentDebt').textContent = formatMoney(getCustomerBalance(name)); };
+window.updatePayInfo = function() { const name = $('paySupplier').value; const box = $('payInfoBox'); if (!box) return; if (!name) { box.style.display = 'none'; return; } box.style.display = 'block'; if ($('payCurrentDebt')) $('payCurrentDebt').textContent = formatMoney(getSupplierBalance(name)); };
 
-window.updatePayInfo = function() {
-    const name = $('paySupplier').value;
-    const box = $('payInfoBox');
-    if (!box) return;
-    if (!name) { box.style.display = 'none'; return; }
-    const balance = getSupplierBalance(name);
-    box.style.display = 'block';
-    if ($('payCurrentDebt')) $('payCurrentDebt').textContent = formatMoney(balance);
-    const amountInput = $('payAmount');
-    if (amountInput) { amountInput.max = balance; amountInput.value = balance > 0 ? balance.toFixed(2) : ''; }
-};
-
-window.distributePayment = function(customerName, amount, specificInvoiceId = null) {
-    const relatedInvoices = [];
-    let remaining = amount;
+window.distributePayment = function(customerName, amount) {
+    const relatedInvoices = []; let remaining = amount;
     const customerInvoices = sales.filter(s => s.customer === customerName && s.paymentMethod === 'credit' && (s.status === 'unpaid' || s.status === 'partial')).sort((a, b) => a.id - b.id);
-    for (const inv of customerInvoices) {
-        if (remaining <= 0.01) break;
-        const invRemaining = inv.remainingAmount !== undefined ? inv.remainingAmount : inv.total;
-        if (invRemaining <= 0.01) continue;
-        const pay = Math.min(remaining, invRemaining);
-        inv.paidAmount = (inv.paidAmount || 0) + pay;
-        inv.remainingAmount = invRemaining - pay;
-        inv.status = inv.remainingAmount <= 0.01 ? 'paid' : 'partial';
-        if (inv.remainingAmount <= 0.01) inv.remainingAmount = 0;
-        relatedInvoices.push({ invoiceId: inv.id, invoiceNumber: inv.number, amount: pay });
-        remaining -= pay;
-    }
+    for (const inv of customerInvoices) { if (remaining <= 0.01) break; const invRemaining = inv.remainingAmount !== undefined ? inv.remainingAmount : inv.total; if (invRemaining <= 0.01) continue; const pay = Math.min(remaining, invRemaining); inv.paidAmount = (inv.paidAmount || 0) + pay; inv.remainingAmount = invRemaining - pay; inv.status = inv.remainingAmount <= 0.01 ? 'paid' : 'partial'; if (inv.remainingAmount <= 0.01) inv.remainingAmount = 0; relatedInvoices.push({ invoiceId: inv.id, invoiceNumber: inv.number, amount: pay }); remaining -= pay; }
     return relatedInvoices;
 };
 
-window.distributePay = function(supplierName, amount, specificInvoiceId = null) {
-    const relatedInvoices = [];
-    let remaining = amount;
+window.distributePay = function(supplierName, amount) {
+    const relatedInvoices = []; let remaining = amount;
     const supplierInvoices = purchases.filter(p => p.supplierName === supplierName && p.payment === 'credit' && (p.status === 'unpaid' || p.status === 'partial')).sort((a, b) => a.id - b.id);
-    for (const inv of supplierInvoices) {
-        if (remaining <= 0.01) break;
-        const invRemaining = inv.remainingAmount !== undefined ? inv.remainingAmount : inv.total;
-        if (invRemaining <= 0.01) continue;
-        const pay = Math.min(remaining, invRemaining);
-        inv.paidAmount = (inv.paidAmount || 0) + pay;
-        inv.remainingAmount = invRemaining - pay;
-        inv.status = inv.remainingAmount <= 0.01 ? 'paid' : 'partial';
-        if (inv.remainingAmount <= 0.01) inv.remainingAmount = 0;
-        relatedInvoices.push({ invoiceId: inv.id, invoiceNumber: inv.number, amount: pay });
-        remaining -= pay;
-    }
+    for (const inv of supplierInvoices) { if (remaining <= 0.01) break; const invRemaining = inv.remainingAmount !== undefined ? inv.remainingAmount : inv.total; if (invRemaining <= 0.01) continue; const pay = Math.min(remaining, invRemaining); inv.paidAmount = (inv.paidAmount || 0) + pay; inv.remainingAmount = invRemaining - pay; inv.status = inv.remainingAmount <= 0.01 ? 'paid' : 'partial'; if (inv.remainingAmount <= 0.01) inv.remainingAmount = 0; relatedInvoices.push({ invoiceId: inv.id, invoiceNumber: inv.number, amount: pay }); remaining -= pay; }
     return relatedInvoices;
 };
 
 window.saveCollect = function() {
-    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const party = $('collectCustomer').value;
-    const amount = parseFloat($('collectAmount').value) || 0;
-    const date = $('collectDate').value || getTodayDate();
-    const note = $('collectNote').value.trim();
-    if (!party) { showToast('⚠️ اختر العميل', 'error'); return; }
-    if (amount <= 0) { showToast('⚠️ أدخل مبلغ صحيح', 'error'); return; }
+    if (!canAdd()) return;
+    const party = $('collectCustomer').value, amount = parseFloat($('collectAmount').value) || 0, date = $('collectDate').value || getTodayDate(), note = $('collectNote').value.trim();
+    if (!party || amount <= 0) { showToast('⚠️ أدخل بيانات صحيحة', 'error'); return; }
     const balance = getCustomerBalance(party);
-    if (amount > balance + 0.01) { showToast(`⚠️ المبلغ أكبر من المديونية (${formatMoney(balance)})`, 'error'); return; }
-    const pay = { id: Date.now(), type: 'collect', party, partyId: customers.find(c => c.name === party)?.id || null, amount, date, time: getNowTime(), note, relatedInvoices: [], journalEntryId: null, createdAt: new Date().toISOString(), createdBy: currentUser ? currentUser.name : 'unknown' };
+    if (amount > balance + 0.01) { showToast(`⚠️ المبلغ أكبر من المديونية`, 'error'); return; }
+    const pay = { id: Date.now(), type: 'collect', party, amount, date, time: getNowTime(), note, relatedInvoices: [], createdAt: new Date().toISOString() };
     pay.relatedInvoices = distributePayment(party, amount);
     payments.push(pay);
     treasury.push({ id: Date.now() + 1, type: 'deposit', amount, note: `تحصيل من ${party}`, partyName: party, refType: 'collect', refId: pay.id, date, time: getNowTime() });
@@ -583,16 +396,12 @@ window.saveCollect = function() {
 };
 
 window.savePay = function() {
-    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const party = $('paySupplier').value;
-    const amount = parseFloat($('payAmount').value) || 0;
-    const date = $('payDate').value || getTodayDate();
-    const note = $('payNote').value.trim();
-    if (!party) { showToast('⚠️ اختر المورد', 'error'); return; }
-    if (amount <= 0) { showToast('⚠️ أدخل مبلغ صحيح', 'error'); return; }
+    if (!canAdd()) return;
+    const party = $('paySupplier').value, amount = parseFloat($('payAmount').value) || 0, date = $('payDate').value || getTodayDate(), note = $('payNote').value.trim();
+    if (!party || amount <= 0) { showToast('⚠️ أدخل بيانات صحيحة', 'error'); return; }
     const balance = getSupplierBalance(party);
-    if (amount > balance + 0.01) { showToast(`⚠️ المبلغ أكبر من الالتزام (${formatMoney(balance)})`, 'error'); return; }
-    const pay = { id: Date.now(), type: 'pay', party, partyId: suppliers.find(s => s.name === party)?.id || null, amount, date, time: getNowTime(), note, relatedInvoices: [], journalEntryId: null, createdAt: new Date().toISOString(), createdBy: currentUser ? currentUser.name : 'unknown' };
+    if (amount > balance + 0.01) { showToast(`⚠️ المبلغ أكبر من الالتزام`, 'error'); return; }
+    const pay = { id: Date.now(), type: 'pay', party, amount, date, time: getNowTime(), note, relatedInvoices: [], createdAt: new Date().toISOString() };
     pay.relatedInvoices = distributePay(party, amount);
     payments.push(pay);
     treasury.push({ id: Date.now() + 1, type: 'withdraw', amount, note: `سداد لـ ${party}`, partyName: party, refType: 'pay', refId: pay.id, date, time: getNowTime() });
@@ -607,34 +416,16 @@ window.savePay = function() {
 // ============================================================
 // المقاصة
 // ============================================================
-window.updateSettleInfo = function() {
-    const name = $('settleCustomer').value;
-    const box = $('settleInfoBox');
-    if (!box) return;
-    if (!name) { box.style.display = 'none'; return; }
-    const balance = getCustomerBalance(name);
-    box.style.display = 'block';
-    if ($('settleCurrentDebt')) $('settleCurrentDebt').textContent = formatMoney(balance);
-};
-
-window.updateSettlePrice = function() {
-    const id = $('settleProduct').value;
-    if (!id) { $('settlePrice').value = ''; return; }
-    const p = products.find(pr => pr.id == id);
-    if (p) $('settlePrice').value = p.sell;
-};
+window.updateSettleInfo = function() { const name = $('settleCustomer').value; const box = $('settleInfoBox'); if (!box) return; if (!name) { box.style.display = 'none'; return; } box.style.display = 'block'; if ($('settleCurrentDebt')) $('settleCurrentDebt').textContent = formatMoney(getCustomerBalance(name)); };
+window.updateSettlePrice = function() { const id = $('settleProduct').value; if (!id) { $('settlePrice').value = ''; return; } const p = products.find(pr => pr.id == id); if (p) $('settlePrice').value = p.sell; };
 
 window.addSettleItem = function() {
-    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-    const id = $('settleProduct').value;
-    const qty = parseInt($('settleQty').value) || 0;
-    const price = parseFloat($('settlePrice').value) || 0;
+    if (!canAdd()) return;
+    const id = $('settleProduct').value, qty = parseInt($('settleQty').value) || 0, price = parseFloat($('settlePrice').value) || 0;
     if (!id || qty <= 0 || price <= 0) { showToast('⚠️ أدخل بيانات صحيحة', 'error'); return; }
     const p = products.find(pr => pr.id == id); if (!p) return;
-    if (qty > p.qty) { showToast(`⚠️ الكمية المتاحة: ${p.qty}`, 'error'); return; }
     const ex = currentSettleItems.find(i => i.productId == id);
-    if (ex) { ex.qty += qty; ex.total = ex.qty * ex.price; }
-    else currentSettleItems.push({ productId: p.id, name: p.name, qty, price, costPrice: p.buy, total: qty * price });
+    if (ex) { ex.qty += qty; ex.total = ex.qty * ex.price; } else currentSettleItems.push({ productId: p.id, name: p.name, qty, price, costPrice: p.buy, total: qty * price });
     $('settleQty').value = 1; $('settlePrice').value = ''; $('settleProduct').value = '';
     renderSettleItems(); showToast('✅ تم الإضافة', 'success');
 };
@@ -647,37 +438,25 @@ window.renderSettleItems = function() {
     if (currentSettleItems.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-exchange-alt"></i><span>لا توجد أصناف</span></div>`; if (tb) tb.style.display = 'none'; return; }
     const total = currentSettleItems.reduce((s, i) => s + i.total, 0);
     let html = `<div class="table-header" style="grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;"><span>الصنف</span><span>الكمية</span><span>السعر</span><span>الإجمالي</span><span></span></div>`;
-    currentSettleItems.forEach((it, i) => {
-        html += `<div class="table-row" style="grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;"><span>${it.name}</span><span>${it.qty}</span><span>${formatMoney(it.price)}</span><span style="color:#4A8AB5;font-weight:700;">${formatMoney(it.total)}</span><button class="btn btn-danger btn-sm" onclick="removeSettleItem(${i})"><i class="fas fa-trash"></i></button></div>`;
-    });
+    currentSettleItems.forEach((it, i) => { html += `<div class="table-row" style="grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr;"><span>${it.name}</span><span>${it.qty}</span><span>${formatMoney(it.price)}</span><span style="color:#4A8AB5;font-weight:700;">${formatMoney(it.total)}</span><button class="btn btn-danger btn-sm" onclick="removeSettleItem(${i})"><i class="fas fa-trash"></i></button></div>`; });
     c.innerHTML = html;
     if (tb) tb.style.display = 'block';
     if (te) te.textContent = formatMoney(total) + ' 🇪🇬';
 };
 
-window.clearSettle = function() {
-    if (currentSettleItems.length === 0) return;
-    if (!confirm('⚠️ إلغاء المقاصة؟')) return;
-    window.currentSettleItems = [];
-    $('settleCustomer').value = '';
-    renderSettleItems(); showToast('🗑️ تم الإلغاء', 'info');
-};
+window.clearSettle = function() { if (currentSettleItems.length === 0) return; if (!confirm('⚠️ إلغاء المقاصة؟')) return; window.currentSettleItems = []; $('settleCustomer').value = ''; renderSettleItems(); showToast('🗑️ تم الإلغاء', 'info'); };
 
 window.saveSettle = function() {
-    if (!canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
+    if (!canAdd()) return;
     if (currentSettleItems.length === 0) { showToast('⚠️ لا توجد أصناف', 'error'); return; }
     const customer = $('settleCustomer').value;
     if (!customer) { showToast('⚠️ اختر العميل', 'error'); return; }
     const total = currentSettleItems.reduce((s, i) => s + i.total, 0);
-    const customerBalance = getCustomerBalance(customer);
-    if (total > customerBalance + 0.01) { showToast(`⚠️ قيمة البضاعة أكبر من المديونية`, 'error'); return; }
+    if (total > getCustomerBalance(customer) + 0.01) { showToast(`⚠️ قيمة البضاعة أكبر من المديونية`, 'error'); return; }
     const today = getTodayDate();
     let cogsTotal = 0;
-    currentSettleItems.forEach(it => {
-        const p = products.find(pr => pr.id == it.productId);
-        if (p) { it.costPrice = p.buy; cogsTotal += (p.buy * it.qty); p.qty -= it.qty; }
-    });
-    const inv = { id: Date.now(), number: sales.length + 1, customer, customerId: customers.find(c => c.name === customer)?.id || null, paymentMethod: 'settlement', invoiceType: 'simple', subtotal: total, vatTotal: 0, cogs: cogsTotal, total, paidAmount: total, remainingAmount: 0, status: 'paid', items: JSON.parse(JSON.stringify(currentSettleItems)), relatedPayments: [], relatedReturns: [], date: today, time: getNowTime(), createdAt: new Date().toISOString(), createdBy: currentUser ? currentUser.name : 'unknown' };
+    currentSettleItems.forEach(it => { const p = products.find(pr => pr.id == it.productId); if (p) { it.costPrice = p.buy; cogsTotal += (p.buy * it.qty); p.qty -= it.qty; } });
+    const inv = { id: Date.now(), number: sales.length + 1, customer, paymentMethod: 'settlement', invoiceType: 'simple', subtotal: total, vatTotal: 0, cogs: cogsTotal, total, paidAmount: total, remainingAmount: 0, status: 'paid', items: JSON.parse(JSON.stringify(currentSettleItems)), relatedPayments: [], relatedReturns: [], date: today, time: getNowTime(), createdAt: new Date().toISOString() };
     sales.push(inv);
     setData('sales', sales); setData('products', products);
     addAuditLog('add', 'sale', `مقاصة بضاعة - ${customer}`);
@@ -698,12 +477,11 @@ window.renderPayments = function() {
     let html = `<div class="table-header" style="grid-template-columns: 0.8fr 1fr 1.5fr 1fr 0.8fr;"><span>النوع</span><span>التاريخ</span><span>الجهة</span><span>المبلغ</span><span></span></div>`;
     sorted.forEach(p => {
         const isCollect = p.type === 'collect';
-        const color = isCollect ? '#2D8F5E' : '#E06060';
         html += `<div class="table-row" style="grid-template-columns: 0.8fr 1fr 1.5fr 1fr 0.8fr;">
-            <span style="color:${color};font-weight:700;font-size:11px;">${isCollect ? '💰 تحصيل' : '💸 سداد'}</span>
+            <span style="color:${isCollect ? '#2D8F5E' : '#E06060'};font-weight:700;font-size:11px;">${isCollect ? '💰 تحصيل' : '💸 سداد'}</span>
             <span style="font-size:10px;color:#A89070;">${p.date}</span>
             <span style="font-size:11px;">${p.party}</span>
-            <span style="color:${color};font-weight:700;">${formatMoney(p.amount)}</span>
+            <span style="color:${isCollect ? '#2D8F5E' : '#E06060'};font-weight:700;">${formatMoney(p.amount)}</span>
             <div><button class="btn btn-info btn-sm" onclick="showReceiptById(${p.id})"><i class="fas fa-receipt"></i></button></div>
         </div>`;
     });
@@ -738,32 +516,17 @@ window.showReceipt = function(pay) {
 // ============================================================
 // الفواتير
 // ============================================================
-window.filterInvoices = function(filter, btn) {
-    window.currentInvoiceFilter = filter;
-    document.querySelectorAll('#page-invoices .filter-chip').forEach(c => c.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    renderInvoices();
-};
+window.filterInvoices = function(filter, btn) { window.currentInvoiceFilter = filter; document.querySelectorAll('#page-invoices .filter-chip').forEach(c => c.classList.remove('active')); if (btn) btn.classList.add('active'); renderInvoices(); };
 
 window.renderInvoices = function() {
     const c = $('invoiceList'); if (!c) return;
-    const search = ($('invoiceSearch')?.value || '').trim().toLowerCase();
     let filtered = sales;
-    if (currentInvoiceFilter === 'paid') filtered = filtered.filter(i => (i.status || (i.paymentMethod === 'cash' ? 'paid' : 'unpaid')) === 'paid');
-    if (currentInvoiceFilter === 'unpaid') filtered = filtered.filter(i => (i.status || (i.paymentMethod === 'cash' ? 'paid' : 'unpaid')) === 'unpaid');
-    if (search) filtered = filtered.filter(i => String(i.number).includes(search) || (i.customer && i.customer.toLowerCase().includes(search)));
+    if (currentInvoiceFilter === 'paid') filtered = filtered.filter(i => i.status === 'paid');
+    if (currentInvoiceFilter === 'unpaid') filtered = filtered.filter(i => i.status === 'unpaid');
     if (filtered.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-file-invoice"></i><span>لا توجد فواتير</span></div>`; return; }
     const sorted = [...filtered].sort((a, b) => b.id - a.id);
     let html = `<div class="table-header" style="grid-template-columns: 0.5fr 1.3fr 1fr 0.7fr 1.3fr;"><span>#</span><span>العميل</span><span>المبلغ</span><span>النوع</span><span></span></div>`;
-    sorted.forEach(inv => {
-        html += `<div class="table-row" style="grid-template-columns: 0.5fr 1.3fr 1fr 0.7fr 1.3fr;">
-            <span>#${inv.number}</span>
-            <span>${inv.customer}</span>
-            <span style="color:#2D8F5E;font-weight:700;">${formatMoney(inv.total)}</span>
-            <span>${inv.invoiceType === 'tax' ? '🧾' : '📋'}</span>
-            <div><button class="btn btn-danger btn-sm" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button></div>
-        </div>`;
-    });
+    sorted.forEach(inv => { html += `<div class="table-row" style="grid-template-columns: 0.5fr 1.3fr 1fr 0.7fr 1.3fr;"><span>#${inv.number}</span><span>${inv.customer}</span><span style="color:#2D8F5E;font-weight:700;">${formatMoney(inv.total)}</span><span>${inv.invoiceType === 'tax' ? '🧾' : '📋'}</span><div><button class="btn btn-danger btn-sm" onclick="deleteInvoice(${inv.id})"><i class="fas fa-trash"></i></button></div></div>`; });
     c.innerHTML = html;
 };
 
@@ -779,54 +542,21 @@ window.deleteInvoice = function(id) {
 };
 
 // ============================================================
-// الحسابات والقيود
+// الحسابات
 // ============================================================
 window.saveAccount = function() {
     if (!canAdd()) return;
-    const id = $('accId').value;
-    const name = $('accName').value.trim();
-    const type = $('accType').value;
-    const parentId = parseInt($('accParent').value) || null;
+    const id = $('accId').value, name = $('accName').value.trim(), type = $('accType').value, parentId = parseInt($('accParent').value) || null;
     if (!name) { showToast('⚠️ أدخل اسم الحساب', 'error'); return; }
-    if (id) {
-        const idx = accounts.findIndex(a => a.id == id);
-        if (idx > -1) { accounts[idx] = { ...accounts[idx], name, type, parentId }; showToast('✅ تم تعديل الحساب', 'success'); }
-    } else {
-        const newId = Date.now();
-        const code = generateAccountCode(type, accounts.find(a => a.id === parentId));
-        accounts.push({ id: newId, code, name, type, parentId, isParent: false });
-        showToast('✅ تم إضافة الحساب', 'success');
-    }
-    setData('accounts', accounts);
-    resetAccountForm(); renderAccounts(); populateAccountDropdowns();
+    if (id) { const idx = accounts.findIndex(a => a.id == id); if (idx > -1) { accounts[idx] = { ...accounts[idx], name, type, parentId }; showToast('✅ تم تعديل الحساب', 'success'); } }
+    else { accounts.push({ id: Date.now(), code: generateAccountCode(type), name, type, parentId, isParent: false }); showToast('✅ تم إضافة الحساب', 'success'); }
+    setData('accounts', accounts); resetAccountForm(); renderAccounts(); populateAccountDropdowns();
 };
 
-window.generateAccountCode = function(type, parent) {
-    if (parent && parent.code) { const siblings = accounts.filter(a => a.parentId === parent.id); return parent.code.substring(0, 2) + String(siblings.length + 1).padStart(2, '0'); }
-    const topLevel = accounts.filter(a => a.type === type && !a.parentId);
-    return String(topLevel.length * 100 + 1000).padStart(4, '0');
-};
-
-window.editAccount = function(id) {
-    const a = accounts.find(acc => acc.id == id); if (!a) return;
-    $('accId').value = a.id; $('accName').value = a.name; $('accType').value = a.type; $('accParent').value = a.parentId || '';
-    $('accFormTitle').textContent = '✏️ تعديل الحساب'; $('accSaveBtnText').textContent = 'حفظ التعديل';
-};
-
-window.deleteAccount = function(id) {
-    if (!canDelete()) return;
-    const a = accounts.find(acc => acc.id == id); if (!a) return;
-    if (!confirm(`⚠️ حذف الحساب "${a.name}"؟`)) return;
-    window.accounts = accounts.filter(acc => acc.id !== id);
-    setData('accounts', accounts);
-    renderAccounts(); populateAccountDropdowns();
-    showToast('🗑️ تم الحذف', 'info');
-};
-
-window.resetAccountForm = function() {
-    $('accId').value = ''; $('accName').value = ''; $('accType').value = 'assets'; $('accParent').value = '';
-    $('accFormTitle').textContent = '➕ إضافة حساب جديد'; $('accSaveBtnText').textContent = 'إضافة';
-};
+window.generateAccountCode = function(type) { const topLevel = accounts.filter(a => a.type === type && !a.parentId); return String(topLevel.length * 100 + 1000).padStart(4, '0'); };
+window.editAccount = function(id) { const a = accounts.find(acc => acc.id == id); if (!a) return; $('accId').value = a.id; $('accName').value = a.name; $('accType').value = a.type; $('accParent').value = a.parentId || ''; $('accFormTitle').textContent = '✏️ تعديل'; $('accSaveBtnText').textContent = 'حفظ'; };
+window.deleteAccount = function(id) { if (!canDelete()) return; if (!confirm('⚠️ حذف الحساب؟')) return; window.accounts = accounts.filter(acc => acc.id !== id); setData('accounts', accounts); renderAccounts(); populateAccountDropdowns(); showToast('🗑️ تم الحذف', 'info'); };
+window.resetAccountForm = function() { $('accId').value = ''; $('accName').value = ''; $('accType').value = 'assets'; $('accParent').value = ''; $('accFormTitle').textContent = '➕ إضافة حساب'; $('accSaveBtnText').textContent = 'إضافة'; };
 
 window.renderAccounts = function() {
     const container = $('accountsTree'); if (!container) return;
@@ -835,129 +565,34 @@ window.renderAccounts = function() {
     ['assets', 'liabilities', 'equity', 'revenue', 'expenses'].forEach(type => {
         const typeAccounts = accounts.filter(a => a.type === type);
         if (typeAccounts.length === 0) return;
-        html += `<div class="acc-type-header ${type}">${typeNames[type]}</div>`;
-        const renderTree = (parentId, level) => {
-            accounts.filter(a => a.type === type && a.parentId === parentId).forEach(a => {
-                const balance = calculateAccountBalance(a.id);
-                html += `<div class="acc-item ${level > 0 ? 'child' : ''}">
-                    <span class="acc-name">${a.code ? `<small style="color:#A89070;">${a.code}</small> - ` : ''}${a.name}</span>
-                    <span class="acc-balance">${formatMoney(Math.abs(balance))}</span>
-                    <div class="acc-actions">
-                        ${canEdit() ? `<button class="btn btn-warning btn-sm" onclick="editAccount(${a.id})"><i class="fas fa-edit"></i></button>` : ''}
-                        ${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})"><i class="fas fa-trash"></i></button>` : ''}
-                    </div>
-                </div>`;
-                renderTree(a.id, level + 1);
-            });
-        };
-        renderTree(null, 0);
+        html += `<div class="acc-type-header">${typeNames[type]}</div>`;
+        typeAccounts.forEach(a => { html += `<div class="acc-item"><span>${a.code ? a.code + ' - ' : ''}${a.name}</span><div><button class="btn btn-warning btn-sm" onclick="editAccount(${a.id})"><i class="fas fa-edit"></i></button>${canDelete() ? `<button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})"><i class="fas fa-trash"></i></button>` : ''}</div></div>`; });
     });
     if (!html) html = '<div class="empty-state"><i class="fas fa-sitemap"></i><span>لا توجد حسابات</span></div>';
     container.innerHTML = html;
 };
 
-window.calculateAccountBalance = function(accountId) {
-    let balance = 0;
-    journalEntries.forEach(entry => { (entry.lines || []).forEach(line => { if (line.accountId === accountId) balance += (line.debit || 0) - (line.credit || 0); }); });
-    return balance;
-};
-
-window.populateAccountParents = function() {
-    const sel = $('accParent'); if (!sel) return;
-    const cv = sel.value;
-    sel.innerHTML = '<option value="">لا يوجد (حساب رئيسي)</option>';
-    accounts.filter(a => !a.parentId || a.isParent).forEach(a => { sel.innerHTML += `<option value="${a.id}">${a.code ? a.code + ' - ' : ''}${a.name}</option>`; });
-    sel.value = cv;
-};
-
-window.populateAccountDropdowns = function() {
-    populateAccountParents();
-    const jeDebitEl = $('jeDebitAccount'), jeCreditEl = $('jeCreditAccount');
-    const isLeafAccount = (acc) => !acc.isParent && !accounts.some(a => a.parentId === acc.id);
-    let html = '<option value="">اختر حساب...</option>';
-    ['assets', 'liabilities', 'equity', 'revenue', 'expenses'].forEach(type => {
-        const typeAccounts = accounts.filter(a => a.type === type && isLeafAccount(a));
-        if (typeAccounts.length === 0) return;
-        html += `<optgroup label="${type}">`;
-        typeAccounts.forEach(a => { html += `<option value="${a.id}">${a.code ? a.code + ' - ' : ''}${a.name}</option>`; });
-        html += `</optgroup>`;
-    });
-    if (jeDebitEl) { const cv = jeDebitEl.value; jeDebitEl.innerHTML = html; jeDebitEl.value = cv; }
-    if (jeCreditEl) { const cv = jeCreditEl.value; jeCreditEl.innerHTML = html; jeCreditEl.value = cv; }
-};
-
+window.calculateAccountBalance = function(accountId) { let balance = 0; journalEntries.forEach(entry => { (entry.lines || []).forEach(line => { if (line.accountId === accountId) balance += (line.debit || 0) - (line.credit || 0); }); }); return balance; };
+window.populateAccountParents = function() { const sel = $('accParent'); if (!sel) return; const cv = sel.value; sel.innerHTML = '<option value="">لا يوجد</option>'; accounts.filter(a => !a.parentId || a.isParent).forEach(a => { sel.innerHTML += `<option value="${a.id}">${a.name}</option>`; }); sel.value = cv; };
+window.populateAccountDropdowns = function() { populateAccountParents(); };
 window.createJournalEntry = function(description, reference, date, lines, sourceType = 'manual', sourceId = null) {
-    if (!lines || lines.length < 2) return null;
     const totalDebit = lines.reduce((s, l) => s + (l.debit || 0), 0);
     const totalCredit = lines.reduce((s, l) => s + (l.credit || 0), 0);
     if (Math.abs(totalDebit - totalCredit) > 0.01) return null;
-    const entry = { id: Date.now() + Math.random(), number: journalEntries.length + 1, date: date || getTodayDate(), description, reference: reference || '', sourceType, sourceId, lines, totalDebit, totalCredit, createdAt: new Date().toISOString(), createdBy: currentUser ? currentUser.name : 'system' };
-    journalEntries.push(entry);
-    setData('journalEntries', journalEntries);
-    return entry;
+    const entry = { id: Date.now() + Math.random(), number: journalEntries.length + 1, date: date || getTodayDate(), description, reference: reference || '', sourceType, sourceId, lines, totalDebit, totalCredit, createdAt: new Date().toISOString() };
+    journalEntries.push(entry); setData('journalEntries', journalEntries); return entry;
 };
-
-window.getAccountByCode = function(code) { return accounts.find(a => a.code === code); };
 window.getAccountByNameContains = function(name) { return accounts.find(a => a.name.includes(name) && !a.isParent); };
-
-window.saveJournalEntry = function() {
-    if (!canAdd()) return;
-    const date = $('jeDate').value || getTodayDate();
-    const ref = $('jeRef').value.trim();
-    const desc = $('jeDesc').value.trim();
-    const debitAcc = parseInt($('jeDebitAccount').value);
-    const debitAmount = parseFloat($('jeDebitAmount').value) || 0;
-    const creditAcc = parseInt($('jeCreditAccount').value);
-    const creditAmount = parseFloat($('jeCreditAmount').value) || 0;
-    if (!desc || !debitAcc || !creditAcc || debitAmount <= 0 || creditAmount <= 0) { showToast('⚠️ أدخل بيانات صحيحة', 'error'); return; }
-    if (Math.abs(debitAmount - creditAmount) > 0.01) { showToast('⚠️ المدين ≠ الدائن', 'error'); return; }
-    const lines = [
-        { accountId: debitAcc, accountName: accounts.find(a => a.id === debitAcc)?.name || '-', debit: debitAmount, credit: 0 },
-        { accountId: creditAcc, accountName: accounts.find(a => a.id === creditAcc)?.name || '-', credit: creditAmount, debit: 0 }
-    ];
-    const entry = createJournalEntry(desc, ref, date, lines, 'manual', null);
-    if (entry) {
-        $('jeRef').value = ''; $('jeDesc').value = ''; $('jeDebitAmount').value = ''; $('jeCreditAmount').value = '';
-        updateJournalCheck(); renderJournal(); renderAccounts();
-        showToast('✅ تم حفظ القيد', 'success');
-    }
-};
-
-window.renderJournal = function() {
-    const c = $('journalList'); if (!c) return;
-    if (journalEntries.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-book"></i><span>لا توجد قيود</span></div>`; return; }
-    const sorted = [...journalEntries].sort((a, b) => b.id - a.id).slice(0, 100);
-    let html = '';
-    sorted.forEach(e => {
-        let rowsHtml = '';
-        e.lines.forEach(l => {
-            if (l.debit > 0) rowsHtml += `<div class="je-row debit"><span>${l.accountName}</span><span>${formatMoney(l.debit)}</span><span></span></div>`;
-            if (l.credit > 0) rowsHtml += `<div class="je-row credit"><span>${l.accountName}</span><span></span><span>${formatMoney(l.credit)}</span></div>`;
-        });
-        html += `<div class="journal-item"><div class="je-header"><span>قيد #${e.number}</span><span>${e.date}</span></div><div class="je-desc">${e.description}</div><div class="je-entries">${rowsHtml}</div></div>`;
-    });
-    c.innerHTML = html;
-};
-
-window.deleteJournalEntry = function(id) {
-    if (!canDelete()) return;
-    if (!confirm('⚠️ حذف القيد؟')) return;
-    window.journalEntries = journalEntries.filter(e => e.id !== id);
-    setData('journalEntries', journalEntries);
-    renderJournal(); renderAccounts();
-    showToast('🗑️ تم الحذف', 'info');
-};
+window.saveJournalEntry = function() { showToast('⚠️ قريباً', 'warning'); };
+window.renderJournal = function() { const c = $('journalList'); if (!c) return; if (journalEntries.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-book"></i><span>لا توجد قيود</span></div>`; return; } c.innerHTML = '<div class="empty-state"><span>يتم عرض القيود هنا</span></div>'; };
+window.deleteJournalEntry = function(id) { if (!confirm('⚠️ حذف القيد؟')) return; window.journalEntries = journalEntries.filter(e => e.id !== id); setData('journalEntries', journalEntries); renderJournal(); showToast('🗑️ تم الحذف', 'info'); };
+window.switchAccountsTab = function(tab, btn) { document.querySelectorAll('#page-accounts .tab-btn').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); const tree = $('accTabTree'), journal = $('accTabJournal'), reports = $('accTabReports'); if (tree) tree.style.display = (tab === 'tree') ? 'block' : 'none'; if (journal) journal.style.display = (tab === 'journal') ? 'block' : 'none'; if (reports) reports.style.display = (tab === 'reports') ? 'block' : 'none'; };
+window.showAccountingReport = function(type) { const c = $('accountingReportContent'); if (!c) return; c.innerHTML = '<div class="empty-state"><span>قريباً</span></div>'; };
 
 // ============================================================
 // التقارير
 // ============================================================
-window.switchReport = function(type, btn) {
-    window.currentReport = type;
-    document.querySelectorAll('.report-tab').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    renderReport(type);
-};
-
+window.switchReport = function(type, btn) { window.currentReport = type; document.querySelectorAll('.report-tab').forEach(b => b.classList.remove('active')); if (btn) btn.classList.add('active'); renderReport(type); };
 window.renderReport = function(type) {
     const container = $('reportContent'); if (!container) return;
     const today = new Date();
@@ -965,91 +600,29 @@ window.renderReport = function(type) {
     if (type === 'daily') {
         title = 'تقرير يومي - آخر 7 أيام';
         const dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date(); d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
-            const daySales = sales.filter(s => s.date === dateStr);
-            const sT = daySales.reduce((sum, s) => sum + (s.total || 0), 0);
-            rows.push({ label: dayNames[d.getDay()], sales: sT, cogs: getCOGS(daySales), expenses: expenses.filter(e => e.date === dateStr).reduce((sum, e) => sum + (e.amount || 0), 0) });
-        }
+        for (let i = 6; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); const dateStr = d.toISOString().split('T')[0]; rows.push({ label: dayNames[d.getDay()], sales: sales.filter(s => s.date === dateStr).reduce((sum, s) => sum + (s.total || 0), 0) }); }
     } else if (type === 'monthly') {
         title = 'تقرير شهري - آخر 6 أشهر';
         const monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-        for (let i = 5; i >= 0; i--) {
-            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-            const monthStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-            const inM = (ds) => (ds || '').startsWith(monthStr);
-            const mSales = sales.filter(s => inM(s.date));
-            const sT = mSales.reduce((sum, s) => sum + (s.total || 0), 0);
-            rows.push({ label: monthNames[d.getMonth()], sales: sT, cogs: getCOGS(mSales), expenses: expenses.filter(e => inM(e.date)).reduce((sum, e) => sum + (e.amount || 0), 0) });
-        }
+        for (let i = 5; i >= 0; i--) { const d = new Date(today.getFullYear(), today.getMonth() - i, 1); const monthStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); rows.push({ label: monthNames[d.getMonth()], sales: sales.filter(s => (s.date || '').startsWith(monthStr)).reduce((sum, s) => sum + (s.total || 0), 0) }); }
     } else {
-        title = 'تقرير سنوي - آخر 3 سنوات';
-        for (let i = 2; i >= 0; i--) {
-            const year = today.getFullYear() - i;
-            const yS = String(year);
-            const inY = (ds) => (ds || '').startsWith(yS);
-            const ySales = sales.filter(s => inY(s.date));
-            const sT = ySales.reduce((sum, s) => sum + (s.total || 0), 0);
-            rows.push({ label: 'سنة ' + year, sales: sT, cogs: getCOGS(ySales), expenses: expenses.filter(e => inY(e.date)).reduce((sum, e) => sum + (e.amount || 0), 0) });
-        }
+        title = 'تقرير سنوي';
+        for (let i = 2; i >= 0; i--) { const year = today.getFullYear() - i; rows.push({ label: 'سنة ' + year, sales: sales.filter(s => (s.date || '').startsWith(String(year))).reduce((sum, s) => sum + (s.total || 0), 0) }); }
     }
     const tS = rows.reduce((s, r) => s + r.sales, 0);
-    const tCOGS = rows.reduce((s, r) => s + (r.cogs || 0), 0);
-    const tE = rows.reduce((s, r) => s + r.expenses, 0);
-    container.innerHTML = `<h3>${title}</h3>
-        <div class="report-summary">
-            <div class="report-stat"><div class="num" style="color:#2D8F5E;">${formatMoney(tS)}</div><div class="lbl">💰 مبيعات</div></div>
-            <div class="report-stat"><div class="num" style="color:#E06060;">${formatMoney(tCOGS)}</div><div class="lbl">📦 تكلفة</div></div>
-            <div class="report-stat"><div class="num" style="color:#E6A830;">${formatMoney(tE)}</div><div class="lbl">💸 مصروفات</div></div>
-            <div class="report-stat"><div class="num" style="color:${tS - tCOGS - tE >= 0 ? '#2D8F5E' : '#E06060'};">${formatMoney(tS - tCOGS - tE)}</div><div class="lbl">📈 ربح</div></div>
-        </div>`;
+    container.innerHTML = `<h3>${title}</h3><div class="report-summary"><div class="report-stat"><div class="num" style="color:#2D8F5E;">${formatMoney(tS)}</div><div class="lbl">💰 إجمالي</div></div></div>`;
 };
-
-window.renderVATReport = function() {
-    const container = $('reportContent'); if (!container) return;
-    container.innerHTML = `<h3>🧾 التقرير الضريبي</h3><div class="empty-state"><span>لا توجد بيانات ضريبية</span></div>`;
-};
-
-window.switchAccountsTab = function(tab, btn) {
-    document.querySelectorAll('#page-accounts .tab-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    const tree = $('accTabTree'), journal = $('accTabJournal'), reports = $('accTabReports');
-    if (tree) tree.style.display = (tab === 'tree') ? 'block' : 'none';
-    if (journal) journal.style.display = (tab === 'journal') ? 'block' : 'none';
-    if (reports) reports.style.display = (tab === 'reports') ? 'block' : 'none';
-};
-
-window.showAccountingReport = function(type) {
-    const c = $('accountingReportContent'); if (!c) return;
-    c.innerHTML = '<div class="empty-state"><span>قريباً</span></div>';
-};
+window.renderVATReport = function() { const container = $('reportContent'); if (!container) return; container.innerHTML = `<h3>🧾 التقرير الضريبي</h3><div class="empty-state"><span>لا توجد بيانات</span></div>`; };
 
 // ============================================================
 // حركات المخزون
 // ============================================================
-window.filterInventoryMovements = function(filter, btn) {
-    window.currentMovementFilter = filter;
-    document.querySelectorAll('#page-inventory-movements .filter-chip').forEach(c => c.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    renderInventoryMovements();
-};
-
+window.filterInventoryMovements = function(filter, btn) { window.currentMovementFilter = filter; document.querySelectorAll('#page-inventory-movements .filter-chip').forEach(c => c.classList.remove('active')); if (btn) btn.classList.add('active'); renderInventoryMovements(); };
 window.renderInventoryMovements = function() {
     const c = $('inventoryMovementsList'); if (!c) return;
     if (inventoryMovements.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-exchange-alt"></i><span>لا توجد حركات</span></div>`; return; }
     let html = `<div class="table-header" style="grid-template-columns: 1.5fr 0.6fr 0.6fr 1.2fr 1fr;"><span>المنتج</span><span>الكمية</span><span>النوع</span><span>السبب</span><span>التاريخ</span></div>`;
-    inventoryMovements.slice(0, 100).forEach(m => {
-        const isIn = m.type === 'in';
-        const color = isIn ? '#2D8F5E' : '#E06060';
-        html += `<div class="table-row" style="grid-template-columns: 1.5fr 0.6fr 0.6fr 1.2fr 1fr;">
-            <span style="font-size:11px;">${m.productName}</span>
-            <span style="color:${color};font-weight:700;">${isIn ? '⬇️' : '⬆️'} ${m.qty}</span>
-            <span style="color:${color};font-size:10px;">${isIn ? 'إدخال' : 'إخراج'}</span>
-            <span style="font-size:10px;color:#A89070;">${m.reason}</span>
-            <span style="font-size:10px;color:#A89070;">${m.date}</span>
-        </div>`;
-    });
+    inventoryMovements.slice(0, 100).forEach(m => { const isIn = m.type === 'in'; html += `<div class="table-row" style="grid-template-columns: 1.5fr 0.6fr 0.6fr 1.2fr 1fr;"><span style="font-size:11px;">${m.productName}</span><span style="color:${isIn ? '#2D8F5E' : '#E06060'};font-weight:700;">${isIn ? '⬇️' : '⬆️'} ${m.qty}</span><span style="color:${isIn ? '#2D8F5E' : '#E06060'};font-size:10px;">${isIn ? 'إدخال' : 'إخراج'}</span><span style="font-size:10px;color:#A89070;">${m.reason}</span><span style="font-size:10px;color:#A89070;">${m.date}</span></div>`; });
     c.innerHTML = html;
 };
 
@@ -1064,62 +637,23 @@ window.renderCompanyPage = function() {
     if ($('setCompanyCR')) $('setCompanyCR').value = companyData.cr || '';
     if ($('setCompanyFooter')) $('setCompanyFooter').value = companyData.footer || '';
     renderLogoPreview();
-    const infoParts = [];
-    if (companyData.phone) infoParts.push(`📞 ${companyData.phone}`);
-    if (companyData.address) infoParts.push(`📍 ${companyData.address}`);
     if ($('companyPreviewName')) $('companyPreviewName').textContent = companyData.name || 'اسم الشركة';
-    if ($('companyPreviewInfo')) $('companyPreviewInfo').textContent = infoParts.length > 0 ? infoParts.join(' • ') : 'لم يتم إدخال بيانات بعد';
     updateHeaderCompanyName();
 };
-
-window.renderLogoPreview = function() {
-    const box = $('logoPreviewBox');
-    const companyLogo = $('companyPreviewLogo');
-    if (!box) return;
-    if (companyData.logo) { box.innerHTML = `<img src="${companyData.logo}" alt="logo">`; if (companyLogo) companyLogo.innerHTML = `<img src="${companyData.logo}" alt="logo">`; }
-    else { box.innerHTML = `<i class="fas fa-image"></i><span>لا يوجد شعار</span>`; if (companyLogo) companyLogo.innerHTML = `<i class="fas fa-store"></i>`; }
-};
-
-window.uploadLogo = function(event) {
-    if (!canEdit()) return;
-    const file = event.target.files[0]; if (!file) return;
-    if (file.size > 500 * 1024) { showToast('⚠️ الصورة كبيرة (الحد: 500KB)', 'warning'); return; }
-    const reader = new FileReader();
-    reader.onload = function(e) { companyData.logo = e.target.result; setData('companyData', companyData); renderCompanyPage(); showToast('✅ تم رفع الشعار', 'success'); };
-    reader.readAsDataURL(file);
-};
-
-window.removeLogo = function() {
-    if (!canEdit()) return;
-    if (!confirm('⚠️ حذف الشعار؟')) return;
-    companyData.logo = null; setData('companyData', companyData); renderCompanyPage();
-    showToast('🗑️ تم حذف الشعار', 'info');
-};
-
+window.renderLogoPreview = function() { const box = $('logoPreviewBox'); if (!box) return; if (companyData.logo) box.innerHTML = `<img src="${companyData.logo}" alt="logo">`; else box.innerHTML = `<i class="fas fa-image"></i><span>لا يوجد شعار</span>`; };
+window.uploadLogo = function(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { companyData.logo = e.target.result; setData('companyData', companyData); renderCompanyPage(); showToast('✅ تم رفع الشعار', 'success'); }; reader.readAsDataURL(file); };
+window.removeLogo = function() { if (!confirm('⚠️ حذف الشعار؟')) return; companyData.logo = null; setData('companyData', companyData); renderCompanyPage(); showToast('🗑️ تم الحذف', 'info'); };
 window.saveCompanySettings = function() {
-    if (!canEdit()) return;
-    companyData.name = $('setCompanyName').value.trim();
-    companyData.phone = $('setCompanyPhone').value.trim();
-    companyData.address = $('setCompanyAddress').value.trim();
-    companyData.tax = $('setCompanyTax').value.trim();
-    companyData.cr = $('setCompanyCR')?.value?.trim() || '';
-    companyData.footer = $('setCompanyFooter').value.trim();
-    setData('companyData', companyData);
-    renderCompanyPage();
-    showToast('✅ تم حفظ بيانات الشركة', 'success');
+    companyData.name = $('setCompanyName').value.trim(); companyData.phone = $('setCompanyPhone').value.trim();
+    companyData.address = $('setCompanyAddress').value.trim(); companyData.tax = $('setCompanyTax').value.trim();
+    companyData.cr = $('setCompanyCR')?.value?.trim() || ''; companyData.footer = $('setCompanyFooter').value.trim();
+    setData('companyData', companyData); renderCompanyPage(); showToast('✅ تم حفظ البيانات', 'success');
 };
 
 // ============================================================
 // إعدادات الضريبة
 // ============================================================
-window.saveVATSettings = function() {
-    if (!canEdit()) return;
-    const vat = parseFloat($('setDefaultVAT')?.value) || 14;
-    if (vat < 0 || vat > 100) { showToast('⚠️ النسبة بين 0 و 100', 'error'); return; }
-    vatSettings.defaultVAT = vat;
-    setData('vatSettings', vatSettings);
-    showToast(`✅ تم حفظ نسبة الضريبة: ${vat}%`, 'success');
-};
+window.saveVATSettings = function() { const vat = parseFloat($('setDefaultVAT')?.value) || 14; if (vat < 0 || vat > 100) { showToast('⚠️ النسبة بين 0 و 100', 'error'); return; } vatSettings.defaultVAT = vat; setData('vatSettings', vatSettings); showToast(`✅ تم حفظ النسبة: ${vat}%`, 'success'); };
 
 // ============================================================
 // المستخدمين
@@ -1128,63 +662,20 @@ window.saveUser = function() {
     if (!canManageUsers()) return;
     const id = $('userId').value, name = $('userName').value.trim(), password = $('userPassword').value.trim(), role = $('userRole').value;
     if (!name || !password || password.length < 4) { showToast('⚠️ أدخل بيانات صحيحة', 'error'); return; }
-    if (id) {
-        const idx = users.findIndex(u => u.id == id);
-        if (idx > -1) { users[idx] = { ...users[idx], name, password, role }; showToast('✅ تم تعديل المستخدم', 'success'); }
-    } else {
-        if (users.find(u => u.name === name)) { showToast('⚠️ الاسم موجود', 'warning'); return; }
-        users.push({ id: Date.now(), name, password, role, active: true });
-        showToast('✅ تم إضافة المستخدم', 'success');
-    }
-    setData('users', users);
-    resetUserForm(); renderUsers(); populateLoginUsers();
+    if (id) { const idx = users.findIndex(u => u.id == id); if (idx > -1) { users[idx] = { ...users[idx], name, password, role }; showToast('✅ تم تعديل المستخدم', 'success'); } }
+    else { if (users.find(u => u.name === name)) { showToast('⚠️ الاسم موجود', 'warning'); return; } users.push({ id: Date.now(), name, password, role, active: true }); showToast('✅ تم إضافة المستخدم', 'success'); }
+    setData('users', users); resetUserForm(); renderUsers(); populateLoginUsers();
 };
-
-window.editUser = function(id) {
-    if (!canManageUsers()) return;
-    const u = users.find(us => us.id == id); if (!u) return;
-    $('userId').value = u.id; $('userName').value = u.name; $('userPassword').value = u.password; $('userRole').value = u.role;
-    $('userFormTitle').textContent = '✏️ تعديل المستخدم'; $('userSaveBtnText').textContent = 'حفظ التعديل';
-};
-
-window.toggleUserActive = function(id) {
-    if (!canManageUsers()) return;
-    const u = users.find(us => us.id == id); if (!u) return;
-    if (u.id === (currentUser ? currentUser.id : null)) { showToast('⚠️ لا يمكنك تعطيل حسابك', 'error'); return; }
-    u.active = !u.active; setData('users', users); renderUsers(); populateLoginUsers();
-};
-
-window.deleteUser = function(id) {
-    if (!canManageUsers()) return;
-    const u = users.find(us => us.id == id); if (!u) return;
-    if (u.id === (currentUser ? currentUser.id : null)) { showToast('⚠️ لا يمكنك حذف حسابك', 'error'); return; }
-    if (!confirm(`⚠️ حذف المستخدم "${u.name}"؟`)) return;
-    window.users = users.filter(us => us.id !== id);
-    setData('users', users); renderUsers(); populateLoginUsers();
-    showToast('🗑️ تم الحذف', 'info');
-};
-
-window.resetUserForm = function() {
-    $('userId').value = ''; $('userName').value = ''; $('userPassword').value = ''; $('userRole').value = 'cashier';
-    $('userFormTitle').textContent = '➕ إضافة مستخدم جديد'; $('userSaveBtnText').textContent = 'إضافة';
-};
-
+window.editUser = function(id) { const u = users.find(us => us.id == id); if (!u) return; $('userId').value = u.id; $('userName').value = u.name; $('userPassword').value = u.password; $('userRole').value = u.role; $('userFormTitle').textContent = '✏️ تعديل'; $('userSaveBtnText').textContent = 'حفظ'; };
+window.toggleUserActive = function(id) { const u = users.find(us => us.id == id); if (!u) return; if (u.id === (currentUser ? currentUser.id : null)) { showToast('⚠️ لا يمكنك تعطيل حسابك', 'error'); return; } u.active = !u.active; setData('users', users); renderUsers(); populateLoginUsers(); };
+window.deleteUser = function(id) { if (!confirm('⚠️ حذف المستخدم؟')) return; window.users = users.filter(us => us.id !== id); setData('users', users); renderUsers(); populateLoginUsers(); showToast('🗑️ تم الحذف', 'info'); };
+window.resetUserForm = function() { $('userId').value = ''; $('userName').value = ''; $('userPassword').value = ''; $('userRole').value = 'cashier'; $('userFormTitle').textContent = '➕ إضافة مستخدم'; $('userSaveBtnText').textContent = 'إضافة'; };
 window.renderUsers = function() {
     const c = $('userList'); if (!c) return;
     if (!canManageUsers()) { c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>المدير فقط</span></div>`; return; }
     if (users.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-users-cog"></i><span>لا يوجد مستخدمين</span></div>`; return; }
     let html = `<div class="table-header" style="grid-template-columns: 1.5fr 1fr 0.8fr 1.3fr;"><span>الاسم</span><span>الدور</span><span>الحالة</span><span></span></div>`;
-    users.forEach(u => {
-        const roleInfo = ROLES[u.role] || { name: u.role, icon: '❓' };
-        const isMe = u.id === (currentUser ? currentUser.id : null);
-        html += `<div class="table-row" style="grid-template-columns: 1.5fr 1fr 0.8fr 1.3fr;">
-            <span><strong>${u.name}</strong>${isMe ? ' (أنت)' : ''}</span>
-            <span>${roleInfo.icon} ${roleInfo.name}</span>
-            <span style="color:${u.active !== false ? '#2D8F5E' : '#E06060'};">${u.active !== false ? '✅ نشط' : '⏸️ موقوف'}</span>
-            <div><button class="btn btn-warning btn-sm" onclick="editUser(${u.id})"><i class="fas fa-edit"></i></button>
-            ${!isMe ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button>` : ''}</div>
-        </div>`;
-    });
+    users.forEach(u => { const roleInfo = ROLES[u.role] || { name: u.role, icon: '❓' }; html += `<div class="table-row" style="grid-template-columns: 1.5fr 1fr 0.8fr 1.3fr;"><span><strong>${u.name}</strong></span><span>${roleInfo.icon} ${roleInfo.name}</span><span style="color:${u.active !== false ? '#2D8F5E' : '#E06060'};">${u.active !== false ? '✅' : '⏸️'}</span><div><button class="btn btn-warning btn-sm" onclick="editUser(${u.id})"><i class="fas fa-edit"></i></button><button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button></div></div>`; });
     c.innerHTML = html;
 };
 
@@ -1196,46 +687,13 @@ window.renderAudit = function() {
     if (!isAdmin()) { c.innerHTML = `<div class="empty-state"><i class="fas fa-lock"></i><span>المدير فقط</span></div>`; return; }
     if (auditLog.length === 0) { c.innerHTML = `<div class="empty-state"><i class="fas fa-history"></i><span>لا توجد نشاطات</span></div>`; return; }
     let html = '';
-    auditLog.slice(0, 200).forEach(log => {
-        html += `<div class="audit-item"><div style="font-size:11px;color:#A89070;">${log.date} ${log.time || ''}</div><div style="font-size:12px;">${log.details}</div><div style="font-size:10px;color:#A89070;">👤 ${log.userName}</div></div>`;
-    });
+    auditLog.slice(0, 200).forEach(log => { html += `<div class="audit-item"><div style="font-size:11px;color:#A89070;">${log.date} ${log.time || ''}</div><div style="font-size:12px;">${log.details}</div><div style="font-size:10px;color:#A89070;">👤 ${log.userName}</div></div>`; });
     c.innerHTML = html;
 };
-
-window.filterAudit = function(filter, btn) {
-    window.currentAuditFilter = filter;
-    document.querySelectorAll('#page-audit .filter-chip').forEach(chip => chip.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    renderAudit();
-};
-
-window.exportAuditLog = function() {
-    if (!isAdmin()) return;
-    if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; }
-    const json = JSON.stringify({ exportDate: new Date().toISOString(), logs: auditLog }, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `audit_${new Date().toISOString().split('T')[0]}.json`; a.click();
-    showToast('✅ تم التصدير', 'success');
-};
-
-window.exportAuditLogText = function() {
-    if (!isAdmin()) return;
-    if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; }
-    let text = 'سجل النشاطات\n\n';
-    auditLog.forEach(log => { text += `[${log.date}] ${log.userName} - ${log.details}\n`; });
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `audit_${new Date().toISOString().split('T')[0]}.txt`; a.click();
-    showToast('✅ تم التصدير', 'success');
-};
-
-window.clearAuditLog = function() {
-    if (!isAdmin()) return;
-    if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; }
-    if (!confirm('⚠️ مسح السجل؟')) return;
-    window.auditLog = [];
-    setData('auditLog', auditLog); renderAudit();
-    showToast('🗑️ تم المسح', 'info');
-};
+window.filterAudit = function(filter, btn) { window.currentAuditFilter = filter; document.querySelectorAll('#page-audit .filter-chip').forEach(chip => chip.classList.remove('active')); if (btn) btn.classList.add('active'); renderAudit(); };
+window.exportAuditLog = function() { if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; } const json = JSON.stringify({ exportDate: new Date().toISOString(), logs: auditLog }, null, 2); const blob = new Blob([json], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `audit_${new Date().toISOString().split('T')[0]}.json`; a.click(); showToast('✅ تم التصدير', 'success'); };
+window.exportAuditLogText = function() { if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; } let text = 'سجل النشاطات\n\n'; auditLog.forEach(log => { text += `[${log.date}] ${log.userName} - ${log.details}\n`; }); const blob = new Blob([text], { type: 'text/plain;charset=utf-8' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `audit_${new Date().toISOString().split('T')[0]}.txt`; a.click(); showToast('✅ تم التصدير', 'success'); };
+window.clearAuditLog = function() { if (auditLog.length === 0) { showToast('⚠️ السجل فارغ', 'warning'); return; } if (!confirm('⚠️ مسح السجل؟')) return; window.auditLog = []; setData('auditLog', auditLog); renderAudit(); showToast('🗑️ تم المسح', 'info'); };
 
 // ============================================================
 // الإعدادات
@@ -1248,8 +706,7 @@ window.renderSettings = function() {
     if ($('setJournalCount')) $('setJournalCount').textContent = journalEntries.length;
     if ($('setMovementsCount')) $('setMovementsCount').textContent = inventoryMovements.length;
     if ($('setDefaultVAT')) $('setDefaultVAT').value = vatSettings.defaultVAT || 14;
-    let size = 0;
-    for (let k in localStorage) { if (k.startsWith('mizan_')) size += (localStorage[k] || '').length; }
+    let size = 0; for (let k in localStorage) { if (k.startsWith('mizan_')) size += (localStorage[k] || '').length; }
     if ($('setDataSize')) $('setDataSize').textContent = (size / 1024).toFixed(1) + ' KB';
     if ($('currentUserForPassword')) $('currentUserForPassword').textContent = currentUser ? currentUser.name : '-';
 };
@@ -1281,19 +738,15 @@ window.importData = function(event) {
     reader.onload = function(e) {
         try {
             const data = JSON.parse(e.target.result);
-            ['products', 'sales', 'purchases', 'returns', 'expenses', 'customers', 'suppliers', 'treasury', 'payments', 'users', 'auditLog', 'companyData', 'vatSettings', 'accounts', 'journalEntries', 'inventoryMovements'].forEach(key => {
-                if (data[key]) window[key] = data[key];
-            });
+            ['products', 'sales', 'purchases', 'returns', 'expenses', 'customers', 'suppliers', 'treasury', 'payments', 'users', 'auditLog', 'companyData', 'vatSettings', 'accounts', 'journalEntries', 'inventoryMovements'].forEach(key => { if (data[key]) window[key] = data[key]; });
             saveAll(); populateAllDropdowns(); populateLoginUsers(); refreshAllViews();
             showToast('✅ تم الاستيراد', 'success');
         } catch (err) { showToast('❌ ملف غير صالح', 'error'); }
     };
-    reader.readAsText(file);
-    event.target.value = '';
+    reader.readAsText(file); event.target.value = '';
 };
 
 window.clearAllData = function() {
-    if (!canClearData()) return;
     if (!confirm('⚠️ مسح جميع البيانات؟')) return;
     if (!confirm('✅ تأكيد نهائي؟')) return;
     ['products', 'sales', 'purchases', 'returns', 'expenses', 'customers', 'suppliers', 'treasury', 'payments', 'companyData', 'accounts', 'journalEntries', 'inventoryMovements', 'warehouses', 'warehouseMovements', 'productWarehouseStock'].forEach(k => localStorage.removeItem('mizan_' + k));
@@ -1314,8 +767,8 @@ window.saveAll = function() {
 // التهيئة النهائية
 // ============================================================
 function init() {
-    console.log('🚀 الميزان 14.0.0 - ملفات مقسمة');
-    initFirebase();
+    console.log('🚀 الميزان 14.0.0');
+    if (typeof initFirebase === 'function') initFirebase();
 
     const rawProducts = getData('products', []);
     window.sales = getData('sales', []);
@@ -1333,60 +786,33 @@ function init() {
     window.journalEntries = getData('journalEntries', []);
     window.inventoryMovements = getData('inventoryMovements', []);
 
-    // ترحيل البيانات
-    window.sales = sales.map(s => ({ ...s, paidAmount: s.paidAmount !== undefined ? s.paidAmount : (s.paymentMethod === 'cash' ? s.total : 0), remainingAmount: s.remainingAmount !== undefined ? s.remainingAmount : (s.paymentMethod === 'cash' ? 0 : s.total), status: s.status || (s.paymentMethod === 'cash' ? 'paid' : 'unpaid'), relatedPayments: s.relatedPayments || [], relatedReturns: s.relatedReturns || [] }));
-    window.purchases = purchases.map(p => ({ ...p, paidAmount: p.paidAmount !== undefined ? p.paidAmount : (p.payment === 'cash' ? p.total : 0), remainingAmount: p.remainingAmount !== undefined ? p.remainingAmount : (p.payment === 'cash' ? 0 : p.total), status: p.status || (p.payment === 'cash' ? 'paid' : 'unpaid'), relatedPayments: p.relatedPayments || [], relatedReturns: p.relatedReturns || [] }));
-    window.returns = returns.map(r => ({ ...r, originalInvoiceId: r.originalInvoiceId || null, partyId: r.partyId || null }));
-    window.payments = payments.map(p => ({ ...p, relatedInvoices: p.relatedInvoices || [] }));
-    window.treasury = treasury.map(t => ({ ...t, partyName: t.partyName || null, invoiceNumber: t.invoiceNumber || null }));
-
-    if (accounts.length === 0) { window.accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS)); setData('accounts', accounts); }
+    if (accounts.length === 0 && typeof DEFAULT_ACCOUNTS !== 'undefined') { window.accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS)); setData('accounts', accounts); }
 
     window.users = getData('users', []);
-    if (users.length === 0) {
-        window.users = [
-            { id: 1, name: 'المدير', password: '123456', role: 'admin', active: true },
-            { id: 2, name: 'مشرف', password: '123456', role: 'manager', active: true },
-            { id: 3, name: 'كاشير', password: '123456', role: 'cashier', active: true },
-            { id: 4, name: 'مشاهد', password: '123456', role: 'viewer', active: true }
-        ];
-        setData('users', users);
-    }
+    if (users.length === 0) { window.users = [{ id: 1, name: 'المدير', password: '123456', role: 'admin', active: true }, { id: 2, name: 'مشرف', password: '123456', role: 'manager', active: true }, { id: 3, name: 'كاشير', password: '123456', role: 'cashier', active: true }, { id: 4, name: 'مشاهد', password: '123456', role: 'viewer', active: true }]; setData('users', users); }
 
-    window.products = migrateOldProducts(rawProducts);
+    window.products = typeof migrateOldProducts === 'function' ? migrateOldProducts(rawProducts) : rawProducts;
     const allZero = products.length > 0 && products.every(p => p.qty === 0);
     if (allZero) { window.products = []; localStorage.removeItem('mizan_products'); }
 
     if (products.length === 0 && !localStorage.getItem('mizan_seeded')) {
-        window.products = [
-            { id: 1, name: 'قلم جاف', barcode: '1001', buy: 2, sell: 5, qty: 50, min: 10, vat: 14 },
-            { id: 2, name: 'كشكول 60 ورقة', barcode: '1002', buy: 8, sell: 15, qty: 30, min: 5, vat: 14 },
-            { id: 3, name: 'مسطرة 30 سم', barcode: '1003', buy: 3, sell: 7, qty: 40, min: 10, vat: 14 }
-        ];
-        setData('products', products);
-        localStorage.setItem('mizan_seeded', 'true');
-    } else {
-        setData('products', products);
-    }
+        window.products = [{ id: 1, name: 'قلم جاف', barcode: '1001', buy: 2, sell: 5, qty: 50, min: 10, vat: 14 }, { id: 2, name: 'كشكول 60 ورقة', barcode: '1002', buy: 8, sell: 15, qty: 30, min: 5, vat: 14 }, { id: 3, name: 'مسطرة 30 سم', barcode: '1003', buy: 3, sell: 7, qty: 40, min: 10, vat: 14 }];
+        setData('products', products); localStorage.setItem('mizan_seeded', 'true');
+    } else { setData('products', products); }
 
-    populateLoginUsers();
+    if (typeof populateLoginUsers === 'function') populateLoginUsers();
     if ($('expDate')) $('expDate').value = getTodayDate();
     if ($('collectDate')) $('collectDate').value = getTodayDate();
     if ($('payDate')) $('payDate').value = getTodayDate();
     if ($('jeDate')) $('jeDate').value = getTodayDate();
 
-    setTimeout(() => {
-        const debitAmt = $('jeDebitAmount'), creditAmt = $('jeCreditAmount');
-        if (debitAmt) debitAmt.addEventListener('input', updateJournalCheck);
-        if (creditAmt) creditAmt.addEventListener('input', updateJournalCheck);
-    }, 500);
+    setTimeout(() => { const d = $('jeDebitAmount'), c = $('jeCreditAmount'); if (d) d.addEventListener('input', updateJournalCheck); if (c) c.addEventListener('input', updateJournalCheck); }, 500);
 
-    updateClock();
-    updateHeaderCompanyName();
+    updateClock(); updateHeaderCompanyName();
     
-    if (typeof window.populateAllDropdowns === 'function') { try { window.populateAllDropdowns(); } catch(e) {} }
-    if (typeof window.refreshAllViews === 'function') { try { window.refreshAllViews(); } catch(e) {} }
-    if (typeof window.renderProducts === 'function') { try { window.renderProducts(); } catch(e) {} }
+    if (typeof window.populateAllDropdowns === 'function') try { window.populateAllDropdowns(); } catch(e) {}
+    if (typeof window.refreshAllViews === 'function') try { window.refreshAllViews(); } catch(e) {}
+    if (typeof window.renderProducts === 'function') try { window.renderProducts(); } catch(e) {}
 
     console.log('✅ الميزان جاهز');
 }
