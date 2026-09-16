@@ -1,5 +1,5 @@
 // ============================================================
-// الميزان 14.0.0 - نظام الحماية والأمان (نسخة محدّثة)
+// الميزان 14.0.0 - نظام الحماية والأمان (النسخة النهائية)
 // app-security.js
 // ============================================================
 
@@ -28,7 +28,7 @@ window.hashString = async function(str) {
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🔐 2. بصمة الجهاز المتقدمة (Canvas + WebGL + Audio)
+// 🔐 2. بصمة الجهاز المتقدمة (Canvas + WebGL + Fonts)
 // ═══════════════════════════════════════════════════════════
 
 window.getCanvasFingerprint = function() {
@@ -66,50 +66,6 @@ window.getWebGLFingerprint = function() {
     } catch (e) { return ''; }
 };
 
-window.getAudioFingerprint = async function() {
-    return new Promise((resolve) => {
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContext) { resolve(''); return; }
-            const context = new AudioContext();
-            const oscillator = context.createOscillator();
-            const analyser = context.createAnalyser();
-            const gain = context.createGain();
-            const scriptProcessor = context.createScriptProcessor(4096, 1, 1);
-            
-            oscillator.type = 'triangle';
-            oscillator.frequency.value = 10000;
-            gain.gain.value = 0;
-            
-            oscillator.connect(analyser);
-            analyser.connect(scriptProcessor);
-            scriptProcessor.connect(gain);
-            gain.connect(context.destination);
-            
-            let data = '';
-            scriptProcessor.onaudioprocess = function(event) {
-                const output = event.outputBuffer.getChannelData(0);
-                for (let i = 0; i < output.length; i++) {
-                    data += Math.abs(output[i]).toFixed(2);
-                }
-                scriptProcessor.onaudioprocess = null;
-                oscillator.disconnect();
-                analyser.disconnect();
-                scriptProcessor.disconnect();
-                gain.disconnect();
-                context.close();
-                resolve(data.substring(0, 100));
-            };
-            
-            oscillator.start(0);
-            setTimeout(() => {
-                try { oscillator.stop(); } catch (e) {}
-                resolve(data.substring(0, 100) || '');
-            }, 500);
-        } catch (e) { resolve(''); }
-    });
-};
-
 window.getFontsFingerprint = function() {
     try {
         const fonts = ['Arial', 'Times New Roman', 'Courier New', 'Georgia', 'Verdana', 'Tahoma', 'Tajawal', 'Cairo', 'Amiri'];
@@ -144,27 +100,17 @@ window.getDeviceFingerprint = async function() {
             window.devicePixelRatio || 1
         ].join('|');
         
-        // ✅ البصمات المتقدمة
+        // ✅ البصمات المتقدمة (بدون صوت)
         const canvasFp = getCanvasFingerprint();
         const webglFp = getWebGLFingerprint();
         const fontsFp = getFontsFingerprint();
-        
-        // ✅ بصمة الصوت (اختيارية - تأخذ وقت)
-        let audioFp = '';
-        try {
-            audioFp = await Promise.race([
-                getAudioFingerprint(),
-                new Promise((resolve) => setTimeout(() => resolve(''), 1000))
-            ]);
-        } catch (e) { audioFp = ''; }
         
         // ✅ دمج البصمات
         const combined = [
             basicInfo,
             canvasFp.substring(0, 500),
             webglFp,
-            fontsFp,
-            audioFp
+            fontsFp
         ].join('|||');
         
         // ✅ تشفير
@@ -176,7 +122,6 @@ window.getDeviceFingerprint = async function() {
     }
 };
 
-// ✅ نسخة مبسطة (للتوافق مع البصمة القديمة)
 window.getSimpleFingerprint = async function() {
     try {
         const data = [
@@ -219,7 +164,6 @@ window.registerUserDevice = async function(uid, fingerprint) {
         
         // لو الجهاز مسجل بالفعل
         if (deviceKeys.includes(fingerprint)) {
-            // تحديث آخر ظهور
             await firebase.database().ref('mizan_users/' + uid + '/devices/' + fingerprint).update({
                 lastSeen: new Date().toISOString()
             });
@@ -283,12 +227,10 @@ window.checkDeviceAuthorized = async function(uid, fingerprint) {
         const devices = await getUserDevices(uid);
         const deviceKeys = Object.keys(devices);
         
-        // لو الجهاز مسجل
         if (deviceKeys.includes(fingerprint)) {
             return { authorized: true, isNew: false, deviceCount: deviceKeys.length };
         }
         
-        // لو الجهاز جديد، جرب نضيفه
         const result = await registerUserDevice(uid, fingerprint);
         
         if (result.success) {
@@ -321,7 +263,6 @@ window.registerNewUser = async function(email, password, userName, companyName) 
         
         const deviceFingerprint = await getDeviceFingerprint();
         
-        // حفظ بيانات المستخدم
         await firebase.database().ref('mizan_users/' + uid).set({
             uid: uid,
             email: email,
@@ -332,7 +273,6 @@ window.registerNewUser = async function(email, password, userName, companyName) 
             devices: {}
         });
         
-        // تسجيل الجهاز الأول
         await registerUserDevice(uid, deviceFingerprint);
         
         console.log('✅ تم إنشاء الحساب بنجاح:', uid);
@@ -374,7 +314,6 @@ window.loginWithDeviceCheck = async function(email, password) {
             return { success: false, error: 'تم حظر حسابك. يرجى التواصل مع الدعم.' };
         }
         
-        // ✅ التحقق من الجهاز
         const deviceCheck = await checkDeviceAuthorized(uid, currentFingerprint);
         
         if (!deviceCheck.authorized) {
@@ -384,7 +323,7 @@ window.loginWithDeviceCheck = async function(email, password) {
                 return {
                     success: false,
                     error: 'MAX_DEVICES_REACHED',
-                    message: 'لقد وصلت للحد الأقصى من الأجهزة المسجلة (' + MAX_DEVICES_PER_USER + ' أجهزة). لإضافة جهاز جديد، يجب إلغاء ترخيص أحد الأجهزة القديمة.',
+                    message: 'لقد وصلت للحد الأقصى من الأجهزة المسجلة (3 أجهزة). لإضافة جهاز جديد، يجب إلغاء ترخيص أحد الأجهزة القديمة.',
                     maxDevices: MAX_DEVICES_PER_USER,
                     deviceCount: deviceCheck.deviceCount
                 };
@@ -875,11 +814,10 @@ window.removeDeviceFromManager = async function(fingerprint) {
     
     if (success) {
         showToast('✅ تم حذف الجهاز بنجاح', 'success');
-        // إعادة فتح لوحة الإدارة لتحديث القائمة
         setTimeout(() => showDevicesManager(), 500);
     } else {
         showToast('❌ فشل حذف الجهاز', 'error');
     }
 };
 
-console.log('✅ تم تحميل app-security.js بنجاح (نظام متقدم)');
+console.log('✅ تم تحميل app-security.js بنجاح (نظام متقدم - بدون تحذيرات)');
