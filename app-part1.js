@@ -1,7 +1,6 @@
 // ============================================================
 // الميزان 14.0.0 - الجزء 1: الأساسيات
-// app-part1.js
-// المتغيرات + الأدوات + Firebase + المستخدمين + الحسابات + المخازن
+// app-part1.js (نسخة كاملة - مع نظام الحماية)
 // ============================================================
 
 const STORAGE_KEY = 'mizan_';
@@ -19,7 +18,7 @@ const firebaseConfig = {
     measurementId: "G-D6K2GYLBKD"
 };
 
-// ✅ المتغيرات العامة (window. عشان تبان في الملفات التانية)
+// ✅ المتغيرات العامة
 window.firebaseReady = false;
 window.CLOUD_PATH = 'mizan_data';
 
@@ -38,7 +37,6 @@ window.accounts = [];
 window.journalEntries = [];
 window.inventoryMovements = [];
 
-// ✅ متغيرات المخازن الجديدة
 window.warehouses = [];
 window.warehouseMovements = [];
 window.productWarehouseStock = {};
@@ -276,7 +274,6 @@ window.updateSyncStatus = function(msg, type = 'info') {
 window.syncToCloud = function() {
     const ref = getFirebaseRef();
     if (!ref) { showToast('⚠️ Firebase غير متصل', 'error'); return; }
-    
     function cleanForFirebase(obj) {
         if (obj === null || obj === undefined) return null;
         if (Array.isArray(obj)) return obj.map(cleanForFirebase);
@@ -294,7 +291,6 @@ window.syncToCloud = function() {
         }
         return obj;
     }
-    
     const data = cleanForFirebase({
         products: products || [], sales: sales || [], purchases: purchases || [],
         returns: returns || [], expenses: expenses || [], customers: customers || [],
@@ -306,7 +302,6 @@ window.syncToCloud = function() {
         productWarehouseStock: productWarehouseStock || {},
         lastSync: new Date().toISOString(), version: '14.0.0'
     });
-    
     updateSyncStatus('⏳ جاري الرفع...', 'info');
     showToast('⏳ جاري الرفع...', 'info');
     ref.set(data)
@@ -369,62 +364,66 @@ window.updateClock = function() {
 setInterval(updateClock, 1000);
 
 // ============================================================
-// تسجيل الدخول
+// 🆕 نظام تسجيل الدخول الجديد (Firebase Authentication)
 // ============================================================
-window.populateLoginUsers = function() {
-    const sel = $('loginUsername');
-    if (!sel) return;
-    sel.innerHTML = '';
-    users.forEach(u => {
-        if (u.active !== false) {
-            sel.innerHTML += `<option value="${u.id}">${u.name} (${ROLES[u.role]?.name || u.role})</option>`;
-        }
-    });
-};
 
+// دالة تسجيل الدخول - تستدعي doLogin من app-security.js
 window.checkLogin = function() {
-    const userIdEl = $('loginUsername');
-    const passwordEl = $('loginPassword');
-    const error = $('loginError');
-    if (!userIdEl || !passwordEl) return;
-    const userId = userIdEl.value;
-    const password = passwordEl.value;
-    if (!userId) { if (error) error.classList.add('show'); return; }
-    const user = users.find(u => u.id == userId);
-    if (!user) { if (error) error.classList.add('show'); return; }
-    if (user.password !== password) {
-        if (error) error.classList.add('show');
-        passwordEl.value = '';
-        passwordEl.focus();
-        setTimeout(() => { if (error) error.classList.remove('show'); }, 3000);
-        return;
+    if (typeof window.doLogin === 'function') {
+        window.doLogin();
+    } else {
+        console.warn('⚠️ doLogin غير متاحة - تأكد من تحميل app-security.js');
+        showToast('⚠️ نظام الحماية لم يُحمّل بعد', 'error');
     }
-    window.currentUser = user;
-    localStorage.setItem(STORAGE_KEY + 'current_user', JSON.stringify({ id: user.id, name: user.name, role: user.role }));
-    if (error) error.classList.remove('show');
-    passwordEl.value = '';
-    const loginCont = $('loginContainer');
-    const appCont = $('appContent');
-    if (loginCont) loginCont.classList.add('hidden');
-    if (appCont) appCont.style.display = 'block';
-    updateUserUI();
-    applyPermissions();
-    addAuditLog('login', 'user', `تسجيل دخول: ${user.name}`, { userId: user.id, role: user.role });
-    showToast(`🔓 مرحباً ${user.name}!`, 'success');
-    navigateTo('dashboard');
 };
 
+// دالة تعيين المستخدم الحالي
+window.setCurrentUser = function(user) {
+    window.currentUser = user;
+    try {
+        localStorage.setItem(STORAGE_KEY + 'current_user', JSON.stringify({
+            id: user.id,
+            name: user.name,
+            email: user.email || '',
+            role: user.role
+        }));
+    } catch (e) {}
+    
+    // تحديث الواجهة
+    if (typeof updateUserUI === 'function') updateUserUI();
+    if (typeof applyPermissions === 'function') applyPermissions();
+    
+    console.log('✅ تم تعيين المستخدم:', user.name);
+};
+
+// دالة قفل التطبيق (تسجيل الخروج)
 window.lockApp = function() {
-    if (currentUser) {
-        addAuditLog('login', 'user', `تسجيل خروج: ${currentUser.name}`, { userId: currentUser.id });
+    if (currentUser && typeof addAuditLog === 'function') {
+        addAuditLog('login', 'user', 'تسجيل خروج: ' + currentUser.name, { userId: currentUser.id });
     }
+    
+    // تسجيل خروج من Firebase
+    if (typeof window.logoutFromFirebase === 'function') {
+        window.logoutFromFirebase().then(() => {
+            if (typeof window.showLoginScreen === 'function') window.showLoginScreen();
+        });
+    } else {
+        if (typeof window.showLoginScreen === 'function') window.showLoginScreen();
+    }
+    
     window.currentUser = null;
-    localStorage.removeItem(STORAGE_KEY + 'current_user');
+    try { localStorage.removeItem(STORAGE_KEY + 'current_user'); } catch (e) {}
+    
     const loginCont = $('loginContainer');
     const appCont = $('appContent');
     if (loginCont) loginCont.classList.remove('hidden');
     if (appCont) appCont.style.display = 'none';
-    populateLoginUsers();
+};
+
+// دوال قديمة (للتوافق مع الكود القديم)
+window.populateLoginUsers = function() {
+    // لن تُستخدم بعد الآن لأن تسجيل الدخول أصبح بـ Firebase Auth
+    console.log('ℹ️ populateLoginUsers: تم استبدالها بـ Firebase Auth');
 };
 
 window.updateUserUI = function() {
@@ -517,50 +516,67 @@ window.closeModal = function() {
 // Populate All Dropdowns
 // ============================================================
 window.populateAllDropdowns = function() {
-    if (typeof populateSaleProducts === 'function') populateSaleProducts();
-    if (typeof populateSaleCustomers === 'function') populateSaleCustomers();
-    if (typeof populatePurSuppliers === 'function') populatePurSuppliers();
-    if (typeof populatePurProducts === 'function') populatePurProducts();
-    if (typeof populateRetProducts === 'function') populateRetProducts();
-    if (typeof toggleReturnCustomer === 'function') toggleReturnCustomer();
-    if (typeof populateCollectCustomers === 'function') populateCollectCustomers();
-    if (typeof populatePaySuppliers === 'function') populatePaySuppliers();
-    if (typeof populateSettleCustomers === 'function') populateSettleCustomers();
-    if (typeof populateSettleProducts === 'function') populateSettleProducts();
-    if (typeof populateAccountDropdowns === 'function') populateAccountDropdowns();
-    if (typeof populateWarehouseDropdowns === 'function') populateWarehouseDropdowns();
-    if (typeof populateWarehouseProducts === 'function') populateWarehouseProducts();
-    if (typeof populateWarehouseStockFilter === 'function') populateWarehouseStockFilter();
+    function safeCall(funcName) {
+        if (typeof window[funcName] === 'function') {
+            try { window[funcName](); } catch (e) { console.warn('⚠️ خطأ في ' + funcName + ':', e.message); }
+        }
+    }
+    safeCall('populateSaleProducts');
+    safeCall('populateSaleCustomers');
+    safeCall('populatePurSuppliers');
+    safeCall('populatePurProducts');
+    safeCall('populateRetProducts');
+    safeCall('toggleReturnCustomer');
+    safeCall('populateCollectCustomers');
+    safeCall('populatePaySuppliers');
+    safeCall('populateSettleCustomers');
+    safeCall('populateSettleProducts');
+    safeCall('populateAccountDropdowns');
+    safeCall('populateWarehouseDropdowns');
+    safeCall('populateWarehouseProducts');
+    safeCall('populateWarehouseStockFilter');
+    safeCall('populateSaleWarehouse');
+    safeCall('populatePurWarehouse');
+    safeCall('populateRetWarehouse');
 };
 
 // ============================================================
 // Refresh All Views
 // ============================================================
 window.refreshAllViews = function() {
-    if (typeof renderProducts === 'function') renderProducts();
-    if (typeof renderCashier === 'function') renderCashier();
-    if (typeof renderPurchases === 'function') renderPurchases();
-    if (typeof renderReturns === 'function') renderReturns();
-    if (typeof renderExpenses === 'function') renderExpenses();
-    if (typeof renderInvoices === 'function') renderInvoices();
-    if (typeof renderTreasury === 'function') renderTreasury();
-    if (typeof renderCustomers === 'function') renderCustomers();
-    if (typeof renderSuppliers === 'function') renderSuppliers();
-    if (typeof renderPayments === 'function') renderPayments();
-    if (typeof renderUsers === 'function') renderUsers();
-    if (typeof renderAudit === 'function') renderAudit();
-    if (typeof renderAccounts === 'function') renderAccounts();
-    if (typeof renderJournal === 'function') renderJournal();
-    if (typeof renderInventoryMovements === 'function') renderInventoryMovements();
-    if (typeof renderWarehouses === 'function') renderWarehouses();
-    if (typeof renderWarehouseStock === 'function') renderWarehouseStock();
-    if (typeof renderWarehouseMovements === 'function') renderWarehouseMovements();
-    if (typeof updateDashboard === 'function') updateDashboard();
-    if (typeof renderSettings === 'function') renderSettings();
+    function safeCall(funcName) {
+        if (typeof window[funcName] === 'function') {
+            try { window[funcName](); } catch (e) { console.warn('⚠️ خطأ في ' + funcName + ':', e.message); }
+        }
+    }
+    safeCall('renderProducts');
+    safeCall('renderCashier');
+    safeCall('renderPurchases');
+    safeCall('renderReturns');
+    safeCall('renderExpenses');
+    safeCall('renderInvoices');
+    safeCall('renderTreasury');
+    safeCall('renderCustomers');
+    safeCall('renderSuppliers');
+    safeCall('renderPayments');
+    safeCall('renderUsers');
+    safeCall('renderAudit');
+    safeCall('renderAccounts');
+    safeCall('renderJournal');
+    safeCall('renderInventoryMovements');
+    safeCall('renderWarehouses');
+    safeCall('renderWarehouseStock');
+    safeCall('renderWarehouseMovements');
+    safeCall('updateDashboard');
+    safeCall('renderSettings');
+    safeCall('populateAllDropdowns');
+    safeCall('populateCashBoxDropdowns');
+    safeCall('renderWarehouseStatsOnDashboard');
+    safeCall('initMultiTreasury');
 };
 
 // ============================================================
-// Save All (يستخدم من الملفات التانية)
+// Save All
 // ============================================================
 window.saveAll = function() {
     setData('products', products);
@@ -584,4 +600,23 @@ window.saveAll = function() {
     setData('productWarehouseStock', productWarehouseStock);
 };
 
-console.log('✅ تم تحميل app-part1.js - الأساسيات (v14.0.0)');
+// ============================================================
+// 🆕 تهيئة نظام الحماية عند التحميل
+// ============================================================
+window.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        // ✅ عرض شاشة الدخول الجديدة (من app-security.js)
+        if (typeof window.showLoginScreen === 'function') {
+            window.showLoginScreen();
+        } else {
+            console.warn('⚠️ showLoginScreen غير متاحة - تأكد من تحميل app-security.js');
+        }
+        
+        // ✅ تهيئة مراقب تسجيل الدخول
+        if (typeof window.initAuthListener === 'function') {
+            window.initAuthListener();
+        }
+    }, 2000);
+});
+
+console.log('✅ تم تحميل app-part1.js - الأساسيات (v14.0.0) - مع نظام الحماية');
