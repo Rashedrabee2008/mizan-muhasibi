@@ -1237,4 +1237,271 @@ window.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() { populateProductWarehouse(); }, 3500);
 });
 
+// ═══════════════════════════════════════════════════════════
+// 💰 نافذة تأكيد الدفع
+// ═══════════════════════════════════════════════════════════
+window.showPaymentConfirmModal = function(data) {
+    const { customer, total, subtotal, vatTotal, isTaxInvoice, paymentMethod, cashBoxId, cashBoxName, warehouseId } = data;
+    
+    // حساب القيم الافتراضية
+    const defaultPaid = paymentMethod === 'cash' ? total : 0;
+    const defaultRemaining = total - defaultPaid;
+    
+    // الحصول على الخزائن المتاحة
+    let cashBoxesHtml = '';
+    if (typeof cashBoxes !== 'undefined' && Array.isArray(cashBoxes) && cashBoxes.length > 0) {
+        cashBoxes.filter(b => b.active !== false).forEach(function(box) {
+            const selected = box.id == cashBoxId ? 'selected' : '';
+            cashBoxesHtml += '<option value="' + box.id + '" ' + selected + '>' + (box.icon || '') + ' ' + box.name + '</option>';
+        });
+    }
+    if (!cashBoxesHtml) {
+        cashBoxesHtml = '<option value="' + (cashBoxId || 1) + '">' + cashBoxName + '</option>';
+    }
+    
+    const html = `
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <h3 style="color:#C9A94E;margin-bottom:15px;">💰 تأكيد الدفع</h3>
+        
+        <div class="payment-confirm-modal">
+            <!-- معلومات الفاتورة -->
+            <div class="pc-info-row">
+                <span class="pc-label">العميل:</span>
+                <span class="pc-value">${customer}</span>
+            </div>
+            <div class="pc-info-row">
+                <span class="pc-label">نوع الفاتورة:</span>
+                <span class="pc-value">${isTaxInvoice ? '🧾 ضريبية' : '📋 عادية'}</span>
+            </div>
+            
+            <div class="pc-divider"></div>
+            
+            <!-- قيمة الفاتورة -->
+            <div class="pc-total-display">
+                <div class="pc-total-label">قيمة الفاتورة</div>
+                <div class="pc-total-value">${formatMoney(total)} ج.م</div>
+            </div>
+            
+            <!-- المبلغ المدفوع -->
+            <div class="pc-form-group">
+                <label>💵 المبلغ المدفوع</label>
+                <input type="number" id="pcPaidAmount" class="pc-input" value="${defaultPaid}" min="0" max="${total}" step="0.01" oninput="updatePaymentConfirm()" />
+            </div>
+            
+            <!-- المتبقي -->
+            <div class="pc-remaining-display" id="pcRemainingBox">
+                <div class="pc-remaining-label">المتبقي (آجل)</div>
+                <div class="pc-remaining-value" id="pcRemaining">${formatMoney(defaultRemaining)} ج.م</div>
+            </div>
+            
+            <!-- الخزنة -->
+            <div class="pc-form-group" id="pcCashBoxGroup" style="display:${defaultPaid > 0 ? 'block' : 'none'};">
+                <label>💰 الخزنة</label>
+                <select id="pcCashBox" class="pc-input">${cashBoxesHtml}</select>
+            </div>
+            
+            <!-- أزرار -->
+            <div class="pc-actions">
+                <button class="btn btn-success btn-block" onclick="confirmSalePayment()">
+                    <i class="fas fa-check"></i> تأكيد وحفظ
+                </button>
+                <button class="btn btn-secondary btn-block" onclick="closeModal()">
+                    <i class="fas fa-times"></i> إلغاء
+                </button>
+            </div>
+        </div>
+    `;
+    
+    if (typeof openModal === 'function') openModal(html);
+    
+    // تخزين البيانات مؤقتاً
+    window._pendingSaleData = data;
+};
+
+// ═══════════════════════════════════════════════════════════
+// 🔄 تحديث المتبقي عند تغيير المبلغ المدفوع
+// ═══════════════════════════════════════════════════════════
+window.updatePaymentConfirm = function() {
+    if (!window._pendingSaleData) return;
+    
+    const total = window._pendingSaleData.total;
+    const paidInput = document.getElementById('pcPaidAmount');
+    const paid = parseFloat(paidInput?.value) || 0;
+    const remaining = Math.max(0, total - paid);
+    
+    const remainingEl = document.getElementById('pcRemaining');
+    const cashBoxGroup = document.getElementById('pcCashBoxGroup');
+    
+    if (remainingEl) {
+        remainingEl.textContent = formatMoney(remaining) + ' ج.م';
+        remainingEl.style.color = remaining > 0 ? '#E06060' : '#2D8F5E';
+    }
+    
+    if (cashBoxGroup) {
+        cashBoxGroup.style.display = paid > 0 ? 'block' : 'none';
+    }
+    
+    // تحديث حالة المتبقي
+    const remainingBox = document.getElementById('pcRemainingBox');
+    if (remainingBox) {
+        remainingBox.style.borderRightColor = remaining > 0 ? '#E06060' : '#2D8F5E';
+    }
+};
+
+// ═══════════════════════════════════════════════════════════
+// ✅ تأكيد وحفظ الفاتورة
+// ═══════════════════════════════════════════════════════════
+window.confirmSalePayment = function() {
+    if (!window._pendingSaleData) return;
+    
+    const data = window._pendingSaleData;
+    const paid = parseFloat(document.getElementById('pcPaidAmount')?.value) || 0;
+    const total = data.total;
+    const remaining = Math.max(0, total - paid);
+    const cashBoxId = parseInt(document.getElementById('pcCashBox')?.value) || data.cashBoxId;
+    const cashBoxName = document.getElementById('pcCashBox')?.selectedOptions[0]?.text || data.cashBoxName;
+    
+    // ✅ التحقق
+    if (paid < 0 || paid > total + 0.01) {
+        showToast('⚠️ المبلغ المدفوع غير صحيح', 'error');
+        return;
+    }
+    
+    // ✅ تنفيذ الحفظ الفعلي
+    executeSaleSave({
+        ...data,
+        paidAmount: paid,
+        remainingAmount: remaining,
+        status: remaining <= 0.01 ? 'paid' : (paid > 0 ? 'partial' : 'unpaid'),
+        cashBoxId: cashBoxId,
+        cashBoxName: cashBoxName
+    });
+    
+    closeModal();
+    window._pendingSaleData = null;
+};
+
+// ═══════════════════════════════════════════════════════════
+// 💾 تنفيذ حفظ الفاتورة
+// ═══════════════════════════════════════════════════════════
+window.executeSaleSave = function(data) {
+    const { customer, total, subtotal, vatTotal, isTaxInvoice, warehouseId, paidAmount, remainingAmount, status, cashBoxId, cashBoxName } = data;
+    const today = getTodayDate();
+    
+    let cogsTotal = 0;
+    const itemChanges = [];
+    currentSaleItems.forEach(function(it) {
+        const p = products.find(function(pr) { return pr.id == it.productId; });
+        if (p) {
+            it.costPrice = p.buy;
+            cogsTotal += (p.buy * it.qty);
+            const before = p.qty;
+            p.qty -= it.qty;
+            if (warehouseId && typeof getProductStockInWarehouse === 'function' && typeof setProductStockInWarehouse === 'function') {
+                const whBefore = getProductStockInWarehouse(it.productId, warehouseId);
+                setProductStockInWarehouse(it.productId, warehouseId, Math.max(0, whBefore - it.qty));
+            }
+            itemChanges.push({ item: it, before: before, after: p.qty });
+        }
+    });
+    
+    const inv = {
+        id: Date.now(), number: sales.length + 1, customer: customer,
+        customerId: customers.find(function(c) { return c.name === customer; })?.id || null,
+        warehouseId: warehouseId, cashBoxId: cashBoxId,
+        paymentMethod: status === 'paid' ? 'cash' : (paidAmount > 0 ? 'partial' : 'credit'),
+        invoiceType: isTaxInvoice ? 'tax' : 'simple',
+        subtotal: subtotal, vatTotal: vatTotal, cogs: cogsTotal, total: total,
+        paidAmount: paidAmount,
+        remainingAmount: remainingAmount,
+        status: status,
+        items: JSON.parse(JSON.stringify(currentSaleItems)),
+        relatedPayments: [], relatedReturns: [], journalEntryId: null,
+        date: today, time: getNowTime(),
+        createdAt: new Date().toISOString(),
+        createdBy: currentUser ? currentUser.name : 'unknown'
+    };
+    sales.push(inv);
+    
+    itemChanges.forEach(function(ch) {
+        if (typeof logInventoryMovement === 'function') {
+            logInventoryMovement({
+                productId: ch.item.productId, productName: ch.item.name,
+                type: 'out', qty: ch.item.qty, price: ch.item.costPrice,
+                reason: 'sale', refType: 'sale', refId: inv.id, refNumber: inv.number,
+                warehouseId: warehouseId, balanceBefore: ch.before, balanceAfter: ch.after
+            });
+        }
+    });
+    
+    // ✅ القيد المحاسبي
+    let journalEntry = null;
+    try {
+        const lines = [];
+        const cashAcc = typeof getAccountByNameContains === 'function' ? getAccountByNameContains('النقدية بالخزنة') : null;
+        const arAcc = typeof getAccountByNameContains === 'function' ? getAccountByNameContains('العملاء') : null;
+        const salesAcc = typeof getAccountByNameContains === 'function' ? getAccountByNameContains('إيرادات المبيعات') : null;
+        const vatAcc = typeof getAccountByNameContains === 'function' ? getAccountByNameContains('ضريبة القيمة المضافة (دائن)') : null;
+        
+        if (paidAmount > 0 && cashAcc) lines.push({ accountId: cashAcc.id, accountName: cashAcc.name, debit: paidAmount, credit: 0 });
+        if (remainingAmount > 0 && arAcc) lines.push({ accountId: arAcc.id, accountName: arAcc.name, debit: remainingAmount, credit: 0 });
+        if (salesAcc) lines.push({ accountId: salesAcc.id, accountName: salesAcc.name, debit: 0, credit: subtotal });
+        if (vatTotal > 0 && vatAcc) lines.push({ accountId: vatAcc.id, accountName: vatAcc.name, debit: 0, credit: vatTotal });
+        
+        if (lines.length >= 2 && typeof createJournalEntry === 'function') {
+            journalEntry = createJournalEntry('فاتورة بيع #' + inv.number + ' - ' + customer, 'SALE-' + inv.number, today, lines, 'sale', inv.id);
+            if (journalEntry) inv.journalEntryId = journalEntry.id;
+        }
+    } catch (e) { console.warn('⚠️ فشل القيد:', e); }
+    
+    // ✅ حركة الخزنة (إذا كان هناك مبلغ مدفوع)
+    if (paidAmount > 0) {
+        treasury.push({
+            id: Date.now() + 1, type: 'deposit', amount: paidAmount,
+            note: 'فاتورة بيع #' + inv.number + ' - ' + customer + (remainingAmount > 0 ? ' (جزئي)' : ''),
+            partyName: customer, invoiceNumber: inv.number,
+            cashBoxId: cashBoxId, cashBoxName: cashBoxName,
+            refType: 'sale', refId: inv.id, journalEntryId: inv.journalEntryId,
+            date: today, time: getNowTime()
+        });
+    }
+    
+    // ✅ حفظ
+    if (typeof setData === 'function') {
+        setData('products', products);
+        setData('sales', sales);
+        setData('treasury', treasury);
+        setData('customers', customers);
+    }
+    if (typeof addAuditLog === 'function') {
+        addAuditLog('add', 'sale', 'فاتورة بيع #' + inv.number + ' - ' + customer + ' - ' + formatMoney(total) + ' ج.م' + (remainingAmount > 0 ? ' (متبقي: ' + formatMoney(remainingAmount) + ')' : ''));
+    }
+    
+    // ✅ إعادة تعيين
+    currentSaleItems = [];
+    const custEl = document.getElementById('saleCustomer'); if (custEl) custEl.value = '';
+    if (typeof setRadioValue === 'function') {
+        setRadioValue('salePaymentMethod', 'cash');
+        setRadioValue('saleInvoiceType', 'simple');
+    }
+    
+    renderCashier();
+    updateSaleTotals();
+    populateSaleProducts();
+    if (typeof populateSaleWarehouse === 'function') populateSaleWarehouse();
+    if (typeof populateCashBoxDropdowns === 'function') populateCashBoxDropdowns();
+    if (typeof updateDashboard === 'function') updateDashboard();
+    if (typeof renderTreasury === 'function') renderTreasury();
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof renderCustomers === 'function') renderCustomers();
+    updateInvoiceHeader();
+    
+    // ✅ رسالة نجاح
+    let successMsg = '✅ فاتورة #' + inv.number + ' بمبلغ ' + formatMoney(total) + ' 🇪🇬';
+    if (remainingAmount > 0) {
+        successMsg += ' - مدفوع: ' + formatMoney(paidAmount) + '، متبقي: ' + formatMoney(remainingAmount);
+    }
+    if (typeof showToast === 'function') showToast(successMsg, 'success');
+};
+
 console.log('✅ تم تحميل app-part2.js بنجاح');
