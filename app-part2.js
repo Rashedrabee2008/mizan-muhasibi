@@ -957,4 +957,109 @@ window.populateProductWarehouse = function() {
 
 window.addEventListener('DOMContentLoaded', function() { setTimeout(function() { populateProductWarehouse(); }, 3500); });
 
+
+// ═══════════════════════════════════════════════════════════
+// 🖨️ طباعة الفاتورة الحالية (نسخة كاملة)
+// ═══════════════════════════════════════════════════════════
+window.printCurrentInvoice = function() {
+    if (currentSaleItems.length === 0) {
+        if (typeof showToast === 'function') showToast('⚠️ لا توجد أصناف للطباعة', 'warning');
+        return;
+    }
+    
+    // ✅ جمع بيانات الفاتورة
+    const customer = document.getElementById('saleCustomer')?.value || 'عميل نقدي';
+    const whName = document.getElementById('saleWarehouse')?.selectedOptions[0]?.text || 'المخزن';
+    const cashBoxName = document.getElementById('saleCashBox')?.selectedOptions[0]?.text || 'نقدي';
+    const subtotal = currentSaleItems.reduce(function(s, i) { return s + (i.subtotal || i.total); }, 0);
+    const vatTotal = currentSaleItems.reduce(function(s, i) { return s + (i.vatAmount || 0); }, 0);
+    const invoiceType = document.querySelector('input[name="saleInvoiceType"]:checked')?.value || 'simple';
+    const isTax = invoiceType === 'tax';
+    const finalVAT = isTax ? vatTotal : 0;
+    const total = subtotal + finalVAT;
+    
+    // ✅ إنشاء صفوف الأصناف
+    let itemsHtml = '';
+    currentSaleItems.forEach(function(it, i) {
+        itemsHtml += '<tr>' +
+            '<td style="padding:8px;border:1px solid #ddd;text-align:center;">' + (i + 1) + '</td>' +
+            '<td style="padding:8px;border:1px solid #ddd;">' + it.name + '</td>' +
+            '<td style="padding:8px;border:1px solid #ddd;text-align:center;">' + it.qty + '</td>' +
+            '<td style="padding:8px;border:1px solid #ddd;text-align:center;">' + formatMoney(it.price) + '</td>' +
+            '<td style="padding:8px;border:1px solid #ddd;text-align:center;">' + formatMoney(it.total) + '</td>' +
+            '</tr>';
+    });
+    
+    // ✅ شعار الشركة
+    const logoHtml = companyData.logo ? '<img src="' + companyData.logo + '" style="max-width:80px;max-height:80px;margin:0 auto 10px;display:block;" />' : '';
+    
+    // ✅ HTML للطباعة
+    const printHtml = '<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"><title>فاتورة بيع</title>' +
+        '<style>' +
+        '* { margin:0; padding:0; box-sizing:border-box; font-family:Arial, "Tajawal", sans-serif; }' +
+        'body { padding:20px; background:#fff; color:#000; font-size:13px; }' +
+        '.header { text-align:center; padding-bottom:15px; border-bottom:2px dashed #333; margin-bottom:15px; }' +
+        '.header h1 { color:#000; font-size:24px; margin-bottom:5px; }' +
+        '.header p { color:#666; font-size:12px; margin:3px 0; }' +
+        '.tax-badge { display:inline-block; background:#000; color:#fff; padding:4px 16px; border-radius:20px; font-size:11px; font-weight:900; margin-bottom:10px; }' +
+        '.info { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:15px; padding:10px; background:#f5f5f5; border-radius:5px; font-size:12px; }' +
+        '.info div { color:#000; }' +
+        '.info .lbl { font-weight:700; color:#555; }' +
+        'table { width:100%; border-collapse:collapse; margin-bottom:15px; font-size:12px; }' +
+        'table th { background:#000; color:#fff; padding:10px 8px; border:1px solid #000; text-align:center; }' +
+        'table td { padding:8px; border:1px solid #ddd; text-align:center; }' +
+        '.totals { width:300px; margin-right:auto; font-size:13px; margin-top:15px; }' +
+        '.totals .row { display:flex; justify-content:space-between; padding:6px 10px; border-bottom:1px solid #eee; }' +
+        '.totals .row:last-child { border-bottom:none; }' +
+        '.totals .total { background:#000; color:#fff; font-weight:900; font-size:18px; padding:12px; margin-top:8px; border-radius:5px; }' +
+        '.footer { text-align:center; margin-top:20px; padding-top:15px; border-top:2px dashed #333; font-size:11px; color:#666; }' +
+        '@media print { @page { size:auto; margin:10mm; } body { padding:0; } }' +
+        '</style></head><body>' +
+        '<div class="header">' +
+        (isTax ? '<div class="tax-badge">🧾 فاتورة ضريبية</div>' : '') +
+        logoHtml +
+        '<h1>' + (companyData.name || 'الميزان') + '</h1>' +
+        (companyData.phone ? '<p>📞 ' + companyData.phone + '</p>' : '') +
+        (companyData.address ? '<p>📍 ' + companyData.address + '</p>' : '') +
+        (companyData.tax ? '<p>🆔 ' + companyData.tax + '</p>' : '') +
+        '<p style="margin-top:8px;font-size:14px;font-weight:bold;">فاتورة بيع</p>' +
+        '</div>' +
+        '<div class="info">' +
+        '<div><span class="lbl">رقم:</span> #' + (sales.length + 1) + '</div>' +
+        '<div><span class="lbl">التاريخ:</span> ' + getTodayDate() + '</div>' +
+        '<div><span class="lbl">العميل:</span> ' + customer + '</div>' +
+        '<div><span class="lbl">المخزن:</span> ' + whName + '</div>' +
+        '<div><span class="lbl">الخزنة:</span> ' + cashBoxName + '</div>' +
+        '<div><span class="lbl">الوقت:</span> ' + getNowTime() + '</div>' +
+        '</div>' +
+        '<table><thead><tr><th>#</th><th>الصنف</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>' +
+        '<tbody>' + itemsHtml + '</tbody></table>' +
+        '<div class="totals">' +
+        '<div class="row"><span>المجموع:</span><span>' + formatMoney(subtotal) + ' ج.م</span></div>' +
+        (isTax ? '<div class="row"><span>الضريبة:</span><span>' + formatMoney(finalVAT) + ' ج.م</span></div>' : '') +
+        '<div class="row total"><span>الإجمالي:</span><span>' + formatMoney(total) + ' ج.م</span></div>' +
+        '</div>' +
+        '<div class="footer">' + (companyData.footer || 'شكراً لتعاملكم معنا 🌟') + '</div>' +
+        '<script>' +
+        'window.onload = function() {' +
+        '  setTimeout(function() {' +
+        '    window.print();' +
+        '    setTimeout(function() { window.close(); }, 1000);' +
+        '  }, 300);' +
+        '};' +
+        '<\/script>' +
+        '</body></html>';
+    
+    // ✅ فتح نافذة الطباعة
+    const printWindow = window.open('', '_blank', 'width=800,height=600');
+    if (!printWindow) {
+        if (typeof showToast === 'function') showToast('⚠️ الرجاء السماح بالنوافذ المنبثقة', 'warning');
+        return;
+    }
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
+    
+    if (typeof showToast === 'function') showToast('🖨️ جاري الطباعة...', 'info');
+    if (typeof addAuditLog === 'function') addAuditLog('edit', 'sale', 'طباعة فاتورة بيع');
+};
 console.log('✅ تم تحميل app-part2.js بنجاح');
