@@ -1,9 +1,220 @@
 // ============================================================
 // الميزان 14.0.0 - الجزء 2: العمليات
-// app-part2.js (نسخة كاملة - مع إصلاح الخزنة والضريبة)
+// app-part2.js (نسخة كاملة - مع إصلاح إضافة المنتج)
 // ============================================================
 
 console.log('📦 تحميل app-part2.js - العمليات + البحث + المخزون');
+
+// ═══════════════════════════════════════════════════════════
+// 💾 حفظ المنتج (إضافة/تعديل) - ✅ الدالة الأساسية
+// ═══════════════════════════════════════════════════════════
+window.saveProduct = function() {
+    if (typeof canAdd === 'function' && !canAdd()) {
+        showToast('⚠️ ليس لديك صلاحية', 'error');
+        return;
+    }
+    
+    const id = document.getElementById('productId')?.value;
+    const name = document.getElementById('productName')?.value.trim();
+    const barcode = document.getElementById('productBarcode')?.value.trim() || '';
+    const buy = parseFloat(document.getElementById('productBuy')?.value) || 0;
+    const sell = parseFloat(document.getElementById('productSell')?.value) || 0;
+    const qty = parseInt(document.getElementById('productQty')?.value) || 0;
+    const min = parseInt(document.getElementById('productMin')?.value) || 5;
+    const vat = parseFloat(document.getElementById('productVAT')?.value) || 14;
+    const warehouseId = document.getElementById('productWarehouse')?.value;
+    
+    // ✅ التحقق من البيانات
+    if (!name) {
+        showToast('⚠️ أدخل اسم المنتج', 'error');
+        document.getElementById('productName')?.focus();
+        return;
+    }
+    if (buy < 0 || sell < 0) {
+        showToast('⚠️ الأسعار يجب أن تكون موجبة', 'error');
+        return;
+    }
+    if (qty < 0) {
+        showToast('⚠️ الكمية يجب أن تكون موجبة', 'error');
+        return;
+    }
+    
+    if (id) {
+        // ✏️ تعديل منتج موجود
+        const idx = products.findIndex(p => p.id == id);
+        if (idx > -1) {
+            const oldQty = products[idx].qty || 0;
+            const qtyDiff = qty - oldQty;
+            
+            products[idx] = {
+                ...products[idx],
+                name,
+                barcode,
+                buy,
+                sell,
+                qty,
+                min,
+                vat
+            };
+            
+            // ✅ تحديث المخزن لو تغيرت الكمية
+            if (qtyDiff !== 0 && warehouseId) {
+                const targetWhId = warehouseId;
+                if (targetWhId && typeof setProductStockInWarehouse === 'function') {
+                    const currentWhQty = typeof getProductStockInWarehouse === 'function' 
+                        ? getProductStockInWarehouse(id, targetWhId) 
+                        : 0;
+                    setProductStockInWarehouse(id, targetWhId, Math.max(0, currentWhQty + qtyDiff));
+                }
+            }
+            
+            if (typeof addAuditLog === 'function') {
+                addAuditLog('edit', 'product', `تعديل منتج: ${name}`);
+            }
+            showToast('✅ تم تعديل المنتج', 'success');
+        }
+    } else {
+        // ➕ إضافة منتج جديد
+        if (products.find(p => p.name === name)) {
+            showToast('⚠️ اسم المنتج موجود بالفعل', 'warning');
+            return;
+        }
+        
+        const newProduct = {
+            id: Date.now(),
+            name,
+            barcode,
+            buy,
+            sell,
+            qty,
+            min,
+            vat,
+            createdAt: new Date().toISOString()
+        };
+        
+        products.push(newProduct);
+        
+        // ✅ ربط الكمية بالمخزن
+        if (qty > 0) {
+            const defaultWh = typeof getDefaultWarehouse === 'function' ? getDefaultWarehouse() : null;
+            const targetWhId = warehouseId || (defaultWh ? defaultWh.id : null);
+            if (targetWhId) {
+                if (typeof productWarehouseStock === 'undefined' || !productWarehouseStock) {
+                    window.productWarehouseStock = {};
+                }
+                if (!productWarehouseStock[newProduct.id]) {
+                    productWarehouseStock[newProduct.id] = {};
+                }
+                productWarehouseStock[newProduct.id][targetWhId] = qty;
+                if (typeof setData === 'function') {
+                    setData('productWarehouseStock', productWarehouseStock);
+                }
+            }
+        }
+        
+        if (typeof addAuditLog === 'function') {
+            addAuditLog('add', 'product', `إضافة منتج: ${name} (${qty} وحدة)`);
+        }
+        showToast('✅ تم إضافة المنتج', 'success');
+    }
+    
+    // 💾 حفظ البيانات
+    if (typeof setData === 'function') {
+        setData('products', products);
+    }
+    
+    // 🔄 تحديث الواجهات
+    resetProductForm();
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof populateSaleProducts === 'function') populateSaleProducts();
+    if (typeof populatePurProducts === 'function') populatePurProducts();
+    if (typeof populateRetProducts === 'function') populateRetProducts();
+    if (typeof updateDashboard === 'function') updateDashboard();
+    if (typeof renderWarehouseStatsOnDashboard === 'function') renderWarehouseStatsOnDashboard();
+};
+
+// ═══════════════════════════════════════════════════════════
+// 🔄 إعادة تعيين نموذج المنتج
+// ═══════════════════════════════════════════════════════════
+window.resetProductForm = function() {
+    if (document.getElementById('productId')) document.getElementById('productId').value = '';
+    if (document.getElementById('productName')) document.getElementById('productName').value = '';
+    if (document.getElementById('productBarcode')) document.getElementById('productBarcode').value = '';
+    if (document.getElementById('productBuy')) document.getElementById('productBuy').value = '';
+    if (document.getElementById('productSell')) document.getElementById('productSell').value = '';
+    if (document.getElementById('productQty')) document.getElementById('productQty').value = '';
+    if (document.getElementById('productMin')) document.getElementById('productMin').value = '5';
+    if (document.getElementById('productVAT')) document.getElementById('productVAT').value = '14';
+    if (document.getElementById('productWarehouse')) document.getElementById('productWarehouse').value = '';
+    if (document.getElementById('productFormTitle')) document.getElementById('productFormTitle').textContent = '➕ إضافة منتج جديد';
+    if (document.getElementById('productSaveBtnText')) document.getElementById('productSaveBtnText').textContent = 'إضافة';
+};
+
+// ═══════════════════════════════════════════════════════════
+// ✏️ تعديل منتج
+// ═══════════════════════════════════════════════════════════
+window.editProduct = function(id) {
+    if (typeof canEdit === 'function' && !canEdit()) {
+        showToast('⚠️ ليس لديك صلاحية', 'error');
+        return;
+    }
+    const p = products.find(pr => pr.id == id);
+    if (!p) return;
+    
+    if (document.getElementById('productId')) document.getElementById('productId').value = p.id;
+    if (document.getElementById('productName')) document.getElementById('productName').value = p.name;
+    if (document.getElementById('productBarcode')) document.getElementById('productBarcode').value = p.barcode || '';
+    if (document.getElementById('productBuy')) document.getElementById('productBuy').value = p.buy;
+    if (document.getElementById('productSell')) document.getElementById('productSell').value = p.sell;
+    if (document.getElementById('productQty')) document.getElementById('productQty').value = p.qty;
+    if (document.getElementById('productMin')) document.getElementById('productMin').value = p.min || 5;
+    if (document.getElementById('productVAT')) document.getElementById('productVAT').value = p.vat || 14;
+    
+    // ✅ تعيين المخزن الحالي
+    if (document.getElementById('productWarehouse') && typeof productWarehouseStock !== 'undefined' && productWarehouseStock[p.id]) {
+        const whIds = Object.keys(productWarehouseStock[p.id]);
+        if (whIds.length > 0) {
+            document.getElementById('productWarehouse').value = whIds[0];
+        }
+    }
+    
+    if (document.getElementById('productFormTitle')) document.getElementById('productFormTitle').textContent = '✏️ تعديل المنتج';
+    if (document.getElementById('productSaveBtnText')) document.getElementById('productSaveBtnText').textContent = 'حفظ التعديل';
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ═══════════════════════════════════════════════════════════
+// 🗑️ حذف منتج
+// ═══════════════════════════════════════════════════════════
+window.deleteProduct = function(id) {
+    if (typeof canDelete === 'function' && !canDelete()) {
+        showToast('⚠️ ليس لديك صلاحية', 'error');
+        return;
+    }
+    const p = products.find(pr => pr.id == id);
+    if (!p) return;
+    
+    if (!confirm(`⚠️ حذف المنتج "${p.name}"؟`)) return;
+    
+    window.products = products.filter(pr => pr.id !== id);
+    
+    // حذف من المخازن
+    if (typeof productWarehouseStock !== 'undefined' && productWarehouseStock[id]) {
+        delete productWarehouseStock[id];
+        if (typeof setData === 'function') setData('productWarehouseStock', productWarehouseStock);
+    }
+    
+    if (typeof setData === 'function') setData('products', products);
+    if (typeof addAuditLog === 'function') addAuditLog('delete', 'product', `حذف منتج: ${p.name}`);
+    
+    if (typeof renderProducts === 'function') renderProducts();
+    if (typeof updateDashboard === 'function') updateDashboard();
+    if (typeof populateSaleProducts === 'function') populateSaleProducts();
+    if (typeof populatePurProducts === 'function') populatePurProducts();
+    
+    showToast('🗑️ تم حذف المنتج', 'info');
+};
 
 // ═══════════════════════════════════════════════════════════
 // 📦 عرض المنتجات في المخزون
@@ -43,35 +254,31 @@ window.safeRenderProducts = function() {
     }
 };
 
-if (typeof window.editProduct !== 'function') {
-    window.editProduct = function(id) {
-        const p = products.find(pr => pr.id == id); if (!p) return;
-        document.getElementById('productId').value = p.id;
-        document.getElementById('productName').value = p.name;
-        document.getElementById('productBarcode').value = p.barcode || '';
-        document.getElementById('productBuy').value = p.buy;
-        document.getElementById('productSell').value = p.sell;
-        document.getElementById('productQty').value = p.qty;
-        document.getElementById('productMin').value = p.min || 5;
-        document.getElementById('productVAT').value = p.vat || 14;
-        document.getElementById('productFormTitle').textContent = '✏️ تعديل المنتج';
-        document.getElementById('productSaveBtnText').textContent = 'حفظ التعديل';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-}
-
-if (typeof window.deleteProduct !== 'function') {
-    window.deleteProduct = function(id) {
-        if (!canDelete()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
-        const p = products.find(pr => pr.id == id); if (!p) return;
-        if (!confirm('⚠️ حذف المنتج "' + p.name + '"؟')) return;
-        window.products = products.filter(pr => pr.id !== id);
-        setData('products', products);
-        addAuditLog('delete', 'product', 'حذف منتج: ' + p.name);
-        renderProducts(); updateDashboard();
-        showToast('🗑️ تم حذف المنتج', 'info');
-    };
-}
+// ═══════════════════════════════════════════════════════════
+// 🏪 تعبئة قائمة المخازن في نموذج المنتج
+// ═══════════════════════════════════════════════════════════
+window.populateProductWarehouse = function() {
+    try {
+        const sel = document.getElementById('productWarehouse');
+        if (!sel) return;
+        const cv = sel.value;
+        let whs = [];
+        if (typeof warehouses !== 'undefined' && Array.isArray(warehouses) && warehouses.length > 0) {
+            whs = warehouses;
+        } else {
+            try { whs = JSON.parse(localStorage.getItem('mizan_warehouses') || '[]'); } catch (e) { whs = []; }
+        }
+        if (whs.length === 0) {
+            whs = [{ id: 1, name: 'المخزن الرئيسي', isDefault: true, active: true }];
+        }
+        let html = '<option value="">توزيع على المخزن الرئيسي</option>';
+        whs.forEach(function(w) {
+            html += '<option value="' + w.id + '">' + w.name + (w.isDefault ? ' ⭐' : '') + '</option>';
+        });
+        sel.innerHTML = html;
+        sel.value = cv;
+    } catch (e) { console.warn('⚠️ خطأ في populateProductWarehouse:', e.message); }
+};
 
 // ═══════════════════════════════════════════════════════════
 // 🔍 نظام البحث الذكي
@@ -291,7 +498,7 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // ═══════════════════════════════════════════════════════════
-// ✅ إضافة صنف للفاتورة (بدون ضريبة)
+// ✅ إضافة صنف للفاتورة
 // ═══════════════════════════════════════════════════════════
 window.addSaleItem = function() {
     if (typeof canAdd === 'function' && !canAdd()) {
@@ -358,7 +565,7 @@ window.removeSaleItem = function(i) {
 };
 
 // ═══════════════════════════════════════════════════════════
-// ✅ عرض أصناف الفاتورة (بدون ضريبة في كل صنف)
+// ✅ عرض أصناف الفاتورة
 // ═══════════════════════════════════════════════════════════
 window.renderCashier = function() {
     const c = document.getElementById('saleItemsContainer');
@@ -392,7 +599,7 @@ window.renderCashier = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// ✅ حساب الإجماليات (الضريبة فقط للفواتير الضريبية)
+// ✅ حساب الإجماليات
 // ═══════════════════════════════════════════════════════════
 window.updateSaleTotals = function() {
     const subtotal = currentSaleItems.reduce(function(s, i) { return s + (i.subtotal || i.total); }, 0);
@@ -427,7 +634,7 @@ window.updateInvoiceHeader = function() {
 };
 
 // ═══════════════════════════════════════════════════════════
-// 💾 حفظ الفاتورة (مع نافذة تأكيد الدفع)
+// 💾 حفظ الفاتورة
 // ═══════════════════════════════════════════════════════════
 window.saveSale = function() {
     if (typeof canAdd === 'function' && !canAdd()) { showToast('⚠️ ليس لديك صلاحية', 'error'); return; }
@@ -459,7 +666,6 @@ window.saveSale = function() {
     const total = subtotal + finalVAT;
     const customer = document.getElementById('saleCustomer')?.value || 'عميل نقدي';
     const paymentMethod = typeof getRadioValue === 'function' ? getRadioValue('salePaymentMethod', 'cash') : 'cash';
-    // ✅ قراءة الخزنة المختارة مباشرة من القائمة
     const selectedCashBoxId = document.getElementById('saleCashBox')?.value;
     const selectedCashBoxName = document.getElementById('saleCashBox')?.selectedOptions[0]?.text || 'نقدي';
     showPaymentConfirmModal({
@@ -524,7 +730,6 @@ window.confirmSalePayment = function() {
     const paid = parseFloat(document.getElementById('pcPaidAmount')?.value) || 0;
     const total = data.total;
     const remaining = Math.max(0, total - paid);
-    // ✅ قراءة الخزنة المختارة من نافذة تأكيد الدفع
     const selectedCashBoxId = parseInt(document.getElementById('pcCashBox')?.value) || data.cashBoxId;
     const selectedCashBoxName = document.getElementById('pcCashBox')?.selectedOptions[0]?.text || data.cashBoxName;
     if (paid < 0 || paid > total + 0.01) { showToast('⚠️ المبلغ المدفوع غير صحيح', 'error'); return; }
@@ -904,6 +1109,7 @@ window.deleteExpense = function(id) {
 window.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         populateSaleWarehouse(); populatePurWarehouse(); populateRetWarehouse();
+        populateProductWarehouse();
         const n = _applyAllSearch();
         console.log('🔍 تم تفعيل البحث على ' + n + ' قائمة');
         if (typeof renderProducts === 'function') { try { renderProducts(); } catch(e) {} }
@@ -918,59 +1124,11 @@ setInterval(function() { if (document.getElementById('invTimeDisplay') && typeof
         if (_navOriginal) _navOriginal.apply(this, arguments);
         setTimeout(function() {
             if (page === 'cashier') { populateSaleWarehouse(); populateSaleProducts(); populateSaleCustomers(); if (typeof populateCashBoxDropdowns === 'function') populateCashBoxDropdowns(); _applyAllSearch(); if (typeof updateInvoiceHeader === 'function') updateInvoiceHeader(); }
-            if (page === 'inventory') { if (typeof renderProducts === 'function') renderProducts(); }
+            if (page === 'inventory') { if (typeof renderProducts === 'function') renderProducts(); if (typeof populateProductWarehouse === 'function') populateProductWarehouse(); }
             if (page === 'purchases') { populatePurWarehouse(); populatePurProducts(); populatePurSuppliers(); if (typeof populateCashBoxDropdowns === 'function') populateCashBoxDropdowns(); _applyAllSearch(); }
             if (page === 'returns') { populateRetWarehouse(); populateRetProducts(); if (typeof populateCashBoxDropdowns === 'function') populateCashBoxDropdowns(); _applyAllSearch(); }
         }, 300);
     };
 })();
-
-window.populateProductWarehouse = function() {
-    try {
-        const sel = document.getElementById('productWarehouse'); if (!sel) return;
-        const cv = sel.value;
-        let whs = [];
-        if (typeof warehouses !== 'undefined' && Array.isArray(warehouses) && warehouses.length > 0) whs = warehouses;
-        else { try { whs = JSON.parse(localStorage.getItem('mizan_warehouses') || '[]'); } catch (e) { whs = []; } }
-        if (whs.length === 0) whs = [{ id: 1, name: 'المخزن الرئيسي', isDefault: true, active: true }];
-        let html = '<option value="">توزيع على المخزن الرئيسي</option>';
-        whs.forEach(function(w) { html += '<option value="' + w.id + '">' + w.name + (w.isDefault ? ' ⭐' : '') + '</option>'; });
-        sel.innerHTML = html; sel.value = cv;
-    } catch (e) { console.warn('⚠️ خطأ في populateProductWarehouse:', e.message); }
-};
-
-(function() {
-    let _originalSaveProduct = window.saveProduct;
-    window.saveProduct = function() {
-        try {
-            if (_originalSaveProduct) _originalSaveProduct.apply(this, arguments);
-            setTimeout(function() {
-                try {
-                    const productName = document.getElementById('productName')?.value?.trim();
-                    if (!productName) return;
-                    const product = products.find(function(p) { return p.name === productName; });
-                    if (!product) return;
-                    const warehouseId = document.getElementById('productWarehouse')?.value;
-                    const defaultWh = typeof getDefaultWarehouse === 'function' ? getDefaultWarehouse() : (warehouses && warehouses[0]);
-                    const targetWhId = warehouseId || (defaultWh ? defaultWh.id : null);
-                    if (!targetWhId) return;
-                    if (typeof productWarehouseStock === 'undefined' || !productWarehouseStock) window.productWarehouseStock = {};
-                    if (!productWarehouseStock[product.id]) productWarehouseStock[product.id] = {};
-                    const currentQty = productWarehouseStock[product.id][targetWhId] || 0;
-                    if (currentQty < product.qty) {
-                        const diff = product.qty - currentQty;
-                        productWarehouseStock[product.id][targetWhId] = currentQty + diff;
-                        if (typeof setData === 'function') setData('productWarehouseStock', productWarehouseStock);
-                    }
-                    populateProductWarehouse();
-                    if (typeof renderProducts === 'function') renderProducts();
-                    if (typeof renderWarehouseStatsOnDashboard === 'function') renderWarehouseStatsOnDashboard();
-                } catch (e) { console.warn('⚠️ خطأ في ربط المنتج بالمخزن:', e.message); }
-            }, 300);
-        } catch (e) { console.warn('⚠️ خطأ في saveProduct:', e.message); }
-    };
-})();
-
-window.addEventListener('DOMContentLoaded', function() { setTimeout(function() { populateProductWarehouse(); }, 3500); });
 
 console.log('✅ تم تحميل app-part2.js بنجاح');
