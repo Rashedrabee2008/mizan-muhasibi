@@ -5,34 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#0D0D0D" />
     <title>الميزان - نظام محاسبة ونقاط بيع</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>" />
 </head>
 <body>
 
     <!-- ============ شاشة الدخول ============ -->
-    <div class="login-container" id="loginContainer">
-        <div class="login-box">
-            <div class="logo"><i class="fas fa-scale-balanced"></i></div>
-            <h1>الميزان</h1>
-            <p class="subtitle">نظام محاسبة ونقاط بيع</p>
-            <div class="form-group">
-                <label>👤 اسم المستخدم</label>
-                <select id="loginUsername" class="login-select"></select>
-            </div>
-            <div class="form-group">
-                <label>🔑 كلمة المرور</label>
-                <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور..." onkeydown="if(event.key==='Enter') checkLogin()" />
-            </div>
-            <button class="btn btn-primary btn-block" onclick="checkLogin()">
-                <i class="fas fa-unlock"></i> دخول
-            </button>
-            <div class="error-msg" id="loginError">❌ بيانات الدخول غير صحيحة</div>
-            <div class="hint">🔒 كلمة المرور الافتراضية: <strong>123456</strong></div>
-        </div>
-    </div>
+    <div class="login-container" id="loginContainer"></div>
 
     <!-- ============ التطبيق ============ -->
     <div id="appContent" style="display:none;">
@@ -46,7 +27,7 @@
             <div class="header-actions">
                 <span class="user-badge" id="currentUserBadge" title="المستخدم الحالي">
                     <i class="fas fa-user-circle"></i>
-                    <span id="currentUserName">المدير</span>
+                    <span id="currentUserName">المستخدم</span>
                 </span>
                 <button class="cloud-btn" onclick="syncToCloud()" title="مزامنة للسحابة">
                     <i class="fas fa-cloud-upload-alt"></i>
@@ -136,7 +117,6 @@
                         <button class="btn btn-secondary" onclick="resetProductForm()"><i class="fas fa-times"></i> إلغاء</button>
                     </div>
                 </div>
-                <!-- ✅ استخدام safeRenderProducts بدلاً من renderProducts -->
                 <div class="search-box"><input type="text" id="inventorySearch" placeholder="🔍 بحث..." oninput="safeRenderProducts()" /></div>
                 <div id="productList"></div>
             </div>
@@ -1153,6 +1133,13 @@
                     <button class="btn btn-primary btn-block" onclick="saveVATSettings()"><i class="fas fa-save"></i> حفظ</button>
                 </div>
                 <div class="settings-section">
+                    <h3><i class="fas fa-mobile-alt"></i> الأجهزة المسجلة</h3>
+                    <p class="settings-desc">إدارة الأجهزة المرتبطة بحسابك (حتى 3 أجهزة).</p>
+                    <button class="btn btn-info btn-block" onclick="showDevicesManager()">
+                        <i class="fas fa-list"></i> إدارة الأجهزة المسجلة
+                    </button>
+                </div>
+                <div class="settings-section">
                     <h3><i class="fas fa-cloud"></i> المزامنة السحابية</h3>
                     <button class="btn btn-success btn-block" onclick="syncToCloud()"><i class="fas fa-cloud-upload-alt"></i> رفع البيانات للسحابة</button>
                     <button class="btn btn-info btn-block" onclick="syncFromCloud()" style="margin-top:6px;"><i class="fas fa-cloud-download-alt"></i> استعادة من السحابة</button>
@@ -1229,23 +1216,23 @@
 
     <div id="toast" class="toast"></div>
 
-    <!-- ✅ Firebase أولاً -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    
-<!-- ✅ ثم ملفات التطبيق -->
-<script src="app-security.js" defer></script>
-<script src="app-part1.js" defer></script>
-<script src="app-part2.js" defer></script>
-<script src="app-part3.js" defer></script>
-<script src="app-part4.js" defer></script>
-<script src="app-warehouses.js" defer></script>
-<script src="app-whatsapp.js" defer></script>
-<script src="app-integration.js" defer></script>
-<script src="app-sync-stock.js" defer></script>
-<script src="app-session.js" defer></script>
-<script src="app-multi-treasury.js" defer></script>
+    <!-- ============ Firebase ============ -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+    <!-- ============ ملفات JavaScript - الترتيب مهم ============ -->
+    <script src="app-security.js" defer></script>
+    <script src="app-part1.js" defer></script>
+    <script src="app-part2.js" defer></script>
+    <script src="app-part3.js" defer></script>
+    <script src="app-part4.js" defer></script>
+    <script src="app-warehouses.js" defer></script>
+    <script src="app-whatsapp.js" defer></script>
+    <script src="app-integration.js" defer></script>
+    <script src="app-sync-stock.js" defer></script>
+    <script src="app-session.js" defer></script>
+    <script src="app-multi-treasury.js" defer></script>
     
     <!-- 🔍 Eruda Console للموبايل -->
     <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
