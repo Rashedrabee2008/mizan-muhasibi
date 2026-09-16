@@ -452,7 +452,9 @@ window.saveSale = function() {
     if (currentSaleItems.length === 0) { showToast('⚠️ لا توجد أصناف', 'error'); return; }
     
     const whId = document.getElementById('saleWarehouse')?.value;
+    const paymentMethod = typeof getRadioValue === 'function' ? getRadioValue('salePaymentMethod', 'cash') : 'cash';
     
+    // ✅ التحقق من الكميات
     for (let i = 0; i < currentSaleItems.length; i++) {
         const it = currentSaleItems[i];
         const p = products.find(function(pr) { return pr.id == it.productId; });
@@ -468,8 +470,6 @@ window.saveSale = function() {
     const subtotal = currentSaleItems.reduce(function(s, i) { return s + (i.subtotal || i.total); }, 0);
     const invoiceType = typeof getRadioValue === 'function' ? getRadioValue('saleInvoiceType', 'simple') : 'simple';
     const isTaxInvoice = invoiceType === 'tax';
-    
-    // ✅ حساب الضريبة فقط إذا كانت الفاتورة ضريبية
     let vatTotal = 0;
     if (isTaxInvoice) {
         currentSaleItems.forEach(function(it) {
@@ -478,19 +478,24 @@ window.saveSale = function() {
             vatTotal += (it.qty * it.price) * (vatPercent / 100);
         });
     }
-    
     const finalVAT = isTaxInvoice ? vatTotal : 0;
     const total = subtotal + finalVAT;
     
     const customer = document.getElementById('saleCustomer')?.value || 'عميل نقدي';
-    const paymentMethod = typeof getRadioValue === 'function' ? getRadioValue('salePaymentMethod', 'cash') : 'cash';
     const cashBoxId = typeof getSaleCashBox === 'function' ? getSaleCashBox() : null;
     const cashBoxName = document.getElementById('saleCashBox')?.selectedOptions[0]?.text || 'نقدي';
     
+    // ✅ فتح نافذة تأكيد الدفع (دايماً، عشان تسأل عن المبلغ المدفوع)
     showPaymentConfirmModal({
-        customer: customer, total: total, subtotal: subtotal, vatTotal: finalVAT,
-        isTaxInvoice: isTaxInvoice, paymentMethod: paymentMethod,
-        cashBoxId: cashBoxId, cashBoxName: cashBoxName, warehouseId: whId
+        customer: customer,
+        total: total,
+        subtotal: subtotal,
+        vatTotal: finalVAT,
+        isTaxInvoice: isTaxInvoice,
+        paymentMethod: paymentMethod,
+        cashBoxId: cashBoxId,
+        cashBoxName: cashBoxName,
+        warehouseId: whId
     });
 };
 
