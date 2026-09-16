@@ -1221,17 +1221,28 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-    <!-- ============ ملفات JavaScript - الترتيب مهم ============ -->
+        <!-- ============ ملفات JavaScript - الترتيب مهم ============ -->
+    <!-- 1. الأمان أولاً (يعرّف doLogin, showLoginScreen, initAuthListener) -->
     <script src="app-security.js" defer></script>
+    <!-- 2. الأساسيات (يعرّف checkLogin, setCurrentUser, lockApp) -->
     <script src="app-part1.js" defer></script>
+    <!-- 3. العمليات -->
     <script src="app-part2.js" defer></script>
+    <!-- 4. العرض والتهيئة (يحتوي changePassword المحدّث) -->
     <script src="app-part3.js" defer></script>
+    <!-- 5. الطباعة الحرارية فقط -->
     <script src="app-part4.js" defer></script>
+    <!-- 6. المخازن -->
     <script src="app-warehouses.js" defer></script>
+    <!-- 7. الواتساب (يحتوي جميع دوال الواتساب) -->
     <script src="app-whatsapp.js" defer></script>
+    <!-- 8. التكامل -->
     <script src="app-integration.js" defer></script>
+    <!-- 9. مزامنة المخزون -->
     <script src="app-sync-stock.js" defer></script>
+    <!-- 10. الجلسة (يعترض setCurrentUser و lockApp) -->
     <script src="app-session.js" defer></script>
+    <!-- 11. الخزائن المتعددة -->
     <script src="app-multi-treasury.js" defer></script>
     
     <!-- 🔍 Eruda Console للموبايل -->
