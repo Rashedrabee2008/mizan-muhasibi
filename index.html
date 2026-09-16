@@ -1229,11 +1229,13 @@
 
     <div id="toast" class="toast"></div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- ✅ Firebase أولاً -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-  <!-- ✅ ملفات JavaScript - الترتيب مهم -->
-<script src="app-security.js" defer></script>  <!-- ✅ جديد: نظام الحماية -->
+<!-- ✅ ثم ملفات التطبيق -->
+<script src="app-security.js" defer></script>
 <script src="app-part1.js" defer></script>
 <script src="app-part2.js" defer></script>
 <script src="app-part3.js" defer></script>
