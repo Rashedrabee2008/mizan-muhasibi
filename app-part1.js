@@ -420,11 +420,8 @@ window.lockApp = function() {
     if (appCont) appCont.style.display = 'none';
 };
 
-// دوال قديمة (للتوافق مع الكود القديم)
-window.populateLoginUsers = function() {
-    // لن تُستخدم بعد الآن لأن تسجيل الدخول أصبح بـ Firebase Auth
-    console.log('ℹ️ populateLoginUsers: تم استبدالها بـ Firebase Auth');
-};
+// ✅ populateLoginUsers: لم تعد مستخدمة (Firebase Auth يحل محلها)
+// تم حذفها نهائياً لتجنب التكرار
 
 window.updateUserUI = function() {
     if (!currentUser) return;
@@ -481,6 +478,9 @@ window.navigateTo = function(page) {
     if (page === 'users') renderUsers();
     if (page === 'audit') renderAudit();
     if (page === 'settings') renderSettings();
+
+    // ✅ إطلاق حدث التنقل لحفظ آخر صفحة في الجلسة
+    window.dispatchEvent(new CustomEvent('mizan_navigate', { detail: { page: page } }));
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
