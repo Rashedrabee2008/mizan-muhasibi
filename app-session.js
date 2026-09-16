@@ -1,11 +1,6 @@
 // ============================================================
-// الميزان 14.0.0 - إدارة الجلسة
+// الميزان 14.0.0 - إدارة الجلسة (مصحح للعمل مع Firebase Auth)
 // app-session.js
-// ============================================================
-// 
-// يحل مشكلة:
-// - Refresh بيرجع لتسجيل الدخول
-// - الحفاظ على الجلسة لمدة 7 أيام
 // ============================================================
 
 console.log('🔐 تحميل app-session.js - إدارة الجلسة');
@@ -22,7 +17,8 @@ window.saveSession = function(user) {
         const session = {
             userId: user.id,
             userName: user.name,
-            userRole: user.role,
+            userEmail: user.email || '',
+            userRole: user.role || 'admin',
             loginTime: Date.now(),
             expiresAt: Date.now() + SESSION_TIMEOUT,
             lastPage: 'dashboard'
@@ -44,16 +40,12 @@ window.getSession = function() {
     try {
         const data = localStorage.getItem(SESSION_KEY);
         if (!data) return null;
-        
         const session = JSON.parse(data);
-        
-        // التحقق من انتهاء الصلاحية
         if (session.expiresAt && Date.now() > session.expiresAt) {
             console.log('⏰ انتهت صلاحية الجلسة');
             localStorage.removeItem(SESSION_KEY);
             return null;
         }
-        
         return session;
     } catch (e) {
         console.error('❌ فشل قراءة الجلسة:', e);
@@ -70,97 +62,22 @@ window.clearSession = function() {
         localStorage.removeItem(SESSION_KEY);
         console.log('🗑️ تم مسح الجلسة');
         return true;
-    } catch (e) {
-        return false;
-    }
+    } catch (e) { return false; }
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🔄 استعادة الجلسة تلقائياً
+// ℹ️ autoRestoreSession - لم تعد ضرورية مع Firebase Auth
 // ═══════════════════════════════════════════════════════════
 
 window.autoRestoreSession = function() {
-    const session = getSession();
-    if (!session) {
-        console.log('ℹ️ لا توجد جلسة محفوظة');
-        return false;
-    }
-    
-    // البحث عن المستخدم
-    const user = users.find(u => u.id === session.userId);
-    if (!user) {
-        console.log('⚠️ المستخدم غير موجود');
-        clearSession();
-        return false;
-    }
-    
-    if (user.active === false) {
-        console.log('⚠️ المستخدم موقوف');
-        clearSession();
-        return false;
-    }
-    
-    // ✅ استعادة الجلسة
-    window.currentUser = user;
-    console.log('✅ تم استعادة الجلسة تلقائياً:', user.name);
-    
-    // إظهار التطبيق
-    const loginCont = $('loginContainer');
-    const appCont = $('appContent');
-    if (loginCont) loginCont.classList.add('hidden');
-    if (appCont) appCont.style.display = 'block';
-    
-    // تحديث الواجهة
-    if (typeof updateUserUI === 'function') updateUserUI();
-    if (typeof applyPermissions === 'function') applyPermissions();
-    
-    // التسجيل في السجل
-    if (typeof addAuditLog === 'function') {
-        addAuditLog('login', 'user', `استعادة الجلسة: ${user.name}`, { userId: user.id });
-    }
-    
-    // الانتقال للصفحة الأخيرة
-    const lastPage = session.lastPage || 'dashboard';
-    if (typeof navigateTo === 'function') {
-        navigateTo(lastPage);
-    }
-    
-    return true;
+    console.log('ℹ️ autoRestoreSession: Firebase Auth يتولى الاستعادة تلقائياً');
+    return false;
 };
 
 // ═══════════════════════════════════════════════════════════
-// 🔧 تحسين دالة تسجيل الدخول
+// 🔧 حفظ آخر صفحة
 // ═══════════════════════════════════════════════════════════
 
-const _originalCheckLogin = window.checkLogin;
-window.checkLogin = function() {
-    // استدعاء الدالة الأصلية
-    const result = _originalCheckLogin ? _originalCheckLogin.apply(this, arguments) : null;
-    
-    // حفظ الجلسة بعد تأخير بسيط
-    setTimeout(() => {
-        if (window.currentUser) {
-            saveSession(currentUser);
-        }
-    }, 500);
-    
-    return result;
-};
-
-// ═══════════════════════════════════════════════════════════
-// 🔧 تحسين دالة تسجيل الخروج
-// ═══════════════════════════════════════════════════════════
-
-const _originalLockApp = window.lockApp;
-window.lockApp = function() {
-    clearSession();
-    if (_originalLockApp) _originalLockApp.apply(this, arguments);
-};
-
-// ============================================================
-// 🔧 حفظ آخر صفحة (بدون تعارض مع navigateTo الأساسي)
-// ============================================================
-// ✅ لا نعيد تعريف navigateTo هنا، بل نستخدم حدث مخصص
 window.addEventListener('mizan_navigate', function(e) {
     if (e.detail && e.detail.page) {
         const page = e.detail.page;
@@ -184,25 +101,32 @@ setInterval(() => {
             localStorage.setItem(SESSION_KEY, JSON.stringify(session));
         }
     }
-}, 60 * 60 * 1000); // كل ساعة
+}, 60 * 60 * 1000);
 
 // ═══════════════════════════════════════════════════════════
-// 🚀 التهيئة عند التحميل
+// 🚀 اعتراض setCurrentUser لحفظ الجلسة
 // ═══════════════════════════════════════════════════════════
 
-window.addEventListener('DOMContentLoaded', function() {
-    // انتظر تحميل البيانات
-    setTimeout(() => {
-        // جرب استعادة الجلسة
-        const restored = autoRestoreSession();
-        
-        if (restored) {
-            console.log('🎉 تم استعادة الجلسة - التطبيق جاهز');
-        } else {
-            console.log('ℹ️ يرجى تسجيل الدخول');
+(function() {
+    let _originalSetCurrentUser = window.setCurrentUser;
+    window.setCurrentUser = function(user) {
+        if (_originalSetCurrentUser) _originalSetCurrentUser.apply(this, arguments);
+        if (user && window.saveSession) {
+            saveSession(user);
         }
-    }, 1500);
-});
+    };
+})();
+
+// ═══════════════════════════════════════════════════════════
+// 🚀 اعتراض lockApp لمسح الجلسة
+// ═══════════════════════════════════════════════════════════
+
+(function() {
+    let _originalLockApp = window.lockApp;
+    window.lockApp = function() {
+        clearSession();
+        if (_originalLockApp) _originalLockApp.apply(this, arguments);
+    };
+})();
 
 console.log('✅ تم تحميل app-session.js بنجاح');
-console.log('🔐 الجلسة محفوظة لمدة 7 أيام');
